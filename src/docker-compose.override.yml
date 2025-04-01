@@ -1,0 +1,55 @@
+name: 'backbuddy'
+
+services:
+  api:
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    build:
+      args:
+        BUILD_ENV: dev
+    ports:
+      - "8080:8080"
+    env_file:
+      - Development.env
+
+  mongodb:
+    hostname: "mongodb"
+    image: "mongo:latest"
+    ports:
+      - "27017:27017"
+    expose:
+      - "27017"
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh mongodb:27017/test --quiet
+      interval: 5s
+      timeout: 5s
+      retries: 60
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    environment:
+      - REDIS_PASSWORD=my-password
+      - REDIS_PORT=6379
+      - REDIS_DATABASES=16
+    healthcheck:
+      test: redis-cli ping
+      interval: 5s
+      timeout: 5s
+      retries: 60
+
+  mongoexpress:
+    image: mongo-express:latest
+    ports:
+      - "8081:8081"
+    environment:
+      - ME_CONFIG_MONGODB_URL=mongodb://mongodb:27017
+      - ME_CONFIG_BASICAUTH=false
+      - PORT=8081
+    depends_on:
+      mongodb: 
+        condition: service_healthy

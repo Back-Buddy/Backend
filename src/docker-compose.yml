@@ -1,0 +1,7 @@
+name: 'backbuddy'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Api/Dockerfile
