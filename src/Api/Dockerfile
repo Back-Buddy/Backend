@@ -1,12 +1,12 @@
 ARG BUILD_ENV=prod
 
 # Base Stage for general settings that never change
-FROM mcr.microsoft.com/dotnet/aspnet:9.0@sha256:c013be6e8c5219fa56002ad96aac9d99afcca23a185aadd0a30e9b4f3d6efd8c AS aspnet
+FROM mcr.microsoft.com/dotnet/aspnet:9.0@sha256:4f0ad314f83e6abeb6906e69d0f9c81a0d2ee51d362e035c7d3e6ac5743f5399 AS aspnet
 WORKDIR /app
 EXPOSE 8080
 
 # Build Stage with Dotnet SDK
-FROM mcr.microsoft.com/dotnet/sdk:9.0@sha256:4845ef954a33b55c1a1f5db1ac24ba6cedb1dafb7f0b6a64ebce2fabe611f0c0 AS sdk
+FROM mcr.microsoft.com/dotnet/sdk:9.0@sha256:d7f4691d11f610d9b94bb75517c9e78ac5799447b5b3e82af9e4625d8c8d1d53 AS sdk
 WORKDIR /src
 
 # Install dev tools
