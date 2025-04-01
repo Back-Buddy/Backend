@@ -1,0 +1,56 @@
+name: CI/CD
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build:
+    name: Build & Unit Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install .NET Core
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Install dependencies
+        run: dotnet restore src/Backend.sln
+
+      - name: Build Api
+        run: dotnet build src/Api/Api.csproj -c Release
+
+      - name: Exceute Unit Tests
+        run: dotnet test src/Api-Test/Api-Test.csproj -v n
+
+  integration:
+    name: Integration Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Services
+        uses: hoverkraft-tech/compose-action@v2.0.2
+        with:
+          compose-file: "src/docker-compose.override.yml"
+
+      - name: Install .NET Core
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Install dependencies
+        run: dotnet restore src/Backend.sln
+
+      - name: Exceute Integration Tests
+        run: dotnet test src/Integration-Test/Integration-Test.csproj -v n
