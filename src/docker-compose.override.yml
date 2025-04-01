@@ -8,6 +8,8 @@ services:
       redis:
         condition: service_healthy
     build:
+      context: .
+      dockerfile: Api/Dockerfile
       args:
         BUILD_ENV: dev
     ports:
