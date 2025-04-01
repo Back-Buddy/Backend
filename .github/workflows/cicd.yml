@@ -43,7 +43,7 @@ jobs:
         uses: hoverkraft-tech/compose-action@v2.0.2
         with:
           cwd: "${{ github.workspace }}/src/"
-          compose-file: "src/docker-compose.override.yml"
+          compose-file: "docker-compose.override.yml"
 
       - name: Install .NET Core
         uses: actions/setup-dotnet@v4
