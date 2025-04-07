@@ -1,8 +1,18 @@
-# SportSpot
+# BackBuddy
 
 ## About
 
-SportSpot is a web application designed to manage sports-related activities. It includes various services and components such as a backend, database services, and a REST emulator.
+BackBuddy Backend is the server-side component of the BackBuddy system — a smart posture and sitting-time monitoring platform.
+It provides REST and WebSocket APIs to handle:
+
+- Sensor data ingestion and real-time processing
+- User authentication and management
+- Sensor configuration and assignment
+- Push notification triggering
+- Session statistics and analysis
+
+Built with ASP.NET Core, the backend is containerized via Docker and supports CI/CD using GitHub Actions.
+It serves as the central hub for communication between mobile clients, sensor devices (e.g. ESP32), and the database.
 
 ## Services
 
