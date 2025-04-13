@@ -60,6 +60,51 @@ The MongoDB service is executed in a Docker container and can be accessed at [ht
 
    - Dev-UI: [http://localhost:8081](http://localhost:8081)
 
+## Entity relationship diagram
+```mermaid
+   erDiagram
+    USER {
+        string userID(Firebase)
+        string username
+        string avatar
+        int coins
+    }
+
+    DEVICE {
+        GUIDV7 deviceID
+        string name
+        string userID
+        int threshold_minutes
+        string identificationKey(KeyVault)
+    }
+
+    DEVICE_LOGS {
+        string deviceID
+        datetime start
+        datetime end
+        enum type
+    }
+
+    DEVICE_CURRENT_REDIS {
+        string deviceID
+        datetime start
+        boolean pushSent
+    }
+
+    REPORT {
+        string deviceID
+        string userID
+        datetime start
+        datetime end
+        json meta_data
+    }
+
+    Relations {
+        string userID_1
+        string userID_2
+    }
+```
+
 ## Tests
 
 ### Requirements
