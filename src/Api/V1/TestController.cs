@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using BackBuddy.Api.Service.V1.Exceptions;
+using Microsoft.AspNetCore.Mvc;
 
 namespace BackBuddy.Api.Service.V1
 {
