@@ -5,7 +5,9 @@ using BackBuddy.Api.Service.V1.WebSockets.Exceptions;
 using BackBuddy.Api.Service.V1.WebSockets.Mapper;
 using MassTransit;
 using System.Collections.Concurrent;
+using System.Linq.Expressions;
 using System.Net.WebSockets;
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -52,20 +54,13 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Services
                 throw new UnsupportActionWebSocketMessageException();
 
             Guid deviceId = _connectionService.GetDevice(webSocket) ?? throw new UnauthorizedException();
-
             (Type genericType, Func<Guid, IWebSocketMessageDto, object> factory) = _messageFactoryCache.GetOrAdd(
                 message.MessageType,
                 msgType =>
                 {
                     Type payloadType = msgType.GetMessageType();
                     Type genType = typeof(WebSocketMessageReceive<>).MakeGenericType(payloadType);
-
-                    object factoryFunc(Guid id, IWebSocketMessageDto msg)
-                    {
-                        return Activator.CreateInstance(genType, [id, msg])
-                            ?? throw new InvalidOperationException($"Failed to create instance of {genType.Name}");
-                    }
-
+                    var factoryFunc = CreateFactory(payloadType, genType);
                     return (genType, factoryFunc);
                 });
 
@@ -84,6 +79,23 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Services
             byte[] buffer = Encoding.UTF8.GetBytes(payload);
             await webSocket.SendAsync(new ArraySegment<byte>(buffer), System.Net.WebSockets.WebSocketMessageType.Text, true, CancellationToken.None);
             return true;
+        }
+
+        private static Func<Guid, IWebSocketMessageDto, object> CreateFactory(Type genericPayloadType, Type genericType)
+        {
+            ParameterExpression idParam = Expression.Parameter(typeof(Guid), "deviceId");
+            ParameterExpression msgParam = Expression.Parameter(typeof(IWebSocketMessageDto), "message");
+
+            UnaryExpression castedMsg = Expression.Convert(msgParam, genericPayloadType);
+
+            ConstructorInfo ctor = genericType.GetConstructor([typeof(Guid), genericPayloadType]) ?? throw new InvalidOperationException($"Constructor not found on {genericType.Name}");
+
+            NewExpression newExpr = Expression.New(ctor, idParam, castedMsg);
+
+            UnaryExpression castResult = Expression.Convert(newExpr, typeof(object));
+
+            var lambda = Expression.Lambda<Func<Guid, IWebSocketMessageDto, object>>(castResult, idParam, msgParam);
+            return lambda.Compile();
         }
     }
 }
