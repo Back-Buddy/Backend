@@ -14,7 +14,6 @@ builder.Services.AddExceptionHandler<AbstractBaseExceptionHandler>();
 
 builder.Services.AddSingleton<IConnectionService, ConnectionService>();
 builder.Services.AddScoped<IWebSocketService, WebSocketService>();
-builder.Services.AddScoped<CustomWebSocketMiddleware>();
 
 builder.Services.AddMassTransit(x =>
 {
@@ -35,13 +34,11 @@ builder.Services.ConfigureFullSwaggerConfig();
 
 var app = builder.Build();
 
-app.UseExceptionHandler();
-app.UseMiddleware<CustomWebSocketMiddleware>();
 
 app.UseSwagger();
 app.UseSwaggerUI();
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
@@ -53,5 +50,8 @@ app.UseWebSockets(new WebSocketOptions
 {
     KeepAliveInterval = TimeSpan.FromSeconds(5)
 });
+
+app.UseExceptionHandler();
+app.UseMiddleware<CustomWebSocketMiddleware>();
 
 await app.RunAsync();
