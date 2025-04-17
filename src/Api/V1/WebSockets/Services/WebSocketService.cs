@@ -50,10 +50,13 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Services
             Guid deviceId = _connectionService.GetDevice(webSocket) ?? throw new UnauthorizedException();
 
 
-            Type genericMessageReceiveType = typeof(WebSocketMessageReceive<>).MakeGenericType(message.GetType());
-            object messageReceiveRaw = Activator.CreateInstance(genericMessageReceiveType, [deviceId, message]) ?? throw new UnauthorizedException();
+            WebSocketMessageReceive webSocketMessageReceive = new()
+            {
+                DeviceId = deviceId,
+                Message = message
+            };
 
-            await _publishEndpoint.Publish(messageReceiveRaw);
+            await _publishEndpoint.Publish(webSocketMessageReceive);
         }
 
         public async Task<bool> SendMessage(Guid deviceId, IWebSocketMessageDto message)
