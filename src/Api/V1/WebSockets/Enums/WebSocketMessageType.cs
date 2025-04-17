@@ -2,5 +2,6 @@
 {
     public enum WebSocketMessageType
     {
+        StatusMessage
     }
 }

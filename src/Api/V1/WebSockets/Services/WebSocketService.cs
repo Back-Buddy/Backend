@@ -2,7 +2,9 @@
 using BackBuddy.Api.Service.V1.WebSockets.Converter;
 using BackBuddy.Api.Service.V1.WebSockets.DTOs;
 using BackBuddy.Api.Service.V1.WebSockets.Exceptions;
+using BackBuddy.Api.Service.V1.WebSockets.Mapper;
 using MassTransit;
+using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
@@ -12,6 +14,7 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Services
 {
     public class WebSocketService(IConnectionService _connectionService, IPublishEndpoint _publishEndpoint) : IWebSocketService
     {
+        private static readonly ConcurrentDictionary<Enums.WebSocketMessageType, (Type GenericType, Func<Guid, IWebSocketMessageDto, object> Factory)> _messageFactoryCache = [];
 
         private readonly static JsonSerializerOptions _options = new()
         {
@@ -41,22 +44,33 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Services
             await _connectionService.RemoveWebSocket(webSocket, "Disconnected", closeStatus);
         }
 
+
         public async Task OnReceive(WebSocket webSocket, string payload)
         {
             IWebSocketMessageDto message = JsonSerializer.Deserialize<IWebSocketMessageDto>(payload, _options) ?? throw new InvalidWebSocketMessageException();
             if (message.IsToSend())
                 throw new UnsupportActionWebSocketMessageException();
-            //TODO: Other Exception (Internal Server Error or something else) | Log the error
+
             Guid deviceId = _connectionService.GetDevice(webSocket) ?? throw new UnauthorizedException();
 
+            (Type genericType, Func<Guid, IWebSocketMessageDto, object> factory) = _messageFactoryCache.GetOrAdd(
+                message.MessageType,
+                msgType =>
+                {
+                    Type payloadType = msgType.GetMessageType();
+                    Type genType = typeof(WebSocketMessageReceive<>).MakeGenericType(payloadType);
 
-            WebSocketMessageReceive webSocketMessageReceive = new()
-            {
-                DeviceId = deviceId,
-                Message = message
-            };
+                    object factoryFunc(Guid id, IWebSocketMessageDto msg)
+                    {
+                        return Activator.CreateInstance(genType, [id, msg])
+                            ?? throw new InvalidOperationException($"Failed to create instance of {genType.Name}");
+                    }
 
-            await _publishEndpoint.Publish(webSocketMessageReceive);
+                    return (genType, factoryFunc);
+                });
+
+            object messageReceive = factory(deviceId, message);
+            await _publishEndpoint.Publish(messageReceive, genericType);
         }
 
         public async Task<bool> SendMessage(Guid deviceId, IWebSocketMessageDto message)
@@ -68,7 +82,7 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Services
                 return false;
             string payload = JsonSerializer.Serialize(message, _options);
             byte[] buffer = Encoding.UTF8.GetBytes(payload);
-            await webSocket.SendAsync(new ArraySegment<byte>(buffer), WebSocketMessageType.Text, true, CancellationToken.None);
+            await webSocket.SendAsync(new ArraySegment<byte>(buffer), System.Net.WebSockets.WebSocketMessageType.Text, true, CancellationToken.None);
             return true;
         }
     }

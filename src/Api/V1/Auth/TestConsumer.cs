@@ -3,12 +3,12 @@ using MassTransit;
 
 namespace BackBuddy.Api.Service.V1.Auth
 {
-    public class TestConsumer : IConsumer<WebSocketMessageReceive>
+    public class TestConsumer(ILogger<TestConsumer> logger) : IConsumer<WebSocketMessageReceive<TestMessage>>
     {
-        public Task Consume(ConsumeContext<WebSocketMessageReceive> context)
+        public Task Consume(ConsumeContext<WebSocketMessageReceive<TestMessage>> context)
         {
-            //TODO: Implement the consumer logic
-            throw new NotImplementedException();
+            logger.LogInformation(context.Message.Message.Status);
+            return Task.CompletedTask;
         }
     }
 }
