@@ -1,6 +1,6 @@
 ﻿using BackBuddy.Api.Service.V1.Exceptions;
 using BackBuddy.Api.Service.V1.WebSockets.Converter;
-using BackBuddy.Api.Service.V1.WebSockets.Dtos;
+using BackBuddy.Api.Service.V1.WebSockets.DTOs;
 using BackBuddy.Api.Service.V1.WebSockets.Exceptions;
 using MassTransit;
 using System.Net.WebSockets;
@@ -50,13 +50,10 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Services
             Guid deviceId = _connectionService.GetDevice(webSocket) ?? throw new UnauthorizedException();
 
 
-            WebSocketMessageReceive webSocketMessageReceive= new()
-            {
-                DeviceId = deviceId,
-                Message = message
-            };
+            Type genericMessageReceiveType = typeof(WebSocketMessageReceive<>).MakeGenericType(message.GetType());
+            object messageReceiveRaw = Activator.CreateInstance(genericMessageReceiveType, [deviceId, message]) ?? throw new UnauthorizedException();
 
-            await _publishEndpoint.Publish(webSocketMessageReceive);
+            await _publishEndpoint.Publish(messageReceiveRaw);
         }
 
         public async Task<bool> SendMessage(Guid deviceId, IWebSocketMessageDto message)

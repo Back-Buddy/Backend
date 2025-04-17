@@ -1,4 +1,4 @@
-﻿using BackBuddy.Api.Service.V1.WebSockets.Dtos;
+﻿using BackBuddy.Api.Service.V1.WebSockets.DTOs;
 using BackBuddy.Api.Service.V1.WebSockets.Enums;
 using BackBuddy.Api.Service.V1.WebSockets.Exceptions;
 using BackBuddy.Api.Service.V1.WebSockets.Mapper;
