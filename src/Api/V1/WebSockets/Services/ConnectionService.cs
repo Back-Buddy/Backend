@@ -40,7 +40,7 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Services
             return [.. _sockets.Values];
         }
 
-        public async Task RemoveWebSocket(WebSocket webSocket, string? reason)
+        public async Task RemoveWebSocket(WebSocket webSocket, string? reason = null, WebSocketCloseStatus closeStatus = WebSocketCloseStatus.NormalClosure)
         {
             KeyValuePair<Guid, WebSocket> registeredWebsocket = _sockets.FirstOrDefault(x => x.Value == webSocket);
 
@@ -49,7 +49,7 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Services
 
             if (webSocket.State != WebSocketState.Aborted)
             {
-                await webSocket.CloseAsync(closeStatus: WebSocketCloseStatus.NormalClosure, statusDescription: reason, cancellationToken: CancellationToken.None);
+                await webSocket.CloseAsync(closeStatus: closeStatus, statusDescription: reason, cancellationToken: CancellationToken.None);
             }
         }
     }

@@ -10,7 +10,7 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Services
         List<WebSocket> GetWebSockets();
         List<Guid> GetAllDevices();
         bool AddWebSocket(WebSocket webSocket, Guid deviceId);
-        Task RemoveWebSocket(WebSocket webSocket, string? reason);
+        Task RemoveWebSocket(WebSocket webSocket, string? reason = null, WebSocketCloseStatus closeStatus = WebSocketCloseStatus.NormalClosure);
         Guid? GetDevice(WebSocket webSocket);
     }
 }

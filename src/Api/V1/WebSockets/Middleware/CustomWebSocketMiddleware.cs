@@ -60,9 +60,9 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Middleware
             }
         }
 
-        private static async Task HandleDisconnect(WebSocket socket, IWebSocketService webSocketService)
+        private static async Task HandleDisconnect(WebSocket socket, IWebSocketService webSocketService, WebSocketCloseStatus closeStatus)
         {
-            await webSocketService.OnDisconnect(socket);
+            await webSocketService.OnDisconnect(socket, closeStatus);
         }
 
         private static async Task Receive(WebSocket socket, IWebSocketService webSocketService, ILogger<CustomWebSocketMiddleware> logger)
@@ -82,7 +82,7 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Middleware
                         // Check if the message is too big
                         if (inputStream.Length > 1024 * 1024 * 50)
                         {
-                            await HandleDisconnect(socket, webSocketService);
+                            await HandleDisconnect(socket, webSocketService, WebSocketCloseStatus.MessageTooBig);
                             return;
                         }
                     } while (!result.EndOfMessage);
@@ -95,14 +95,14 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Middleware
                     }
                     else if (result.MessageType == WebSocketMessageType.Close)
                     {
-                        await HandleDisconnect(socket, webSocketService);
+                        await HandleDisconnect(socket, webSocketService, WebSocketCloseStatus.NormalClosure);
                     }
                 }
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "An error occurred while receiving a message: {ErrorMessage}", ex.Message);
-                await HandleDisconnect(socket, webSocketService);
+                await HandleDisconnect(socket, webSocketService, WebSocketCloseStatus.InvalidPayloadData);
             }
         }
     }

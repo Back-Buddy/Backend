@@ -36,9 +36,9 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Services
             return true;
         }
 
-        public async Task OnDisconnect(WebSocket webSocket)
+        public async Task OnDisconnect(WebSocket webSocket, WebSocketCloseStatus closeStatus = WebSocketCloseStatus.NormalClosure)
         {
-            await _connectionService.RemoveWebSocket(webSocket, "Disconnected");
+            await _connectionService.RemoveWebSocket(webSocket, "Disconnected", closeStatus);
         }
 
         public async Task OnReceive(WebSocket webSocket, string payload)
