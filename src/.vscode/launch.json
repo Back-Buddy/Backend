@@ -8,10 +8,7 @@
 			"name": "(DOTNET) Debug Platform",
 			"type": "docker",
 			"request": "attach",
-			"platform": "netCore",
-			"sourceFileMap": {
-				"/src": "/"
-			}
+			"platform": "netCore"
 		}
 	]
 }

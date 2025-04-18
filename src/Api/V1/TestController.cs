@@ -13,6 +13,5 @@ namespace BackBuddy.Api.Service.V1
         {
             return Ok("Hello World");
         }
-
     }
 }
