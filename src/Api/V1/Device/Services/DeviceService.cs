@@ -9,7 +9,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
 {
     public partial class DeviceService(IDeviceRepository repository) : IDeviceService
     {
-        private const string NAME_PATTERN = @"[a-zA-Z0-9]{3,16}";
+        private const string NAME_PATTERN = @"^[a-zA-Z0-9]{3,16}$";
 
         public async Task<DeviceSecretDto> Create(string userId, DeviceCreateRequestDto request)
         {
