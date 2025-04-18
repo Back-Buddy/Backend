@@ -1,4 +1,5 @@
-﻿using MongoDB.Driver;
+﻿using MongoDB.Bson.Serialization.Conventions;
+using MongoDB.Driver;
 
 namespace BackBuddy.Api.Service.V1.Database.MongoDB
 {
@@ -34,6 +35,9 @@ namespace BackBuddy.Api.Service.V1.Database.MongoDB
                 var client = provider.GetRequiredService<IMongoClient>();
                 return client.GetDatabase(_mongoDBDatabaseName);
             });
+
+            ConventionPack pack = [new GuidRepresentationConvention()];
+            ConventionRegistry.Register("Guid Convention", pack, type => true);
 
             return new MongoDBCollectionBuilder(_serviceCollection);
         }
