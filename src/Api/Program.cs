@@ -2,6 +2,7 @@ using BackBuddy.Api.Service.Swagger;
 using BackBuddy.Api.Service.V1.Auth;
 using BackBuddy.Api.Service.V1.Auth.Extensions;
 using BackBuddy.Api.Service.V1.Database.MongoDB;
+using BackBuddy.Api.Service.V1.Device.Entities;
 using BackBuddy.Api.Service.V1.ExceptionHandlers;
 using BackBuddy.Api.Service.V1.WebSockets.Middleware;
 using BackBuddy.Api.Service.V1.WebSockets.Services;
@@ -20,7 +21,8 @@ builder.Services
     .AddMongoDB()
     .AddConnection(mongoConfig.Connection)
     .AddDatabaseName(mongoConfig.DatabaseName)
-    .Connect();
+    .Connect()
+    .AddCollection<DeviceEntity>(nameof(DeviceEntity));
 
 builder.Services.AddSingleton<IConnectionService, ConnectionService>();
 builder.Services.AddScoped<IWebSocketService, WebSocketService>();
