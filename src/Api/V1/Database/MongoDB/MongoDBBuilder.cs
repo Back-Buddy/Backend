@@ -41,7 +41,7 @@ namespace BackBuddy.Api.Service.V1.Database.MongoDB
 
     public class MongoDBCollectionBuilder(IServiceCollection serviceCollection)
     {
-        public MongoDBCollectionBuilder AddCollection<TEntity>(string collectionName, Action<IMongoCollection<TEntity>>? callback = null)
+        public MongoDBCollectionBuilder AddCollection<TEntity>(string collectionName, Action<IMongoCollection<TEntity>>? collection = null)
         {
             if (string.IsNullOrEmpty(collectionName))
                 throw new ArgumentNullException(nameof(collectionName));
