@@ -49,7 +49,7 @@ namespace BackBuddy.Api.Service.V1.Database.MongoDB
             {
                 IMongoDatabase database = x.GetRequiredService<IMongoDatabase>();
                 IMongoCollection<TEntity> mongoCollection = database.GetCollection<TEntity>(collectionName);
-                callback?.Invoke(mongoCollection);
+                collection?.Invoke(mongoCollection);
                 return mongoCollection;
             });
             return this;
