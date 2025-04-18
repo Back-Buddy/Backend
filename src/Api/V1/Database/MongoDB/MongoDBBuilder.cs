@@ -20,21 +20,7 @@ namespace BackBuddy.Api.Service.V1.Database.MongoDB
             return this;
         }
 
-        public MongoDBBuilder AddCollection<TEntity>(string collectionName, Action<IMongoCollection<TEntity>>? callback = null)
-        {
-            if (string.IsNullOrEmpty(collectionName))
-                throw new ArgumentNullException(nameof(collectionName));
-            _serviceCollection.AddSingleton(x =>
-            {
-                IMongoDatabase database = x.GetRequiredService<IMongoDatabase>();
-                IMongoCollection<TEntity> collection = database.GetCollection<TEntity>(collectionName);
-                callback?.Invoke(collection);
-                return collection;
-            });
-            return this;
-        }
-
-        public MongoDBBuilder Connect()
+        public MongoDBCollectionBuilder Connect()
         {
             if (string.IsNullOrEmpty(_mongoDBConnection))
                 throw new InvalidDataException($"{nameof(_mongoDBConnection)} can not be null");
@@ -49,6 +35,23 @@ namespace BackBuddy.Api.Service.V1.Database.MongoDB
                 return client.GetDatabase(_mongoDBDatabaseName);
             });
 
+            return new MongoDBCollectionBuilder(_serviceCollection);
+        }
+    }
+
+    public class MongoDBCollectionBuilder(IServiceCollection serviceCollection)
+    {
+        public MongoDBCollectionBuilder AddCollection<TEntity>(string collectionName, Action<IMongoCollection<TEntity>>? callback = null)
+        {
+            if (string.IsNullOrEmpty(collectionName))
+                throw new ArgumentNullException(nameof(collectionName));
+            serviceCollection.AddSingleton(x =>
+            {
+                IMongoDatabase database = x.GetRequiredService<IMongoDatabase>();
+                IMongoCollection<TEntity> mongoCollection = database.GetCollection<TEntity>(collectionName);
+                callback?.Invoke(mongoCollection);
+                return mongoCollection;
+            });
             return this;
         }
     }
