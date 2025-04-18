@@ -1,6 +1,7 @@
 using BackBuddy.Api.Service.Swagger;
 using BackBuddy.Api.Service.V1.Auth;
 using BackBuddy.Api.Service.V1.Auth.Extensions;
+using BackBuddy.Api.Service.V1.Database.MongoDB;
 using BackBuddy.Api.Service.V1.ExceptionHandlers;
 using BackBuddy.Api.Service.V1.WebSockets.Middleware;
 using BackBuddy.Api.Service.V1.WebSockets.Services;
@@ -11,6 +12,15 @@ builder.ConfigureAuthentification();
 
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<AbstractBaseExceptionHandler>();
+
+IConfigurationSection mongoDBSection = builder.Configuration.GetSection("MongoDB");
+MongoDBConnectionConfig mongoConfig = mongoDBSection.Get<MongoDBConnectionConfig>() ?? throw new InvalidDataException("MongoDB information must be set!");
+
+builder.Services
+    .AddMongoDB()
+    .AddConnection(mongoConfig.Connection)
+    .AddDatabaseName(mongoConfig.DatabaseName)
+    .Connect();
 
 builder.Services.AddSingleton<IConnectionService, ConnectionService>();
 builder.Services.AddScoped<IWebSocketService, WebSocketService>();
@@ -37,8 +47,6 @@ var app = builder.Build();
 
 app.UseSwagger();
 app.UseSwaggerUI();
-
-//app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
