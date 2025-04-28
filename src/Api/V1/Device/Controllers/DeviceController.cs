@@ -27,7 +27,7 @@ namespace BackBuddy.Api.Service.V1.Device.Controllers
             return Ok(devices.Items);
         }
 
-        [HttpPatch]
+        [HttpPost]
         [ProducesResponseType(typeof(DeviceSecretDto), StatusCodes.Status201Created)]
         public async Task<IActionResult> CreateDevice([FromBody] DeviceCreateRequestDto request)
         {
@@ -35,7 +35,7 @@ namespace BackBuddy.Api.Service.V1.Device.Controllers
             return CreatedAtAction(nameof(GetDevice), new { id = deviceSecret.DeviceId }, deviceSecret);
         }
 
-        [HttpPut("{id}")]
+        [HttpPatch("{id}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> UpdateDevice(Guid id, [FromBody] DeviceUpdateRequestDto request)
         {
