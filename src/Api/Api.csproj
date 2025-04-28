@@ -18,8 +18,4 @@
     <PackageReference Include="Swashbuckle.AspNetCore" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="V1\Device\Controllers\" />
-  </ItemGroup>
-
 </Project>

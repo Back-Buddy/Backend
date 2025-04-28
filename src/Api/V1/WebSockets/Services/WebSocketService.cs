@@ -1,4 +1,6 @@
-﻿using BackBuddy.Api.Service.V1.Exceptions;
+﻿using BackBuddy.Api.Service.V1.Device.Entities;
+using BackBuddy.Api.Service.V1.Device.Services;
+using BackBuddy.Api.Service.V1.Exceptions;
 using BackBuddy.Api.Service.V1.WebSockets.Converter;
 using BackBuddy.Api.Service.V1.WebSockets.DTOs;
 using BackBuddy.Api.Service.V1.WebSockets.Exceptions;
@@ -14,7 +16,7 @@ using System.Text.Json.Serialization;
 
 namespace BackBuddy.Api.Service.V1.WebSockets.Services
 {
-    public class WebSocketService(IConnectionService _connectionService, IPublishEndpoint _publishEndpoint) : IWebSocketService
+    public class WebSocketService(IConnectionService connectionService, IDeviceService deviceService, IPublishEndpoint publishEndpoint) : IWebSocketService
     {
         private static readonly ConcurrentDictionary<Enums.WebSocketMessageType, (Type GenericType, Func<Guid, IWebSocketMessageDto, object> Factory)> _messageFactoryCache = [];
 
@@ -26,24 +28,22 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Services
 
         public async Task<bool> OnConnect(WebSocket webSocket, string authorization)
         {
-            //TODO: Add authorization
-            //TODO: Read DeviceId from the token
-            Guid deviceId = Guid.NewGuid();
-            if (!_connectionService.AddWebSocket(webSocket, deviceId))
+            DeviceEntity deviceEntity = await deviceService.Authorize(authorization);
+            if (!connectionService.AddWebSocket(webSocket, deviceEntity.Id))
             {
                 // If the user is already connected, we close the old
-                WebSocket? toClose = _connectionService.GetWebSocket(deviceId);
+                WebSocket? toClose = connectionService.GetWebSocket(deviceEntity.Id);
                 if (toClose != null)
-                    await _connectionService.RemoveWebSocket(toClose, "Reconnected");
+                    await connectionService.RemoveWebSocket(toClose, "Reconnected");
 
-                return _connectionService.AddWebSocket(webSocket, deviceId);
+                return connectionService.AddWebSocket(webSocket, deviceEntity.Id);
             }
             return true;
         }
 
         public async Task OnDisconnect(WebSocket webSocket, WebSocketCloseStatus closeStatus = WebSocketCloseStatus.NormalClosure)
         {
-            await _connectionService.RemoveWebSocket(webSocket, "Disconnected", closeStatus);
+            await connectionService.RemoveWebSocket(webSocket, "Disconnected", closeStatus);
         }
 
 
@@ -53,7 +53,7 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Services
             if (message.IsToSend())
                 throw new UnsupportActionWebSocketMessageException();
 
-            Guid deviceId = _connectionService.GetDevice(webSocket) ?? throw new UnauthorizedException();
+            Guid deviceId = connectionService.GetDevice(webSocket) ?? throw new UnauthorizedException();
             (Type genericType, Func<Guid, IWebSocketMessageDto, object> factory) = _messageFactoryCache.GetOrAdd(
                 message.MessageType,
                 msgType =>
@@ -65,14 +65,14 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Services
                 });
 
             object messageReceive = factory(deviceId, message);
-            await _publishEndpoint.Publish(messageReceive, genericType);
+            await publishEndpoint.Publish(messageReceive, genericType);
         }
 
         public async Task<bool> SendMessage(Guid deviceId, IWebSocketMessageDto message)
         {
             if (!message.IsToSend())
                 throw new UnsupportActionWebSocketMessageException();
-            WebSocket? webSocket = _connectionService.GetWebSocket(deviceId);
+            WebSocket? webSocket = connectionService.GetWebSocket(deviceId);
             if (webSocket == null)
                 return false;
             string payload = JsonSerializer.Serialize(message, _options);

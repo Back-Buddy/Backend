@@ -24,5 +24,10 @@ namespace BackBuddy.Api.Service.V1.Device.Mapper
                 Threshold = entity.Threshold,
             };
         }
+
+        public static List<DeviceDto> ToDto(this IEnumerable<DeviceEntity> entities)
+        {
+            return entities.Select(e => e.ToDto()).ToList();
+        }
     }
 }
