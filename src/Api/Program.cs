@@ -37,7 +37,6 @@ builder.Services.AddMassTransit(x =>
     x.SetKebabCaseEndpointNameFormatter();
 
     //TODO: Register your consumers here
-    x.AddConsumer<TestConsumer>();
 
     x.UsingInMemory((context, cfg) =>
     {

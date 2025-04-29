@@ -1,5 +1,4 @@
-﻿using BackBuddy.Api.Service.V1.Auth;
-using BackBuddy.Api.Service.V1.WebSockets.Enums;
+﻿using BackBuddy.Api.Service.V1.WebSockets.Enums;
 
 namespace BackBuddy.Api.Service.V1.WebSockets.Mapper
 {
@@ -9,7 +8,6 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Mapper
         {
             return type switch
             {
-                WebSocketMessageType.StatusMessage => typeof(TestMessage),
                 _ => throw new NotImplementedException(),
             };
         }

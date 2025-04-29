@@ -26,7 +26,8 @@ namespace BackBuddy.Api.Service.V1.Device.Services
                 Id = Guid.CreateVersion7(),
                 Name = request.Name,
                 UserId = userId,
-                Secret = GenerateSecret()
+                Secret = GenerateSecret(),
+                SecretGeneratedAt = DateTime.UtcNow,
             };
 
             await repository.Add(entity);
