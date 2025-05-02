@@ -3,23 +3,11 @@ using MongoDB.Driver;
 
 namespace BackBuddy.Api.Service.V1.Database.MongoDB
 {
-    public class MongoDBBuilder(IServiceCollection serviceCollection)
+    public class MongoDBBuilder(IServiceCollection serviceCollection, string connection, string databaseName)
     {
         private readonly IServiceCollection _serviceCollection = serviceCollection;
-        private string? _mongoDBConnection;
-        private string? _mongoDBDatabaseName;
-
-        public MongoDBBuilder AddConnection(string connection)
-        {
-            _mongoDBConnection = connection;
-            return this;
-        }
-
-        public MongoDBBuilder AddDatabaseName(string databaseName)
-        {
-            _mongoDBDatabaseName = databaseName;
-            return this;
-        }
+        private readonly string _mongoDBConnection = connection;
+        private readonly string _mongoDBDatabaseName = databaseName;
 
         public MongoDBCollectionBuilder Connect()
         {

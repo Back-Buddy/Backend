@@ -2,9 +2,9 @@
 {
     public static class IServiceCollectionExtension
     {
-        public static MongoDBBuilder AddMongoDB(this IServiceCollection collection)
+        public static MongoDBBuilder AddMongoDB(this IServiceCollection collection, string connectionString, string databaseName)
         {
-            return new MongoDBBuilder(collection);
+            return new MongoDBBuilder(collection, connectionString, databaseName);
         }
     }
 }

@@ -2,6 +2,7 @@
 using BackBuddy.Api.Service.V1.Device.Services;
 using BackBuddy.Api.Service.V1.Exceptions;
 using BackBuddy.Api.Service.V1.WebSockets.Converter;
+using BackBuddy.Api.Service.V1.WebSockets.Dtos;
 using BackBuddy.Api.Service.V1.WebSockets.DTOs;
 using BackBuddy.Api.Service.V1.WebSockets.Exceptions;
 using BackBuddy.Api.Service.V1.WebSockets.Mapper;
@@ -34,10 +35,18 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Services
                 // If the user is already connected, we close the old
                 WebSocket? toClose = connectionService.GetWebSocket(deviceEntity.Id);
                 if (toClose != null)
-                    await connectionService.RemoveWebSocket(toClose, "Reconnected");
+                    await connectionService.RemoveWebSocket(toClose, "Reconnected", WebSocketCloseStatus.NormalClosure);
 
                 return connectionService.AddWebSocket(webSocket, deviceEntity.Id);
             }
+
+            WebSocketConnectedMessage connectedMessage = new() 
+            { 
+                DeviceId = deviceEntity.Id, 
+                WebSocket = webSocket 
+            };
+
+            await publishEndpoint.Publish(connectedMessage);
             return true;
         }
 

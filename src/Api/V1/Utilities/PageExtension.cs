@@ -8,5 +8,10 @@ namespace BackBuddy.Api.Service.V1.Utilities
         {
             response.Headers.Append("X-Has-More-Entries", hasMoreEntires.ToString());
         }
+
+        public static int Offset(this PageRequestDto page)
+        {
+            return (page.Page - 1) * page.Size;
+        }
     }
 }

@@ -20,9 +20,9 @@ namespace BackBuddy.Api.Service.V1.Device.Controllers
 
         [HttpGet]
         [ProducesResponseType(typeof(List<DeviceDto>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetDevices([FromQuery] PageRequestDto page)
+        public async Task<IActionResult> GetDevices([FromQuery] PageRequestDto query)
         {
-            Page<List<DeviceDto>> devices = await deviceService.GetAll(this.GetUserId(), page);
+            Page<List<DeviceDto>> devices = await deviceService.GetAll(this.GetUserId(), query);
             Response.AddPageHeader(devices.HasMoreEntries);
             return Ok(devices.Items);
         }

@@ -5,14 +5,12 @@ namespace BackBuddy.Api.Service.V1.Utilities
 {
     public class PageRequestDto
     {
+        [DefaultValue(10)]
+        [Range(1, 100)]
+        public required int Size { get; init; } = 10;
+
         [DefaultValue(1)]
         [Range(1, int.MaxValue)]
-        public int Page { get; set; } = 1;
-        
-        [DefaultValue(10)]
-        [Range(1, 1000)]
-        public int Size { get; set; } = 10;
-
-        public int Offset() => (Page - 1) * Size;
+        public required int Page { get; init; } = 1;
     }
 }
