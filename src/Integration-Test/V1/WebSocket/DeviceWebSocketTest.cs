@@ -83,11 +83,22 @@ namespace BackBuddy.Integration_Test.V1.WebSocket
         }
 
         [TestMethod]
-        public async Task Test_Connect_Unauthorized()
+        public async Task Test_Connect_Unauthorized_Invalid_Secret()
         {
             // Arrange
             using ClientWebSocket clientWebSocket = new();
             clientWebSocket.Options.AddSubProtocol("blablabla");
+
+            // Act & Assert
+            WebSocketException webSocketException = await Assert.ThrowsExactlyAsync<WebSocketException>(async () => await clientWebSocket.ConnectAsync(new Uri(_webSocketUri), CancellationToken.None));
+            Assert.IsTrue(webSocketException.Message.Contains("401"));
+        }
+
+        [TestMethod]
+        public async Task Test_Connect_Unauthorized_No_Secret()
+        {
+            // Arrange
+            using ClientWebSocket clientWebSocket = new();
 
             // Act & Assert
             WebSocketException webSocketException = await Assert.ThrowsExactlyAsync<WebSocketException>(async () => await clientWebSocket.ConnectAsync(new Uri(_webSocketUri), CancellationToken.None));
