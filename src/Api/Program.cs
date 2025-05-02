@@ -38,7 +38,7 @@ else
     builder.Services.AddSingleton<ISecretProvider, DevSecretProvider>();
 }
 
-    IConfigurationSection mongoDBSection = builder.Configuration.GetSection("MongoDB");
+IConfigurationSection mongoDBSection = builder.Configuration.GetSection("MongoDB");
 MongoDBConnectionConfig mongoConfig = mongoDBSection.Get<MongoDBConnectionConfig>() ?? throw new InvalidDataException("MongoDB information must be set!");
 
 builder.Services
