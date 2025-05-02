@@ -27,10 +27,10 @@ builder.ConfigureAuthentification();
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<AbstractBaseExceptionHandler>();
 
-if (!builder.Environment.IsDevelopment())
+if (builder.Environment.IsDevelopment())
 {
     SecretClient secretClient = new (new Uri(builder.Configuration.GetValue<string>("KEY_VAULT_URI") ?? throw new InvalidDataException("KEY_VAULT_URI is not set!")), new DefaultAzureCredential());
-    builder.Services.AddKeyedSingleton(secretClient, Constants.DEVICE_SECRET);
+    builder.Services.AddKeyedSingleton(Constants.DEVICE_SECRET, secretClient);
     builder.Services.AddSingleton<ISecretProvider, KeyVaultSecretProvider>();
 }
 else

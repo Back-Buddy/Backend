@@ -78,6 +78,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             // Arrange
             string deviceName = "Chair 1";
             Guid deviceId = await _deviceLib.CreateSimpleDevice(_accessToken, deviceName);
+            _deviceIds.Add(deviceId);
 
             // Act & Assert
             RequestFailedException requestFailedException = await Assert.ThrowsExactlyAsync<RequestFailedException>(async () => await _deviceLib.CreateDevice(_accessToken, deviceName.ToLower()));

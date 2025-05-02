@@ -16,10 +16,10 @@ namespace BackBuddy.Api.Service.V1.Database.KeyVault
         {
             await _secretClient.SetSecretAsync(secretName, secretValue);
         }
+
         public async Task DeleteSecret(string secretName)
         {
             await _secretClient.StartDeleteSecretAsync(secretName);
-            await _secretClient.PurgeDeletedSecretAsync(secretName);
         }
     }
 }
