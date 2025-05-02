@@ -3,11 +3,15 @@ using BackBuddy.Api.Service.V1.WebSockets.Services;
 using Microsoft.Extensions.Primitives;
 using System.Net.WebSockets;
 using System.Text;
+using System.Text.Json;
 
 namespace BackBuddy.Api.Service.V1.WebSockets.Middleware
 {
     public class CustomWebSocketMiddleware(RequestDelegate _next, IServiceProvider _serviceProvider)
     {
+
+        private readonly static List<WebSocketState> _states = [WebSocketState.Closed, WebSocketState.Aborted];
+
         public async Task Invoke(HttpContext context)
         {
             if (!context.WebSockets.IsWebSocketRequest)
@@ -15,6 +19,7 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Middleware
                 await _next(context);
                 return;
             }
+            WebSocket? webSocket = null;
             try
             {
                 if (!context.Request.Headers.TryGetValue("Sec-WebSocket-Protocol", out StringValues token))
@@ -35,16 +40,17 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Middleware
                     await new UnauthorizedException().WriteToResponse(context.Response);
                     return;
                 }
-                WebSocket webSocket = await context.WebSockets.AcceptWebSocketAsync(new WebSocketAcceptContext
-                {
-                    SubProtocol = authorization
-                });
-
                 using var scope = _serviceProvider.CreateScope();
                 IWebSocketService webSocketService = scope.ServiceProvider.GetRequiredService<IWebSocketService>();
                 ILogger<CustomWebSocketMiddleware> logger = scope.ServiceProvider.GetRequiredService<ILogger<CustomWebSocketMiddleware>>();
 
-                bool success = await webSocketService.OnConnect(webSocket, authorization);
+                Guid deviceId = await webSocketService.OnAuthorization(authorization);
+                webSocket = await context.WebSockets.AcceptWebSocketAsync(new WebSocketAcceptContext
+                {
+                    SubProtocol = authorization
+                });
+
+                bool success = await webSocketService.OnConnect(webSocket, deviceId);
                 if (!success)
                     return;
 
@@ -53,10 +59,42 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Middleware
             catch (AbstractBaseException ex)
             {
                 await ex.WriteToResponse(context.Response);
+                if (webSocket != null && !_states.Contains(webSocket.State))
+                {
+                    try
+                    {
+                        await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, JsonSerializer.Serialize(ex.GetErrors()), CancellationToken.None);
+                    }
+                    catch // Ignore any exceptions that occur while closing the WebSocket
+                    { }
+                }
             }
             catch (Exception)
             {
-                await new InternalServerErrorException().WriteToResponse(context.Response);
+                InternalServerErrorException ex = new();
+                await ex.WriteToResponse(context.Response);
+                if (webSocket != null && !_states.Contains(webSocket.State))
+                {
+                    try
+                    {
+                        await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, JsonSerializer.Serialize(ex.GetErrors()), CancellationToken.None);
+                    }
+                    catch // Ignore any exceptions that occur while closing the WebSocket
+                    { }
+                }
+            }
+            finally
+            {
+                if (webSocket != null && !_states.Contains(webSocket.State))
+                {
+                    try
+                    {
+                        await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closed by the server", CancellationToken.None);
+                    }
+                    catch // Ignore any exceptions that occur while closing the WebSocket
+                    { }
+                }
+                webSocket?.Dispose();
             }
         }
 

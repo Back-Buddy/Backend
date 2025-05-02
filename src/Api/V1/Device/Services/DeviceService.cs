@@ -123,7 +123,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
             DeviceSecret deviceSecret;
             try
             {
-                deviceSecret = JsonSerializer.Deserialize<DeviceSecret>(Convert.FromBase64String(secret)) ?? throw new JsonException();
+                deviceSecret = DeviceSecret.Decode(secret);
             }
             catch (Exception)
             {

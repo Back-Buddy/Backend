@@ -27,23 +27,28 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Services
             Converters = { new WebSocketMessageConverter(), new JsonStringEnumConverter() }
         };
 
-        public async Task<bool> OnConnect(WebSocket webSocket, string authorization)
+        public async Task<Guid> OnAuthorization(string authorization)
         {
             DeviceEntity deviceEntity = await deviceService.Authorize(authorization);
-            if (!connectionService.AddWebSocket(webSocket, deviceEntity.Id))
+            return deviceEntity.Id;
+        }
+
+        public async Task<bool> OnConnect(WebSocket webSocket, Guid deviceId)
+        {
+            if (!connectionService.AddWebSocket(webSocket, deviceId))
             {
                 // If the user is already connected, we close the old
-                WebSocket? toClose = connectionService.GetWebSocket(deviceEntity.Id);
+                WebSocket? toClose = connectionService.GetWebSocket(deviceId);
                 if (toClose != null)
                     await connectionService.RemoveWebSocket(toClose, "Reconnected", WebSocketCloseStatus.NormalClosure);
 
-                return connectionService.AddWebSocket(webSocket, deviceEntity.Id);
+                return connectionService.AddWebSocket(webSocket, deviceId);
             }
 
             WebSocketConnectedMessage connectedMessage = new() 
             { 
-                DeviceId = deviceEntity.Id, 
-                WebSocket = webSocket 
+                DeviceId = deviceId, 
+                WebSocket = webSocket
             };
 
             await publishEndpoint.Publish(connectedMessage);
