@@ -1,5 +1,7 @@
-﻿using BackBuddy.Api.Service.V1.Exceptions;
+﻿using BackBuddy.Api.Service.V1.ExceptionHandlers;
+using BackBuddy.Api.Service.V1.Exceptions;
 using BackBuddy.Api.Service.V1.WebSockets.Services;
+using MassTransit;
 using Microsoft.Extensions.Primitives;
 using System.Net.WebSockets;
 using System.Text;
@@ -59,29 +61,21 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Middleware
             catch (AbstractBaseException ex)
             {
                 await ex.WriteToResponse(context.Response);
-                if (webSocket != null && !_states.Contains(webSocket.State))
-                {
-                    try
-                    {
-                        await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, JsonSerializer.Serialize(ex.GetErrors()), CancellationToken.None);
-                    }
-                    catch // Ignore any exceptions that occur while closing the WebSocket
-                    { }
-                }
+                await CloseConnection(webSocket, ex);
+            }
+            catch(RequestFaultException ex)
+            {
+                AbstractBaseException? baseException = ex.GetAbstractBaseException();
+                if (baseException == null) throw;
+                await baseException.WriteToResponse(context.Response);
+
+                await CloseConnection(webSocket, baseException);
             }
             catch (Exception)
             {
                 InternalServerErrorException ex = new();
                 await ex.WriteToResponse(context.Response);
-                if (webSocket != null && !_states.Contains(webSocket.State))
-                {
-                    try
-                    {
-                        await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, JsonSerializer.Serialize(ex.GetErrors()), CancellationToken.None);
-                    }
-                    catch // Ignore any exceptions that occur while closing the WebSocket
-                    { }
-                }
+                await CloseConnection(webSocket, ex);
             }
             finally
             {
@@ -101,6 +95,19 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Middleware
         private static async Task HandleDisconnect(WebSocket socket, IWebSocketService webSocketService, WebSocketCloseStatus closeStatus)
         {
             await webSocketService.OnDisconnect(socket, closeStatus);
+        }
+
+        private static async Task CloseConnection(WebSocket? webSocket, AbstractBaseException ex)
+        {
+            if (webSocket != null && !_states.Contains(webSocket.State))
+            {
+                try
+                {
+                    await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, JsonSerializer.Serialize(ex.GetErrors()), CancellationToken.None);
+                }
+                catch // Ignore any exceptions that occur while closing the WebSocket
+                { }
+            }
         }
 
         private static async Task Receive(WebSocket socket, IWebSocketService webSocketService, ILogger<CustomWebSocketMiddleware> logger)
