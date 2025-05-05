@@ -1,4 +1,5 @@
 ﻿using Azure.Security.KeyVault.Secrets;
+using System.Security.Cryptography;
 
 namespace BackBuddy.Api.Service.V1.Database.KeyVault
 {
@@ -20,6 +21,14 @@ namespace BackBuddy.Api.Service.V1.Database.KeyVault
         public async Task DeleteSecret(string secretName)
         {
             await _secretClient.StartDeleteSecretAsync(secretName);
+        }
+
+        public string GenerateSecret()
+        {
+            byte[] randomBytes = new byte[256];
+            using RandomNumberGenerator rng = RandomNumberGenerator.Create();
+            rng.GetBytes(randomBytes);
+            return Convert.ToBase64String(randomBytes);
         }
     }
 }

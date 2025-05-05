@@ -3,6 +3,7 @@
     public enum WebSocketMessageType
     {
         DeviceNewSecret,
-        DeviceNewSecretAck
+        DeviceNewSecretAck,
+        DeviceNewSecretSetAck
     }
 }

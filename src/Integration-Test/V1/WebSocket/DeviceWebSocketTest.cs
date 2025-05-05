@@ -142,9 +142,14 @@ namespace BackBuddy.Integration_Test.V1.WebSocket
             };
 
             await clientWebSocketNew.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(ackNewSecret.ToJsonString())), WebSocketMessageType.Text, true, CancellationToken.None);
-            await clientWebSocketNew.CloseAsync(WebSocketCloseStatus.NormalClosure, "Test completed", CancellationToken.None);
 
-            await Task.Delay(5100); //We need an other callback
+            // Receive ACK
+            WebSocketReceiveResult ackResult = await clientWebSocketNew.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+            rawContent = Encoding.UTF8.GetString(buffer[..ackResult.Count]);
+            JsonObject ackObj = JsonSerializer.Deserialize<JsonObject>(rawContent);
+            Assert.AreEqual("DeviceNewSecretSetAck", ackObj["MessageType"].GetValue<string>());
+
+            await clientWebSocketNew.CloseAsync(WebSocketCloseStatus.NormalClosure, "Test completed", CancellationToken.None);
 
             using ClientWebSocket clientWebSocketCheck = new();
             clientWebSocketCheck.Options.AddSubProtocol(newSecret);

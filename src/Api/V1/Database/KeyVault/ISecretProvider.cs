@@ -5,5 +5,6 @@
         Task<string> GetSecret(string secretName);
         Task SetSecret(string secretName, string secretValue);
         Task DeleteSecret(string secretName);
+        string GenerateSecret();
     }
 }

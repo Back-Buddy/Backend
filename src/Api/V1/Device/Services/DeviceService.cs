@@ -50,12 +50,11 @@ namespace BackBuddy.Api.Service.V1.Device.Services
                 SecretGeneratedAt = DateTime.UtcNow,
             };
 
-            string secret = GenerateSecret();
+            string secret = _secretProvider.GenerateSecret();
             await _secretProvider.SetSecret(entity.Id.ToString(), secret);
             await _repository.Add(entity);
 
-            string storedSecret = await _secretProvider.GetSecret(entity.Id.ToString());
-            DeviceSecret deviceSecret = entity.ToSecret(storedSecret);
+            DeviceSecret deviceSecret = entity.ToSecret(secret);
 
             DeviceSecretDto deviceSecretDto = new()
             {
@@ -149,8 +148,8 @@ namespace BackBuddy.Api.Service.V1.Device.Services
             if (DateTime.UtcNow <= deviceEntity.SecretGeneratedAt.Add(SECRET_EXPIRATION_TIME).ToUniversalTime())
                 return;
 
-            await _secretProvider.SetSecret(GetPreviewSecretName(deviceId), GenerateSecret());
-            string newSecret = await _secretProvider.GetSecret(GetPreviewSecretName(deviceId));
+            string newSecret = _secretProvider.GenerateSecret();
+            await _secretProvider.SetSecret(GetPreviewSecretName(deviceId), newSecret);
 
             DeviceSecret deviceSecret = new()
             {
@@ -175,19 +174,12 @@ namespace BackBuddy.Api.Service.V1.Device.Services
             if (previewSecret != deviceSecret.Secret)
                 throw new DeviceNewSecretConflictException();
 
-            await _secretProvider.DeleteSecret(GetPreviewSecretName(deviceId));
-
             deviceEntity.SecretGeneratedAt = DateTime.UtcNow;
             await _repository.Update(deviceEntity);
             await _secretProvider.SetSecret(deviceEntity.Id.ToString(), deviceSecret.Secret);
-        }
-
-        private static string GenerateSecret()
-        {
-            byte[] randomBytes = new byte[256];
-            using RandomNumberGenerator rng = RandomNumberGenerator.Create();
-            rng.GetBytes(randomBytes);
-            return Convert.ToBase64String(randomBytes);
+        
+            DeviceNewSecretSetAckMessage ackMessage = new() { Secret = deviceSecret.Secret };
+            await _webSocketService.SendMessage(deviceId, ackMessage);
         }
 
         private static string GetPreviewSecretName(Guid deviceId) => $"{deviceId.ToString()}-preview";

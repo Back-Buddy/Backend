@@ -11,6 +11,7 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Mapper
             {
                 WebSocketMessageType.DeviceNewSecret => typeof(DeviceNewSecretMessage),
                 WebSocketMessageType.DeviceNewSecretAck => typeof(DeviceNewSecretAckMessage),
+                WebSocketMessageType.DeviceNewSecretSetAck => typeof(DeviceNewSecretSetAckMessage),
                 _ => throw new NotImplementedException(),
             };
         }
