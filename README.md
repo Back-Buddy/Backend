@@ -103,6 +103,14 @@ The MongoDB service is executed in a Docker container and can be accessed at [ht
         string userID_1
         string userID_2
     }
+
+    %% Beziehungen %%
+    USER  ||--o{  DEVICE                : owns
+    DEVICE||--|{  DEVICE_LOGS           : has_logs
+    DEVICE||--o{  DEVICE_CURRENT_REDIS  : current_state
+    DEVICE||--o{  REPORT                : generates
+    USER  ||--o{  REPORT                : creates
+    USER  }|--|{  Relations             : is_friends_with
 ```
 
 ## Tests
