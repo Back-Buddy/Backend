@@ -1,5 +1,5 @@
-﻿using BackBuddy.Api.Service.V1.Device.Entities;
-using BackBuddy.Api.Service.V1.Device.Services;
+﻿using BackBuddy.Api.Service.V1.Device.DTOs;
+using BackBuddy.Api.Service.V1.Device.DTOs.Queue;
 using BackBuddy.Api.Service.V1.Exceptions;
 using BackBuddy.Api.Service.V1.WebSockets.Converter;
 using BackBuddy.Api.Service.V1.WebSockets.Dtos;
@@ -17,7 +17,7 @@ using System.Text.Json.Serialization;
 
 namespace BackBuddy.Api.Service.V1.WebSockets.Services
 {
-    public class WebSocketService(IConnectionService connectionService, IDeviceService deviceService, IPublishEndpoint publishEndpoint) : IWebSocketService
+    public class WebSocketService(IConnectionService connectionService, IRequestClient<DeviceAuthorizeRequestMessage> deviceAuthRequestClient, IPublishEndpoint publishEndpoint) : IWebSocketService
     {
         private static readonly ConcurrentDictionary<Enums.WebSocketMessageType, (Type GenericType, Func<Guid, IWebSocketMessageDto, object> Factory)> _messageFactoryCache = [];
 
@@ -27,37 +27,46 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Services
             Converters = { new WebSocketMessageConverter(), new JsonStringEnumConverter() }
         };
 
+        private readonly IPublishEndpoint _publishEndpoint = publishEndpoint;
+        private readonly IConnectionService _connectionService = connectionService;
+        private readonly IRequestClient<DeviceAuthorizeRequestMessage> _deviceAuthRequestClient = deviceAuthRequestClient;
+
         public async Task<Guid> OnAuthorization(string authorization)
         {
-            DeviceEntity deviceEntity = await deviceService.Authorize(authorization);
-            return deviceEntity.Id;
+            DeviceAuthorizeRequestMessage authorizeRequestMessage = new()
+            {
+                Secret = authorization
+            };
+
+            Response<DeviceDto> response = await _deviceAuthRequestClient.GetResponse<DeviceDto>(authorizeRequestMessage);
+            DeviceDto device = response.Message;
+            return device.Id;
         }
 
         public async Task<bool> OnConnect(WebSocket webSocket, Guid deviceId)
         {
-            if (!connectionService.AddWebSocket(webSocket, deviceId))
+            if (!_connectionService.AddWebSocket(webSocket, deviceId))
             {
                 // If the user is already connected, we close the old
-                WebSocket? toClose = connectionService.GetWebSocket(deviceId);
+                WebSocket? toClose = _connectionService.GetWebSocket(deviceId);
                 if (toClose != null)
-                    await connectionService.RemoveWebSocket(toClose, "Reconnected", WebSocketCloseStatus.NormalClosure);
+                    await _connectionService.RemoveWebSocket(toClose, "Reconnected", WebSocketCloseStatus.NormalClosure);
 
-                return connectionService.AddWebSocket(webSocket, deviceId);
+                return _connectionService.AddWebSocket(webSocket, deviceId);
             }
 
-            WebSocketConnectedMessage connectedMessage = new() 
-            { 
-                DeviceId = deviceId, 
-                WebSocket = webSocket
+            WebSocketConnectedMessage connectedMessage = new()
+            {
+                DeviceId = deviceId
             };
 
-            await publishEndpoint.Publish(connectedMessage);
+            await _publishEndpoint.Publish(connectedMessage);
             return true;
         }
 
         public async Task OnDisconnect(WebSocket webSocket, WebSocketCloseStatus closeStatus = WebSocketCloseStatus.NormalClosure)
         {
-            await connectionService.RemoveWebSocket(webSocket, "Disconnected", closeStatus);
+            await _connectionService.RemoveWebSocket(webSocket, "Disconnected", closeStatus);
         }
 
 
@@ -67,7 +76,7 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Services
             if (message.IsToSend())
                 throw new UnsupportActionWebSocketMessageException();
 
-            Guid deviceId = connectionService.GetDevice(webSocket) ?? throw new UnauthorizedException();
+            Guid deviceId = _connectionService.GetDevice(webSocket) ?? throw new UnauthorizedException();
             (Type genericType, Func<Guid, IWebSocketMessageDto, object> factory) = _messageFactoryCache.GetOrAdd(
                 message.MessageType,
                 msgType =>
@@ -79,14 +88,14 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Services
                 });
 
             object messageReceive = factory(deviceId, message);
-            await publishEndpoint.Publish(messageReceive, genericType);
+            await _publishEndpoint.Publish(messageReceive, genericType);
         }
 
         public async Task<bool> SendMessage(Guid deviceId, IWebSocketMessageDto message)
         {
             if (!message.IsToSend())
                 throw new UnsupportActionWebSocketMessageException();
-            WebSocket? webSocket = connectionService.GetWebSocket(deviceId);
+            WebSocket? webSocket = _connectionService.GetWebSocket(deviceId);
             if (webSocket == null)
                 return false;
             string payload = JsonSerializer.Serialize(message, _options);

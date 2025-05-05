@@ -1,5 +1,6 @@
 ﻿using BackBuddy.Api.Service.V1.Auth.Extensions;
 using BackBuddy.Api.Service.V1.Device.DTOs;
+using BackBuddy.Api.Service.V1.Device.DTOs.Http;
 using BackBuddy.Api.Service.V1.Device.Services;
 using BackBuddy.Api.Service.V1.Utilities;
 using Microsoft.AspNetCore.Mvc;

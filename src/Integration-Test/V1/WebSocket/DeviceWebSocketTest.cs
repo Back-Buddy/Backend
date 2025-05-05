@@ -1,12 +1,9 @@
 ﻿using BackBuddy.Integration_Test.V1.DTOs;
 using BackBuddy.Integration_Test.V1.Libs;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.WebSockets;
 using System.Text;
+using System.Text.Json;
 using System.Text.Json.Nodes;
-using System.Threading.Tasks;
 
 namespace BackBuddy.Integration_Test.V1.WebSocket
 {
@@ -103,6 +100,56 @@ namespace BackBuddy.Integration_Test.V1.WebSocket
             // Act & Assert
             WebSocketException webSocketException = await Assert.ThrowsExactlyAsync<WebSocketException>(async () => await clientWebSocket.ConnectAsync(new Uri(_webSocketUri), CancellationToken.None));
             Assert.IsTrue(webSocketException.Message.Contains("401"));
+        }
+
+
+        [TestMethod]
+        public async Task Test_Connect_New_Secret()
+        {
+            // Arrange
+            string deviceName = "TestDevice";
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, deviceName);
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            string secret = device["secret"].GetValue<string>();
+            _deviceIds.Add(deviceId);
+
+            using ClientWebSocket clientWebSocket = new();
+            clientWebSocket.Options.AddSubProtocol(secret);
+
+            // Act
+            await clientWebSocket.ConnectAsync(new Uri(_webSocketUri), CancellationToken.None);
+            await clientWebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Test completed", CancellationToken.None);
+
+            await Task.Delay(1100);
+
+            using ClientWebSocket clientWebSocketNew = new();
+            clientWebSocketNew.Options.AddSubProtocol(secret);
+
+            await clientWebSocketNew.ConnectAsync(new Uri(_webSocketUri), CancellationToken.None);
+
+            // Assert
+            byte[] buffer = new byte[1024];
+            WebSocketReceiveResult result = await clientWebSocketNew.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+
+            string rawContent = Encoding.UTF8.GetString(buffer[..result.Count]);
+            JsonObject newSecretObj = JsonSerializer.Deserialize<JsonObject>(rawContent);
+
+            string newSecret = newSecretObj["Secret"].GetValue<string>();
+            JsonObject ackNewSecret = new()
+            {
+                ["secret"] = newSecret,
+                ["messageType"] = "DeviceNewSecretAck"
+            };
+
+            await clientWebSocketNew.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(ackNewSecret.ToJsonString())), WebSocketMessageType.Text, true, CancellationToken.None);
+            await clientWebSocketNew.CloseAsync(WebSocketCloseStatus.NormalClosure, "Test completed", CancellationToken.None);
+
+            await Task.Delay(5100); //We need an other callback
+
+            using ClientWebSocket clientWebSocketCheck = new();
+            clientWebSocketCheck.Options.AddSubProtocol(newSecret);
+            await clientWebSocketCheck.ConnectAsync(new Uri(_webSocketUri), CancellationToken.None);
+            await clientWebSocketCheck.CloseAsync(WebSocketCloseStatus.NormalClosure, "Test completed", CancellationToken.None);
         }
     }
 }

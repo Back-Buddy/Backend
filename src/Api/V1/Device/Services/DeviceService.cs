@@ -1,12 +1,14 @@
 ﻿using BackBuddy.Api.Service.V1.Database.KeyVault;
 using BackBuddy.Api.Service.V1.Device.DTOs;
+using BackBuddy.Api.Service.V1.Device.DTOs.Http;
+using BackBuddy.Api.Service.V1.Device.DTOs.WebSocket;
 using BackBuddy.Api.Service.V1.Device.Entities;
 using BackBuddy.Api.Service.V1.Device.Exceptions;
 using BackBuddy.Api.Service.V1.Device.Mapper;
 using BackBuddy.Api.Service.V1.Device.Repositories;
 using BackBuddy.Api.Service.V1.Utilities;
+using BackBuddy.Api.Service.V1.WebSockets.Services;
 using System.Security.Cryptography;
-using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace BackBuddy.Api.Service.V1.Device.Services
@@ -18,16 +20,20 @@ namespace BackBuddy.Api.Service.V1.Device.Services
         Task Delete(string userId, Guid deviceId);
         Task<DeviceDto> Get(string userId, Guid deviceId);
         Task<Page<List<DeviceDto>>> GetAll(string userId, PageRequestDto page);
-        Task<DeviceEntity> Authorize(string secret);
+        Task<DeviceDto> Authorize(string secret);
+        Task TryUpdateSecret(Guid deviceId);
+        Task AckNewSecret(Guid deviceId, string secret);
         //Task HandleStatusUpdate()
     }
 
-    public partial class DeviceService(IDeviceRepository repository, ISecretProvider secretProvider) : IDeviceService
+    public partial class DeviceService(IDeviceRepository repository, ISecretProvider secretProvider, IWebSocketService webSocketService) : IDeviceService
     {
         private const string NAME_PATTERN = @"^[a-zA-Z0-9 \-]{3,16}$";
+        private readonly static TimeSpan SECRET_EXPIRATION_TIME = TimeSpan.FromSeconds(1);
 
         private readonly IDeviceRepository _repository = repository;
         private readonly ISecretProvider _secretProvider = secretProvider;
+        private readonly IWebSocketService _webSocketService = webSocketService;
 
         public async Task<DeviceSecretDto> Create(string userId, DeviceCreateRequestDto request)
         {
@@ -118,7 +124,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
                 await _repository.Update(device);
         }
 
-        public async Task<DeviceEntity> Authorize(string secret)
+        public async Task<DeviceDto> Authorize(string secret)
         {
             DeviceSecret deviceSecret;
             try
@@ -134,7 +140,46 @@ namespace BackBuddy.Api.Service.V1.Device.Services
             string storedSecret = await _secretProvider.GetSecret(device.Id.ToString());
             if (storedSecret != deviceSecret.Secret)
                 throw new DeviceUnauthorizedException();
-            return device;
+            return device.ToDto();
+        }
+
+        public async Task TryUpdateSecret(Guid deviceId)
+        {
+            DeviceEntity deviceEntity = await _repository.Get(deviceId) ?? throw new DeviceNotFoundException();
+            if (DateTime.UtcNow <= deviceEntity.SecretGeneratedAt.Add(SECRET_EXPIRATION_TIME).ToUniversalTime())
+                return;
+
+            await _secretProvider.SetSecret(GetPreviewSecretName(deviceId), GenerateSecret());
+            string newSecret = await _secretProvider.GetSecret(GetPreviewSecretName(deviceId));
+
+            DeviceSecret deviceSecret = new()
+            {
+                DeviceId = deviceEntity.Id,
+                Secret = newSecret
+            };
+
+            DeviceNewSecretMessage message = new()
+            {
+                Secret = deviceSecret.Encode(),
+            };
+            await _webSocketService.SendMessage(deviceEntity.Id, message);
+        }
+
+        public async Task AckNewSecret(Guid deviceId, string secret)
+        {
+            DeviceEntity deviceEntity = await _repository.Get(deviceId) ?? throw new DeviceNotFoundException();
+
+            DeviceSecret deviceSecret = DeviceSecret.Decode(secret);
+            string previewSecret = await _secretProvider.GetSecret(GetPreviewSecretName(deviceId));
+
+            if (previewSecret != deviceSecret.Secret)
+                throw new DeviceNewSecretConflictException();
+
+            await _secretProvider.DeleteSecret(GetPreviewSecretName(deviceId));
+
+            deviceEntity.SecretGeneratedAt = DateTime.UtcNow;
+            await _repository.Update(deviceEntity);
+            await _secretProvider.SetSecret(deviceEntity.Id.ToString(), deviceSecret.Secret);
         }
 
         private static string GenerateSecret()
@@ -144,6 +189,8 @@ namespace BackBuddy.Api.Service.V1.Device.Services
             rng.GetBytes(randomBytes);
             return Convert.ToBase64String(randomBytes);
         }
+
+        private static string GetPreviewSecretName(Guid deviceId) => $"{deviceId.ToString()}-preview";
 
         [GeneratedRegex(NAME_PATTERN)]
         private static partial Regex NameRegex();

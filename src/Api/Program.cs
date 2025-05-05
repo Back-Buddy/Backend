@@ -2,10 +2,10 @@ using Azure.Identity;
 using Azure.Security.KeyVault.Secrets;
 using BackBuddy.Api.Service;
 using BackBuddy.Api.Service.Swagger;
-using BackBuddy.Api.Service.V1.Auth;
 using BackBuddy.Api.Service.V1.Auth.Extensions;
 using BackBuddy.Api.Service.V1.Database.KeyVault;
 using BackBuddy.Api.Service.V1.Database.MongoDB;
+using BackBuddy.Api.Service.V1.Device.Consumer;
 using BackBuddy.Api.Service.V1.Device.Entities;
 using BackBuddy.Api.Service.V1.Device.Repositories;
 using BackBuddy.Api.Service.V1.Device.Services;
@@ -27,9 +27,9 @@ builder.ConfigureAuthentification();
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<AbstractBaseExceptionHandler>();
 
-if (!builder.Environment.IsDevelopment())
+if (builder.Environment.IsDevelopment())
 {
-    SecretClient secretClient = new (new Uri(builder.Configuration.GetValue<string>("KEY_VAULT_URI") ?? throw new InvalidDataException("KEY_VAULT_URI is not set!")), new DefaultAzureCredential());
+    SecretClient secretClient = new(new Uri(builder.Configuration.GetValue<string>("KEY_VAULT_URI") ?? throw new InvalidDataException("KEY_VAULT_URI is not set!")), new DefaultAzureCredential());
     builder.Services.AddKeyedSingleton(Constants.DEVICE_SECRET, secretClient);
     builder.Services.AddSingleton<ISecretProvider, KeyVaultSecretProvider>();
 }
@@ -56,7 +56,9 @@ builder.Services.AddMassTransit(x =>
 {
     x.SetKebabCaseEndpointNameFormatter();
 
-    //TODO: Register your consumers here
+    x.AddConsumer<DeviceWebSocketConnectedConsumer>();
+    x.AddConsumer<DeviceNewSecretAckConsumer>();
+    x.AddConsumer<DeviceAuthorizeConsumer>();
 
     x.UsingInMemory((context, cfg) =>
     {

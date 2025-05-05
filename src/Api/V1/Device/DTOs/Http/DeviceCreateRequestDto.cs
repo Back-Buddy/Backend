@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace BackBuddy.Api.Service.V1.Device.DTOs
+namespace BackBuddy.Api.Service.V1.Device.DTOs.Http
 {
     public record DeviceCreateRequestDto
     {

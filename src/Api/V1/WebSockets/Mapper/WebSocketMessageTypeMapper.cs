@@ -1,4 +1,5 @@
-﻿using BackBuddy.Api.Service.V1.WebSockets.Enums;
+﻿using BackBuddy.Api.Service.V1.Device.DTOs.WebSocket;
+using BackBuddy.Api.Service.V1.WebSockets.Enums;
 
 namespace BackBuddy.Api.Service.V1.WebSockets.Mapper
 {
@@ -8,6 +9,8 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Mapper
         {
             return type switch
             {
+                WebSocketMessageType.DeviceNewSecret => typeof(DeviceNewSecretMessage),
+                WebSocketMessageType.DeviceNewSecretAck => typeof(DeviceNewSecretAckMessage),
                 _ => throw new NotImplementedException(),
             };
         }
