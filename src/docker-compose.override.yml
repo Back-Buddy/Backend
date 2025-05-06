@@ -55,3 +55,25 @@ services:
     depends_on:
       mongodb: 
         condition: service_healthy
+
+  redisinsight:
+    image: redis/redisinsight:latest
+    ports:
+      - "5540:5540"
+    environment:
+      - RI_REDIS_HOST=redis
+      - RI_REDIS_PASSWORD=my-password
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  firebase:
+    image: spine3/firebase-emulator:latest
+    ports:
+      - "9000:9000"
+      - "8082:8080"
+      - "4000:4000"
+      - "9099:9099"
+      - "8085:8085"
+      - "5001:5001"
+      - "9199:9199"

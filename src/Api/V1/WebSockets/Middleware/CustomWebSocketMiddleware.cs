@@ -1,0 +1,154 @@
+﻿using BackBuddy.Api.Service.V1.ExceptionHandlers;
+using BackBuddy.Api.Service.V1.Exceptions;
+using BackBuddy.Api.Service.V1.WebSockets.Services;
+using MassTransit;
+using Microsoft.Extensions.Primitives;
+using System.Net.WebSockets;
+using System.Text;
+using System.Text.Json;
+
+namespace BackBuddy.Api.Service.V1.WebSockets.Middleware
+{
+    public class CustomWebSocketMiddleware(RequestDelegate _next, IServiceProvider _serviceProvider)
+    {
+
+        private readonly static List<WebSocketState> _states = [WebSocketState.Closed, WebSocketState.Aborted];
+
+        public async Task Invoke(HttpContext context)
+        {
+            if (!context.WebSockets.IsWebSocketRequest)
+            {
+                await _next(context);
+                return;
+            }
+            WebSocket? webSocket = null;
+            try
+            {
+                if (!context.Request.Headers.TryGetValue("Sec-WebSocket-Protocol", out StringValues token))
+                {
+                    await new UnauthorizedException().WriteToResponse(context.Response);
+                    return;
+                }
+
+                if (token.Count == 0)
+                {
+                    await new UnauthorizedException().WriteToResponse(context.Response);
+                    return;
+                }
+
+                string? authorization = token[0];
+                if (string.IsNullOrWhiteSpace(authorization))
+                {
+                    await new UnauthorizedException().WriteToResponse(context.Response);
+                    return;
+                }
+                using var scope = _serviceProvider.CreateScope();
+                IWebSocketService webSocketService = scope.ServiceProvider.GetRequiredService<IWebSocketService>();
+                ILogger<CustomWebSocketMiddleware> logger = scope.ServiceProvider.GetRequiredService<ILogger<CustomWebSocketMiddleware>>();
+
+                Guid deviceId = await webSocketService.OnAuthorization(authorization);
+                webSocket = await context.WebSockets.AcceptWebSocketAsync(new WebSocketAcceptContext
+                {
+                    SubProtocol = authorization
+                });
+
+                bool success = await webSocketService.OnConnect(webSocket, deviceId);
+                if (!success)
+                    return;
+
+                await Receive(webSocket, webSocketService, logger);
+            }
+            catch (AbstractBaseException ex)
+            {
+                await ex.WriteToResponse(context.Response);
+                await CloseConnection(webSocket, ex);
+            }
+            catch(RequestFaultException ex)
+            {
+                AbstractBaseException? baseException = ex.GetAbstractBaseException();
+                if (baseException == null) throw;
+                await baseException.WriteToResponse(context.Response);
+
+                await CloseConnection(webSocket, baseException);
+            }
+            catch (Exception)
+            {
+                InternalServerErrorException ex = new();
+                await ex.WriteToResponse(context.Response);
+                await CloseConnection(webSocket, ex);
+            }
+            finally
+            {
+                if (webSocket != null && !_states.Contains(webSocket.State))
+                {
+                    try
+                    {
+                        await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closed by the server", CancellationToken.None);
+                    }
+                    catch // Ignore any exceptions that occur while closing the WebSocket
+                    { }
+                }
+                webSocket?.Dispose();
+            }
+        }
+
+        private static async Task HandleDisconnect(WebSocket socket, IWebSocketService webSocketService, WebSocketCloseStatus closeStatus)
+        {
+            await webSocketService.OnDisconnect(socket, closeStatus);
+        }
+
+        private static async Task CloseConnection(WebSocket? webSocket, AbstractBaseException ex)
+        {
+            if (webSocket != null && !_states.Contains(webSocket.State))
+            {
+                try
+                {
+                    await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, JsonSerializer.Serialize(ex.GetErrors()), CancellationToken.None);
+                }
+                catch // Ignore any exceptions that occur while closing the WebSocket
+                { }
+            }
+        }
+
+        private static async Task Receive(WebSocket socket, IWebSocketService webSocketService, ILogger<CustomWebSocketMiddleware> logger)
+        {
+            var buffer = new byte[1024 * 4];
+            try
+            {
+                while (socket.State == WebSocketState.Open)
+                {
+                    WebSocketReceiveResult result;
+                    using MemoryStream inputStream = new();
+                    do
+                    {
+                        result = await socket.ReceiveAsync(buffer: new ArraySegment<byte>(buffer),
+                                                          cancellationToken: CancellationToken.None);
+                        await inputStream.WriteAsync(buffer.AsMemory(0, result.Count));
+                        // Check if the message is too big
+                        if (inputStream.Length > 1024 * 1024 * 50)
+                        {
+                            await HandleDisconnect(socket, webSocketService, WebSocketCloseStatus.MessageTooBig);
+                            return;
+                        }
+                    } while (!result.EndOfMessage);
+
+
+                    if (result.MessageType == WebSocketMessageType.Text)
+                    {
+                        string payload = Encoding.UTF8.GetString(inputStream.ToArray());
+                        await webSocketService.OnReceive(socket, payload);
+                    }
+                    else if (result.MessageType == WebSocketMessageType.Close)
+                    {
+                        await HandleDisconnect(socket, webSocketService, WebSocketCloseStatus.NormalClosure);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "An error occurred while receiving a message: {ErrorMessage}", ex.Message);
+                await HandleDisconnect(socket, webSocketService, WebSocketCloseStatus.InvalidPayloadData);
+            }
+        }
+    }
+}
