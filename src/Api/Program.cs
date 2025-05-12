@@ -88,4 +88,9 @@ app.UseWebSockets(new WebSocketOptions
 app.UseExceptionHandler();
 app.UseMiddleware<CustomWebSocketMiddleware>();
 
+if (app.Environment.IsDevelopment())
+{
+    app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+}
+
 await app.RunAsync();
