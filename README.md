@@ -76,6 +76,7 @@ The MongoDB service is executed in a Docker container and can be accessed at [ht
         string userID
         int threshold_minutes
         string identificationKey(KeyVault)
+        boolean active
     }
 
     DEVICE_LOGS {

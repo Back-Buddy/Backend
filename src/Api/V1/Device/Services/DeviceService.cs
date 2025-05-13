@@ -48,6 +48,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
                 Name = request.Name,
                 UserId = userId,
                 SecretGeneratedAt = DateTime.UtcNow,
+                Active = false
             };
 
             string secret = _secretProvider.GenerateSecret();
@@ -116,6 +117,21 @@ namespace BackBuddy.Api.Service.V1.Device.Services
                 if (!await _repository.IsNameUnique(userId, request.Name))
                     throw new DeviceNameIsNotUniqueException(request.Name);
                 device.Name = request.Name;
+                isDirty = true;
+            }
+
+            if (request.Active.HasValue && request.Active.Value != device.Active)
+            {
+                if (request.Active.Value)
+                {
+                    bool hasActiveDevice = await _repository.HasActiveDevices(userId);
+                    if (hasActiveDevice)
+                    {
+                        throw new DeviceActiveConflictException();
+                    }
+                }
+
+                device.Active = request.Active.Value;
                 isDirty = true;
             }
 
