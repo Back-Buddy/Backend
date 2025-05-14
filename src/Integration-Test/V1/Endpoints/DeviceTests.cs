@@ -224,25 +224,25 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
         [TestMethod]
         public async Task Test_ActivateDevice_Conflict()
         {
-            // Arrange - Erstelle und aktiviere erstes Gerät
+            // Arrange - Create and activate first device
             string deviceName1 = "Chair 1";
             Guid deviceId1 = await _deviceLib.CreateSimpleDevice(_accessToken, deviceName1);
             _deviceIds.Add(deviceId1);
             await _deviceLib.UpdateDevice(_accessToken, deviceId1, active: true);
 
-            // Erstelle zweites Gerät
+            // Create second device
             string deviceName2 = "Chair 2";
             Guid deviceId2 = await _deviceLib.CreateSimpleDevice(_accessToken, deviceName2);
             _deviceIds.Add(deviceId2);
 
-            // Act & Assert - Versuch, das zweite Gerät zu aktivieren sollte fehlschlagen
+            // Act & Assert - Attempt to activate the second device should fail
             RequestFailedException requestFailedException = await Assert.ThrowsExactlyAsync<RequestFailedException>(
                 async () => await _deviceLib.UpdateDevice(_accessToken, deviceId2, active: true));
             
-            // Überprüfen, ob der richtige Statuscode zurückgegeben wird
+            // Verify that the correct status code is returned
             Assert.AreEqual(System.Net.HttpStatusCode.Conflict, requestFailedException.ResponseMessage.StatusCode);
             
-            // Überprüfen, ob die richtige Fehlermeldung zurückgegeben wird
+            // Verify that the correct error message is returned
             string rawContent = await requestFailedException.ResponseMessage.Content.ReadAsStringAsync();
             JsonArray errorInformation = JsonSerializer.Deserialize<JsonArray>(rawContent);
             Assert.AreEqual("System.Conflict", errorInformation[0]["Code"].GetValue<string>());
