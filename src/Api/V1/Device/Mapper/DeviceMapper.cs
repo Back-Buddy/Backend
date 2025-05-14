@@ -3,7 +3,7 @@ using BackBuddy.Api.Service.V1.Device.Entities;
 
 namespace BackBuddy.Api.Service.V1.Device.Mapper
 {
-    public static class DeviceEntityMapper
+    public static class DeviceMapper
     {
         public static DeviceDto ToDto(this DeviceEntity entity)
         {
@@ -13,6 +13,10 @@ namespace BackBuddy.Api.Service.V1.Device.Mapper
                 Name = entity.Name,
                 Threshold = entity.Threshold,
             };
+        }
+        public static List<DeviceDto> ToDto(this IEnumerable<DeviceEntity> entities)
+        {
+            return [.. entities.Select(e => e.ToDto())];
         }
 
         public static DeviceSecret ToSecret(this DeviceEntity entity, string secret)
@@ -24,7 +28,18 @@ namespace BackBuddy.Api.Service.V1.Device.Mapper
             };
         }
 
-        public static List<DeviceDto> ToDto(this IEnumerable<DeviceEntity> entities)
+        public static DeviceLogDto ToDto(this DeviceLogEntity entity)
+        {
+            return new DeviceLogDto()
+            {
+                Id = entity.Id,
+                StartTime = entity.StartTime,
+                EndTime = entity.EndTime,
+                LogType = entity.LogType,
+            };
+        }
+
+        public static List<DeviceLogDto> ToDto(this IEnumerable<DeviceLogEntity> entities)
         {
             return [.. entities.Select(e => e.ToDto())];
         }

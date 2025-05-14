@@ -4,6 +4,8 @@
     {
         DeviceNewSecret,
         DeviceNewSecretAck,
-        DeviceNewSecretSetAck
+        DeviceNewSecretSetAck,
+        DeviceUpdateStatus,
+        DeviceUpdateStatusAck,
     }
 }

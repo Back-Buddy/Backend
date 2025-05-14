@@ -7,20 +7,20 @@ namespace BackBuddy.Api.Service.V1.Database.KeyVault
     {
         private readonly SecretClient _secretClient = secretClient;
 
-        public async Task<string> GetSecret(string secretName)
+        public async Task<string> GetSecret(string secretName, CancellationToken cancellationToken = default)
         {
-            KeyVaultSecret secret = await _secretClient.GetSecretAsync(secretName);
+            KeyVaultSecret secret = await _secretClient.GetSecretAsync(secretName, cancellationToken: cancellationToken);
             return secret.Value;
         }
 
-        public async Task SetSecret(string secretName, string secretValue)
+        public async Task SetSecret(string secretName, string secretValue, CancellationToken cancellationToken = default)
         {
-            await _secretClient.SetSecretAsync(secretName, secretValue);
+            await _secretClient.SetSecretAsync(secretName, secretValue, cancellationToken);
         }
 
-        public async Task DeleteSecret(string secretName)
+        public async Task DeleteSecret(string secretName, CancellationToken cancellationToken = default)
         {
-            await _secretClient.StartDeleteSecretAsync(secretName);
+            await _secretClient.StartDeleteSecretAsync(secretName, cancellationToken);
         }
 
         public string GenerateSecret()

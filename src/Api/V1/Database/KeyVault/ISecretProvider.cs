@@ -2,9 +2,9 @@
 {
     public interface ISecretProvider
     {
-        Task<string> GetSecret(string secretName);
-        Task SetSecret(string secretName, string secretValue);
-        Task DeleteSecret(string secretName);
+        Task<string> GetSecret(string secretName, CancellationToken cancellationToken = default);
+        Task SetSecret(string secretName, string secretValue, CancellationToken cancellationToken = default);
+        Task DeleteSecret(string secretName, CancellationToken cancellationToken = default);
         string GenerateSecret();
     }
 }

@@ -1,7 +1,4 @@
 ﻿using BackBuddy.Integration_Test.Exceptions;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http.Headers;
 using System.Net.Mime;
 using System.Text;
@@ -30,14 +27,14 @@ namespace BackBuddy.Integration_Test.V1.Libs
             };
             StringContent content = new(request.ToJsonString(), Encoding.UTF8, MediaTypeNames.Application.Json);
 
-            HttpRequestMessage requestMessage = new (HttpMethod.Post, "/api/v1/device");
+            HttpRequestMessage requestMessage = new(HttpMethod.Post, "/api/v1/device");
             requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
             requestMessage.Content = content;
 
             HttpResponseMessage responseMessage = await _httpClient.SendAsync(requestMessage);
-            if(!responseMessage.IsSuccessStatusCode)
+            if (!responseMessage.IsSuccessStatusCode)
                 throw new RequestFailedException(responseMessage);
-            
+
             string rawContent = await responseMessage.Content.ReadAsStringAsync();
             JsonObject secretObj = JsonSerializer.Deserialize<JsonObject>(rawContent);
             return secretObj;
@@ -46,7 +43,7 @@ namespace BackBuddy.Integration_Test.V1.Libs
         public async Task UpdateDevice(string accessToken, Guid deviceId, string deviceName = null, TimeSpan? threshold = null)
         {
             JsonObject request = [];
-            if(!string.IsNullOrEmpty(deviceName) && !string.IsNullOrWhiteSpace(deviceName))
+            if (!string.IsNullOrEmpty(deviceName) && !string.IsNullOrWhiteSpace(deviceName))
                 request.Add("name", deviceName);
             if (threshold.HasValue)
                 request.Add("threshold", threshold.Value.ToString());
@@ -105,6 +102,16 @@ namespace BackBuddy.Integration_Test.V1.Libs
             JsonObject secretObj = await CreateDevice(accessToken, name);
             Guid deviceId = Guid.Parse(secretObj["deviceId"].AsValue().GetValue<string>());
             return deviceId;
+        }
+
+        public static JsonObject CreateUpdateStatus(string status)
+        {
+            JsonObject request = new()
+            {
+                { "MessageType", "DeviceUpdateStatus" },
+                { "UserPositionStatus", status }
+            };
+            return request;
         }
     }
 }

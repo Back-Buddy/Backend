@@ -6,25 +6,35 @@ using System.Text.RegularExpressions;
 
 namespace BackBuddy.Api.Service.V1.Device.Repositories
 {
+    public interface IDeviceRepository
+    {
+        Task Add(DeviceEntity entity, CancellationToken cancellationToken = default);
+        Task Update(DeviceEntity entity, CancellationToken cancellationToken = default);
+        Task Delete(Guid id, CancellationToken cancellationToken = default);
+        Task<DeviceEntity?> Get(Guid id, CancellationToken cancellationToken = default);
+        Task<Page<List<DeviceEntity>>> GetAll(string userId, PageRequestDto page, CancellationToken cancellationToken = default);
+        Task<bool> IsNameUnique(string userId, string name, CancellationToken cancellationToken = default);
+    }
+
     public class DeviceRepository(IMongoCollection<DeviceEntity> collection) : IDeviceRepository
     {
-        public async Task Add(DeviceEntity entity)
+        public async Task Add(DeviceEntity entity, CancellationToken cancellationToken = default)
         {
-            await collection.InsertOneAsync(entity);
+            await collection.InsertOneAsync(entity, cancellationToken: cancellationToken);
         }
 
-        public async Task Delete(Guid id)
+        public async Task Delete(Guid id, CancellationToken cancellationToken = default)
         {
-            await collection.DeleteOneAsync(x => x.Id == id);
+            await collection.DeleteOneAsync(x => x.Id == id, cancellationToken);
         }
 
-        public async Task<DeviceEntity?> Get(Guid id)
+        public async Task<DeviceEntity?> Get(Guid id, CancellationToken cancellationToken = default)
         {
-            IAsyncCursor<DeviceEntity> cursor = await collection.FindAsync(x => x.Id == id);
-            return await cursor.FirstOrDefaultAsync();
+            IAsyncCursor<DeviceEntity> cursor = await collection.FindAsync(x => x.Id == id, cancellationToken: cancellationToken);
+            return await cursor.FirstOrDefaultAsync(cancellationToken);
         }
 
-        public async Task<Page<List<DeviceEntity>>> GetAll(string userId, PageRequestDto page)
+        public async Task<Page<List<DeviceEntity>>> GetAll(string userId, PageRequestDto page, CancellationToken cancellationToken = default)
         {
             FilterDefinition<DeviceEntity> filter = Builders<DeviceEntity>.Filter
                 .Eq(x => x.UserId, userId);
@@ -33,10 +43,10 @@ namespace BackBuddy.Api.Service.V1.Device.Repositories
                 Limit = page.Size,
                 Skip = page.Offset()
             };
-            IAsyncCursor<DeviceEntity> cursor = await collection.FindAsync(filter, findOptions);
-            long total = await collection.CountDocumentsAsync(filter);
+            IAsyncCursor<DeviceEntity> cursor = await collection.FindAsync(filter, findOptions, cancellationToken: cancellationToken);
+            long total = await collection.CountDocumentsAsync(filter, cancellationToken: cancellationToken);
 
-            List<DeviceEntity> deviceEntities = await cursor.ToListAsync();
+            List<DeviceEntity> deviceEntities = await cursor.ToListAsync(cancellationToken);
             bool hasMoreEntries = total > (page.Offset() + deviceEntities.Count);
 
             Page<List<DeviceEntity>> result = new()
@@ -47,20 +57,20 @@ namespace BackBuddy.Api.Service.V1.Device.Repositories
             return result;
         }
 
-        public async Task<bool> IsNameUnique(string userId, string name)
+        public async Task<bool> IsNameUnique(string userId, string name, CancellationToken cancellationToken = default)
         {
             FilterDefinition<DeviceEntity> filterDefinition = Builders<DeviceEntity>.Filter
                 .And(
                     Builders<DeviceEntity>.Filter.Eq(x => x.UserId, userId),
                     Builders<DeviceEntity>.Filter.Regex(u => u.Name, new BsonRegularExpression(Regex.Escape(name), "i"))
                 );
-            IAsyncCursor<DeviceEntity> cursor = await collection.FindAsync(filterDefinition);
-            return !(await cursor.AnyAsync());
+            IAsyncCursor<DeviceEntity> cursor = await collection.FindAsync(filterDefinition, cancellationToken: cancellationToken);
+            return !(await cursor.AnyAsync(cancellationToken));
         }
 
-        public async Task Update(DeviceEntity entity)
+        public async Task Update(DeviceEntity entity, CancellationToken cancellationToken = default)
         {
-            await collection.ReplaceOneAsync(x => x.Id == entity.Id, entity);
+            await collection.ReplaceOneAsync(x => x.Id == entity.Id, entity, cancellationToken: cancellationToken);
         }
     }
 }
