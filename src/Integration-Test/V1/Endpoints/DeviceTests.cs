@@ -245,7 +245,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             // Verify that the correct error message is returned
             string rawContent = await requestFailedException.ResponseMessage.Content.ReadAsStringAsync();
             JsonArray errorInformation = JsonSerializer.Deserialize<JsonArray>(rawContent);
-            Assert.AreEqual("System.Conflict", errorInformation[0]["Code"].GetValue<string>());
+            Assert.AreEqual("Device.ActiveConflict", errorInformation[0]["Code"].GetValue<string>());
         }
     }
 }
