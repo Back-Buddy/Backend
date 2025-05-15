@@ -4,5 +4,6 @@
     {
         public string? Name { get; init; }
         public TimeSpan? Threshold { get; init; }
+        public bool? Active { get; init; }
     }
 }

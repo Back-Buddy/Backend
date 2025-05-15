@@ -43,13 +43,15 @@ namespace BackBuddy.Integration_Test.V1.Libs
             return secretObj;
         }
 
-        public async Task UpdateDevice(string accessToken, Guid deviceId, string deviceName = null, TimeSpan? threshold = null)
+        public async Task UpdateDevice(string accessToken, Guid deviceId, string deviceName = null, TimeSpan? threshold = null, bool? active = null)
         {
             JsonObject request = [];
             if(!string.IsNullOrEmpty(deviceName) && !string.IsNullOrWhiteSpace(deviceName))
                 request.Add("name", deviceName);
             if (threshold.HasValue)
                 request.Add("threshold", threshold.Value.ToString());
+            if (active.HasValue)
+                request.Add("active", active.Value);
 
             StringContent content = new(request.ToJsonString(), Encoding.UTF8, MediaTypeNames.Application.Json);
             HttpRequestMessage requestMessage = new(HttpMethod.Patch, $"/api/v1/device/{deviceId}");

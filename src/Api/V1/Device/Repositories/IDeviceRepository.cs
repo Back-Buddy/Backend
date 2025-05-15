@@ -11,5 +11,6 @@ namespace BackBuddy.Api.Service.V1.Device.Repositories
         Task<DeviceEntity?> Get(Guid id);
         Task<Page<List<DeviceEntity>>> GetAll(string userId, PageRequestDto page);
         Task<bool> IsNameUnique(string userId, string name);
+        Task<bool> HasActiveDevices(string userId);
     }
 }

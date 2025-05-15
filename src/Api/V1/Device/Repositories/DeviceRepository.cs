@@ -58,6 +58,16 @@ namespace BackBuddy.Api.Service.V1.Device.Repositories
             return !(await cursor.AnyAsync());
         }
 
+        public async Task<bool> HasActiveDevices(string userId)
+        {
+            FilterDefinition<DeviceEntity> filter = Builders<DeviceEntity>.Filter
+                .And(
+                    Builders<DeviceEntity>.Filter.Eq(x => x.UserId, userId),
+                    Builders<DeviceEntity>.Filter.Eq(x => x.Active, true)
+                );
+            IAsyncCursor<DeviceEntity> cursor = await collection.FindAsync(filter);
+            return await cursor.AnyAsync();
+        }
         public async Task Update(DeviceEntity entity)
         {
             await collection.ReplaceOneAsync(x => x.Id == entity.Id, entity);
