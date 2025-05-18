@@ -73,12 +73,14 @@ namespace BackBuddy.Integration_Test.V1.WebSocket
 
             // Act
             JsonObject sittingStatus = DeviceLib.CreateUpdateStatus("Sitting");
+            DateTime sendSitTime = DateTime.UtcNow;
             await clientWebSocket.SendAsync(sittingStatus, int.MaxValue, CancellationToken.None);
 
             // Max Attempts = 2 because of the secret change offer
             await clientWebSocket.PollMessage("DeviceUpdateStatusAck", 2, CancellationToken.None);
 
             JsonObject standingStatus = DeviceLib.CreateUpdateStatus("Standing");
+            DateTime sendStandTime = DateTime.UtcNow;
             await clientWebSocket.SendAsync(standingStatus, int.MaxValue, CancellationToken.None);
 
             await clientWebSocket.PollMessage("DeviceUpdateStatusAck", 1, CancellationToken.None);
@@ -86,6 +88,14 @@ namespace BackBuddy.Integration_Test.V1.WebSocket
             // Assert
             JsonArray logs = await _deviceLogLib.GetLogs(_accessToken, deviceId);
             Assert.AreEqual(1, logs.Count);
+            JsonObject log = logs[0].AsObject();
+
+            Assert.IsTrue(log["startTime"].GetValue<DateTime>() >= sendSitTime, "StartTime must be greater than the send time");
+            Assert.IsTrue(log["endTime"].GetValue<DateTime>() >= sendStandTime, "EndTime must be greater than the send time");
+            Assert.IsTrue(log["endTime"].GetValue<DateTime>() >= log["startTime"].GetValue<DateTime>(), "EndTime must be greater than StartTime");
+            Assert.IsTrue((log["endTime"].GetValue<DateTime>() - sendStandTime) <= TimeSpan.FromSeconds(15), "EndTime and send time small difference");
+            Assert.IsTrue((log["startTime"].GetValue<DateTime>() - sendSitTime) <= TimeSpan.FromSeconds(15), "StartTime and send time small difference");
+            Assert.AreEqual("Sit", log["logType"].GetValue<string>());
 
             // Clean up
             await clientWebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Test completed", CancellationToken.None);
