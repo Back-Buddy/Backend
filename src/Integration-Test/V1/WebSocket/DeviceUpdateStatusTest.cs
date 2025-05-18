@@ -101,5 +101,107 @@ namespace BackBuddy.Integration_Test.V1.WebSocket
             await clientWebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Test completed", CancellationToken.None);
         }
 
+        [TestMethod]
+        public async Task Test_Update_Currently_Sit()
+        {
+            // Arrange
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            string secret = device["secret"].GetValue<string>();
+            _deviceIds.Add(deviceId);
+
+            using ClientWebSocket clientWebSocket = new();
+            clientWebSocket.Options.AddSubProtocol(secret);
+            await clientWebSocket.ConnectAsync(new Uri(_webSocketUri), CancellationToken.None);
+
+            // Act
+            JsonObject sittingStatus = DeviceLib.CreateUpdateStatus("Sitting");
+            await clientWebSocket.SendAsync(sittingStatus, int.MaxValue, CancellationToken.None);
+
+            // Max Attempts = 2 because of the secret change offer
+            await clientWebSocket.PollMessage("DeviceUpdateStatusAck", 2, CancellationToken.None);
+
+            JsonObject sittingStatus2 = DeviceLib.CreateUpdateStatus("Sitting");
+            await clientWebSocket.SendAsync(sittingStatus2, int.MaxValue, CancellationToken.None);
+
+            await clientWebSocket.PollMessage("DeviceUpdateStatusAck", 1, CancellationToken.None);
+
+            // Assert
+            JsonArray logs = await _deviceLogLib.GetLogs(_accessToken, deviceId);
+            Assert.AreEqual(1, logs.Count);
+            JsonObject log = logs[0].AsObject();
+
+            Assert.AreEqual("Error", log["logType"].GetValue<string>());
+
+            // Clean up
+            await clientWebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Test completed", CancellationToken.None);
+        }
+
+        [TestMethod]
+        public async Task Test_Update_Double_Standing()
+        {
+            // Arrange
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            string secret = device["secret"].GetValue<string>();
+            _deviceIds.Add(deviceId);
+
+            using ClientWebSocket clientWebSocket = new();
+            clientWebSocket.Options.AddSubProtocol(secret);
+            await clientWebSocket.ConnectAsync(new Uri(_webSocketUri), CancellationToken.None);
+
+            // Act
+            JsonObject standingStatus1 = DeviceLib.CreateUpdateStatus("Standing");
+            await clientWebSocket.SendAsync(standingStatus1, int.MaxValue, CancellationToken.None);
+
+            // Max Attempts = 2 because of the secret change offer
+            await clientWebSocket.PollMessage("DeviceUpdateStatusAck", 2, CancellationToken.None);
+
+            JsonObject standingStatus2 = DeviceLib.CreateUpdateStatus("Standing");
+            await clientWebSocket.SendAsync(standingStatus2, int.MaxValue, CancellationToken.None);
+
+            await clientWebSocket.PollMessage("DeviceUpdateStatusAck", 1, CancellationToken.None);
+
+            // Assert => No log should be created
+            JsonArray logs = await _deviceLogLib.GetLogs(_accessToken, deviceId);
+            Assert.AreEqual(0, logs.Count);
+
+            // Clean up
+            await clientWebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Test completed", CancellationToken.None);
+        }
+
+        [TestMethod]
+        public async Task Test_Update_Reverse_State()
+        {
+            // Arrange
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            string secret = device["secret"].GetValue<string>();
+            _deviceIds.Add(deviceId);
+
+            using ClientWebSocket clientWebSocket = new();
+            clientWebSocket.Options.AddSubProtocol(secret);
+            await clientWebSocket.ConnectAsync(new Uri(_webSocketUri), CancellationToken.None);
+
+            // Act
+            JsonObject standingStatus = DeviceLib.CreateUpdateStatus("Standing");
+            await clientWebSocket.SendAsync(standingStatus, int.MaxValue, CancellationToken.None);
+
+            // Max Attempts = 2 because of the secret change offer
+            await clientWebSocket.PollMessage("DeviceUpdateStatusAck", 2, CancellationToken.None);
+
+            JsonObject sittingStatus = DeviceLib.CreateUpdateStatus("Sitting");
+            await clientWebSocket.SendAsync(sittingStatus, int.MaxValue, CancellationToken.None);
+
+            await clientWebSocket.PollMessage("DeviceUpdateStatusAck", 1, CancellationToken.None);
+
+            // Assert => No log should be created
+            JsonArray logs = await _deviceLogLib.GetLogs(_accessToken, deviceId);
+            Assert.AreEqual(0, logs.Count);
+
+            // Clean up
+            await clientWebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Test completed", CancellationToken.None);
+        }
+
     }
 }
