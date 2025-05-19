@@ -63,7 +63,7 @@ namespace BackBuddy.Integration_Test.V1.Libs
                 await clientWebSocket.SendAsync(sittingStatus, int.MaxValue, CancellationToken.None);
                 await clientWebSocket.PollMessage("DeviceUpdateStatusAck", 2, CancellationToken.None);
 
-                if(delay != null)
+                if (delay != null)
                     await Task.Delay(delay.Value);
 
                 JsonObject standingStatus = DeviceLib.CreateUpdateStatus("Standing");

@@ -1,11 +1,6 @@
 ﻿using BackBuddy.Integration_Test.V1.DTOs;
 using BackBuddy.Integration_Test.V1.Libs;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Text.Json.Nodes;
-using System.Threading.Tasks;
 
 namespace BackBuddy.Integration_Test.V1.Endpoints
 {
@@ -190,5 +185,54 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             Assert.AreEqual(1, logs.Count);
             Assert.IsFalse(hasMoreResults, "There should be not more results available");
         }
+
+        [TestMethod]
+        public async Task Test_GetLogs_Mixed_Filter_StartDate()
+        {
+            // Arrange
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            string secret = device["secret"].GetValue<string>();
+            _deviceIds.Add(deviceId);
+
+            await DeviceLogLib.CreateSampleLogs(_webSocketUri, secret, 5, delay: TimeSpan.FromSeconds(3));
+
+            // Act
+            (JsonArray logs, _) = await _deviceLogLib.GetLogs(_accessToken, deviceId, descending: false);
+            JsonObject firstLog = logs[0].AsObject();
+            DateTime startDate = firstLog["startTime"].GetValue<DateTime>().AddSeconds(1);
+
+            (JsonArray filteredLogs, _) = await _deviceLogLib.GetLogs(_accessToken, deviceId, startTime: startDate);
+
+            // Assert
+            Assert.IsNotNull(filteredLogs);
+            Assert.AreEqual(4, filteredLogs.Count, "Filtered logs should be 4");
+            Assert.IsFalse(filteredLogs.Any(x => x.AsObject()["id"].GetValue<string>() == firstLog["id"].GetValue<string>()), "Fillered logs not contains firstlog");
+        }
+
+        [TestMethod]
+        public async Task Test_GetLogs_Mixed_Filter_EndDate()
+        {
+            // Arrange
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            string secret = device["secret"].GetValue<string>();
+            _deviceIds.Add(deviceId);
+
+            await DeviceLogLib.CreateSampleLogs(_webSocketUri, secret, 5, delay: TimeSpan.FromSeconds(3));
+
+            // Act
+            (JsonArray logs, _) = await _deviceLogLib.GetLogs(_accessToken, deviceId, descending: true);
+            JsonObject lastLog = logs[0].AsObject();
+            DateTime endDate = lastLog["endTime"].GetValue<DateTime>().AddSeconds(-1);
+
+            (JsonArray filteredLogs, _) = await _deviceLogLib.GetLogs(_accessToken, deviceId, endTime: endDate);
+
+            // Assert
+            Assert.IsNotNull(filteredLogs);
+            Assert.AreEqual(4, filteredLogs.Count, "Filtered logs should be 4");
+            Assert.IsFalse(filteredLogs.Any(x => x.AsObject()["id"].GetValue<string>() == lastLog["id"].GetValue<string>()), "Fillered logs not contains lastlog");
+        }
+
     }
 }
