@@ -51,7 +51,7 @@ namespace BackBuddy.Integration_Test.V1.Libs
             return (JsonSerializer.Deserialize<JsonArray>(content), hasMoreEntries);
         }
 
-        public static async Task CreateSampleLogs(string websocketUri, string secret, int successCount = 0, int errorCount = 0)
+        public static async Task CreateSampleLogs(string websocketUri, string secret, int successCount = 0, int errorCount = 0, TimeSpan? delay = null)
         {
             using ClientWebSocket clientWebSocket = new();
             clientWebSocket.Options.AddSubProtocol(secret);
@@ -62,6 +62,9 @@ namespace BackBuddy.Integration_Test.V1.Libs
                 JsonObject sittingStatus = DeviceLib.CreateUpdateStatus("Sitting");
                 await clientWebSocket.SendAsync(sittingStatus, int.MaxValue, CancellationToken.None);
                 await clientWebSocket.PollMessage("DeviceUpdateStatusAck", 2, CancellationToken.None);
+
+                if(delay != null)
+                    await Task.Delay(delay.Value);
 
                 JsonObject standingStatus = DeviceLib.CreateUpdateStatus("Standing");
                 await clientWebSocket.SendAsync(standingStatus, int.MaxValue, CancellationToken.None);
@@ -81,6 +84,9 @@ namespace BackBuddy.Integration_Test.V1.Libs
                 JsonObject sittingStatus = DeviceLib.CreateUpdateStatus("Sitting");
                 await clientWebSocket.SendAsync(sittingStatus, int.MaxValue, CancellationToken.None);
                 await clientWebSocket.PollMessage("DeviceUpdateStatusAck", 1, CancellationToken.None);
+
+                if (delay != null)
+                    await Task.Delay(delay.Value);
             }
 
             await clientWebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Test completed", CancellationToken.None);
