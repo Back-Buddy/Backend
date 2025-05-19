@@ -14,7 +14,7 @@ namespace BackBuddy.Api.Service.V1.Device.Repositories
         Task<DeviceEntity?> Get(Guid id, CancellationToken cancellationToken = default);
         Task<Page<List<DeviceEntity>>> GetAll(string userId, PageRequestDto page, CancellationToken cancellationToken = default);
         Task<bool> IsNameUnique(string userId, string name, CancellationToken cancellationToken = default);
-        Task<bool> HasActiveDevices(string userId);
+        Task<bool> HasActiveDevices(string userId, CancellationToken cancellationToken = default);
     }
 
     public class DeviceRepository(IMongoCollection<DeviceEntity> collection) : IDeviceRepository
@@ -74,15 +74,15 @@ namespace BackBuddy.Api.Service.V1.Device.Repositories
             await collection.ReplaceOneAsync(x => x.Id == entity.Id, entity, cancellationToken: cancellationToken);
         }
 
-        public async Task<bool> HasActiveDevices(string userId)
+        public async Task<bool> HasActiveDevices(string userId, CancellationToken cancellationToken = default)
         {
             FilterDefinition<DeviceEntity> filter = Builders<DeviceEntity>.Filter
                 .And(
                     Builders<DeviceEntity>.Filter.Eq(x => x.UserId, userId),
                     Builders<DeviceEntity>.Filter.Eq(x => x.Active, true)
                 );
-            IAsyncCursor<DeviceEntity> cursor = await collection.FindAsync(filter);
-            return await cursor.AnyAsync();
+            IAsyncCursor<DeviceEntity> cursor = await collection.FindAsync(filter, cancellationToken: cancellationToken);
+            return await cursor.AnyAsync(cancellationToken);
         }
     }
 }
