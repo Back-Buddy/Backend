@@ -1,5 +1,7 @@
 ﻿using BackBuddy.Integration_Test.Exceptions;
+using BackBuddy.Integration_Test.Extensions;
 using System.Net.Http.Headers;
+using System.Net.WebSockets;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
@@ -46,6 +48,41 @@ namespace BackBuddy.Integration_Test.V1.Libs
                 throw new RequestFailedException(response);
             string content = await response.Content.ReadAsStringAsync();
             return JsonSerializer.Deserialize<JsonArray>(content);
+        }
+
+        public static async Task CreateSampleLogs(string websocketUri, string secret, int successCount = 0, int errorCount = 0)
+        {
+            using ClientWebSocket clientWebSocket = new();
+            clientWebSocket.Options.AddSubProtocol(secret);
+            await clientWebSocket.ConnectAsync(new Uri(websocketUri), CancellationToken.None);
+
+            for (int i = 0; i < successCount; i++)
+            {
+                JsonObject sittingStatus = DeviceLib.CreateUpdateStatus("Sitting");
+                await clientWebSocket.SendAsync(sittingStatus, int.MaxValue, CancellationToken.None);
+                await clientWebSocket.PollMessage("DeviceUpdateStatusAck", 2, CancellationToken.None);
+
+                JsonObject standingStatus = DeviceLib.CreateUpdateStatus("Standing");
+                await clientWebSocket.SendAsync(standingStatus, int.MaxValue, CancellationToken.None);
+                await clientWebSocket.PollMessage("DeviceUpdateStatusAck", 1, CancellationToken.None);
+            }
+
+            // Set default status to "Sitting" for errorCount
+            if (errorCount > 0)
+            {
+                JsonObject sittingStatus = DeviceLib.CreateUpdateStatus("Sitting");
+                await clientWebSocket.SendAsync(sittingStatus, int.MaxValue, CancellationToken.None);
+                await clientWebSocket.PollMessage("DeviceUpdateStatusAck", 2, CancellationToken.None);
+            }
+
+            for (int i = 0; i < errorCount; i++)
+            {
+                JsonObject sittingStatus = DeviceLib.CreateUpdateStatus("Sitting");
+                await clientWebSocket.SendAsync(sittingStatus, int.MaxValue, CancellationToken.None);
+                await clientWebSocket.PollMessage("DeviceUpdateStatusAck", 1, CancellationToken.None);
+            }
+
+            await clientWebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Test completed", CancellationToken.None);
         }
     }
 }

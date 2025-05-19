@@ -1,6 +1,9 @@
 ﻿using BackBuddy.Integration_Test.Exceptions;
+using BackBuddy.Integration_Test.Extensions;
 using System.Net.Http.Headers;
 using System.Net.Mime;
+using System.Net.Sockets;
+using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;

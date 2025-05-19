@@ -1,0 +1,126 @@
+﻿using BackBuddy.Integration_Test.V1.DTOs;
+using BackBuddy.Integration_Test.V1.Libs;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Text.Json.Nodes;
+using System.Threading.Tasks;
+
+namespace BackBuddy.Integration_Test.V1.Endpoints
+{
+    [TestClass]
+    public class DeviceLogTests
+    {
+        private static DeviceLogLib _deviceLogLib;
+        private static DeviceLib _deviceLib;
+        private static string _accessToken;
+        private static string _userId;
+        private static string _webSocketUri;
+        private static FirebaseLib _firebaseLib;
+
+        private readonly static List<Guid> _deviceIds = [];
+
+        [ClassInitialize]
+        public static async Task ClassInitialize(TestContext _)
+        {
+            _webSocketUri = Environment.GetEnvironmentVariable("E2E_WEBSOCKET_URI") ?? "ws://localhost:8080/";
+            _accessToken = Environment.GetEnvironmentVariable("E2E_ACCESS_TOKEN");
+            _userId = Environment.GetEnvironmentVariable("E2E_USER_ID");
+            Uri baseUri = new(Environment.GetEnvironmentVariable("E2E_BASE_URI") ?? "http://localhost:8080/");
+
+            _deviceLib = new DeviceLib(baseUri.ToString());
+            _deviceLogLib = new DeviceLogLib(baseUri.ToString());
+
+            if (_accessToken == null)
+            {
+                _firebaseLib = new("http://localhost:9099/identitytoolkit.googleapis.com/v1/", "change-me");
+                await _firebaseLib.RegisterUserAsync("test@gmail.com", "stringG.1212"); //NOT A REAL SECRET
+                FirebaseDto.FirebaseLoginResponseDto loginResponse = await _firebaseLib.SignInUserAsync("test@gmail.com", "stringG.1212"); //NOT A REAL SECRET
+                _userId = loginResponse.LocalId;
+                _accessToken = loginResponse.IdToken;
+            }
+        }
+
+        [ClassCleanup(ClassCleanupBehavior.EndOfClass)]
+        public static async Task ClassCleanup()
+        {
+            if (_firebaseLib != null)
+            {
+                await _firebaseLib.DeleteUserAsync(_userId);
+            }
+        }
+
+        [TestCleanup]
+        public async Task TestCleanup()
+        {
+            foreach (Guid deviceId in _deviceIds)
+            {
+                await _deviceLib.DeleteDevice(_accessToken, deviceId);
+            }
+            _deviceIds.Clear();
+        }
+
+        [TestMethod]
+        public async Task Test_GetLogs_All_Success()
+        {
+            // Arrange
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            string secret = device["secret"].GetValue<string>();
+            _deviceIds.Add(deviceId);
+
+            await DeviceLogLib.CreateSampleLogs(_webSocketUri, secret, 5, 0);
+
+            // Act
+            JsonArray logs = await _deviceLogLib.GetLogs(_accessToken, deviceId);
+
+            // Assert
+            Assert.IsNotNull(logs);
+            Assert.AreEqual(5, logs.Count);
+            Assert.IsTrue(logs.All(x => x.AsObject()["logType"].GetValue<string>() == "Sit"), "All logs should be of type 'Sit'");
+        }
+
+        [TestMethod]
+        public async Task Test_GetLogs_All_Error()
+        {
+            // Arrange
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            string secret = device["secret"].GetValue<string>();
+            _deviceIds.Add(deviceId);
+
+            await DeviceLogLib.CreateSampleLogs(_webSocketUri, secret, 0, 5);
+
+            // Act
+            JsonArray logs = await _deviceLogLib.GetLogs(_accessToken, deviceId);
+
+            // Assert
+            Assert.IsNotNull(logs);
+            Assert.AreEqual(5, logs.Count);
+            Assert.IsTrue(logs.All(x => x.AsObject()["logType"].GetValue<string>() == "Error"), "All logs should be of type 'Error'");
+        }
+
+        [TestMethod]
+        [DataRow("Sit")]
+        [DataRow("Error")]
+        public async Task Test_GetLogs_Mixed_Filtered(string logType)
+        {
+            // Arrange
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            string secret = device["secret"].GetValue<string>();
+            _deviceIds.Add(deviceId);
+
+            await DeviceLogLib.CreateSampleLogs(_webSocketUri, secret, 5, 5);
+
+            // Act
+            JsonArray logs = await _deviceLogLib.GetLogs(_accessToken, deviceId, logType: logType);
+
+            // Assert
+            Assert.IsNotNull(logs);
+            Assert.AreEqual(5, logs.Count);
+            Assert.IsTrue(logs.All(x => x.AsObject()["logType"].GetValue<string>() == logType), $"All logs should be of type '{logType}'");
+        }
+    }
+}
