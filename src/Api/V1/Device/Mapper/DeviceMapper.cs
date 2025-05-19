@@ -12,6 +12,7 @@ namespace BackBuddy.Api.Service.V1.Device.Mapper
                 Id = entity.Id,
                 Name = entity.Name,
                 Threshold = entity.Threshold,
+                Active = entity.Active
             };
         }
         public static List<DeviceDto> ToDto(this IEnumerable<DeviceEntity> entities)
