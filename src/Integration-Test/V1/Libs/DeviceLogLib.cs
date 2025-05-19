@@ -31,9 +31,9 @@ namespace BackBuddy.Integration_Test.V1.Libs
             return JsonSerializer.Deserialize<JsonObject>(content);
         }
 
-        public async Task<JsonArray> GetLogs(string accessToken, Guid deviceId, string logType = null, bool descending = true, DateTime? startTime = null, DateTime? endTime = null, int page = 1, int pageSize = 10)
+        public async Task<(JsonArray Logs, bool HasMoreEntries)> GetLogs(string accessToken, Guid deviceId, string logType = null, bool descending = true, DateTime? startTime = null, DateTime? endTime = null, int page = 1, int pageSize = 10)
         {
-            string query = $"/api/v1/device/{deviceId}/DeviceLog?page={page}&pageSize={pageSize}&descending={descending}";
+            string query = $"/api/v1/device/{deviceId}/DeviceLog?page={page}&size={pageSize}&descending={descending}";
             if (logType != null)
                 query += $"&logType={logType}";
             if (startTime != null)
@@ -47,7 +47,8 @@ namespace BackBuddy.Integration_Test.V1.Libs
             if (!response.IsSuccessStatusCode)
                 throw new RequestFailedException(response);
             string content = await response.Content.ReadAsStringAsync();
-            return JsonSerializer.Deserialize<JsonArray>(content);
+            bool hasMoreEntries = bool.Parse(response.Headers.GetValues("X-Has-More-Entries").First().ToString());
+            return (JsonSerializer.Deserialize<JsonArray>(content), hasMoreEntries);
         }
 
         public static async Task CreateSampleLogs(string websocketUri, string secret, int successCount = 0, int errorCount = 0)

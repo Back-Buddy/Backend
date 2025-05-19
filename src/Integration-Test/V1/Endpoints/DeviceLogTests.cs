@@ -73,7 +73,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             await DeviceLogLib.CreateSampleLogs(_webSocketUri, secret, 5, 0);
 
             // Act
-            JsonArray logs = await _deviceLogLib.GetLogs(_accessToken, deviceId);
+            (JsonArray logs, _) = await _deviceLogLib.GetLogs(_accessToken, deviceId);
 
             // Assert
             Assert.IsNotNull(logs);
@@ -93,7 +93,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             await DeviceLogLib.CreateSampleLogs(_webSocketUri, secret, 0, 5);
 
             // Act
-            JsonArray logs = await _deviceLogLib.GetLogs(_accessToken, deviceId);
+            (JsonArray logs, _) = await _deviceLogLib.GetLogs(_accessToken, deviceId);
 
             // Assert
             Assert.IsNotNull(logs);
@@ -115,7 +115,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             await DeviceLogLib.CreateSampleLogs(_webSocketUri, secret, 5, 5);
 
             // Act
-            JsonArray logs = await _deviceLogLib.GetLogs(_accessToken, deviceId, logType: logType);
+            (JsonArray logs, _) = await _deviceLogLib.GetLogs(_accessToken, deviceId, logType: logType);
 
             // Assert
             Assert.IsNotNull(logs);
@@ -135,7 +135,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             await DeviceLogLib.CreateSampleLogs(_webSocketUri, secret, 5, 5);
 
             // Act
-            JsonArray logs = await _deviceLogLib.GetLogs(_accessToken, deviceId, descending: true);
+            (JsonArray logs, _) = await _deviceLogLib.GetLogs(_accessToken, deviceId, descending: true);
 
             // Assert
             Assert.IsNotNull(logs);
@@ -155,12 +155,40 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             await DeviceLogLib.CreateSampleLogs(_webSocketUri, secret, 5, 5);
 
             // Act
-            JsonArray logs = await _deviceLogLib.GetLogs(_accessToken, deviceId, descending: false);
+            (JsonArray logs, _) = await _deviceLogLib.GetLogs(_accessToken, deviceId, descending: false);
 
             // Assert
             Assert.IsNotNull(logs);
             Assert.AreEqual(10, logs.Count);
             Assert.IsTrue(logs[0].AsObject()["startTime"].GetValue<DateTime>() <= logs[1].AsObject()["startTime"].GetValue<DateTime>(), "Logs should be sorted by start time in ascending order");
+        }
+
+        [TestMethod]
+        public async Task Test_GetLogs_Mixed_Pagination()
+        {
+            // Arrange
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            string secret = device["secret"].GetValue<string>();
+            _deviceIds.Add(deviceId);
+
+            await DeviceLogLib.CreateSampleLogs(_webSocketUri, secret, 5, 6);
+
+            // Act & Assert
+            JsonArray logs;
+            bool hasMoreResults;
+            (logs, hasMoreResults) = await _deviceLogLib.GetLogs(_accessToken, deviceId, descending: false, page: 1, pageSize: 5);
+
+            Assert.AreEqual(5, logs.Count);
+            Assert.IsTrue(hasMoreResults, "There should be more results available");
+
+            (logs, hasMoreResults) = await _deviceLogLib.GetLogs(_accessToken, deviceId, descending: false, page: 2, pageSize: 5);
+            Assert.AreEqual(5, logs.Count);
+            Assert.IsTrue(hasMoreResults, "There should be more results available");
+
+            (logs, hasMoreResults) = await _deviceLogLib.GetLogs(_accessToken, deviceId, descending: false, page: 3, pageSize: 5);
+            Assert.AreEqual(1, logs.Count);
+            Assert.IsFalse(hasMoreResults, "There should be not more results available");
         }
     }
 }

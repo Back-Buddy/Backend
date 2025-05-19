@@ -86,7 +86,7 @@ namespace BackBuddy.Integration_Test.V1.WebSocket
             await clientWebSocket.PollMessage("DeviceUpdateStatusAck", 1, CancellationToken.None);
 
             // Assert
-            JsonArray logs = await _deviceLogLib.GetLogs(_accessToken, deviceId);
+            (JsonArray logs, _) = await _deviceLogLib.GetLogs(_accessToken, deviceId);
             Assert.AreEqual(1, logs.Count);
             JsonObject log = logs[0].AsObject();
 
@@ -127,7 +127,7 @@ namespace BackBuddy.Integration_Test.V1.WebSocket
             await clientWebSocket.PollMessage("DeviceUpdateStatusAck", 1, CancellationToken.None);
 
             // Assert
-            JsonArray logs = await _deviceLogLib.GetLogs(_accessToken, deviceId);
+            (JsonArray logs, _) = await _deviceLogLib.GetLogs(_accessToken, deviceId);
             Assert.AreEqual(1, logs.Count);
             JsonObject log = logs[0].AsObject();
 
@@ -163,7 +163,7 @@ namespace BackBuddy.Integration_Test.V1.WebSocket
             await clientWebSocket.PollMessage("DeviceUpdateStatusAck", 1, CancellationToken.None);
 
             // Assert => No log should be created
-            JsonArray logs = await _deviceLogLib.GetLogs(_accessToken, deviceId);
+            (JsonArray logs, _) = await _deviceLogLib.GetLogs(_accessToken, deviceId);
             Assert.AreEqual(0, logs.Count);
 
             // Clean up
@@ -196,7 +196,7 @@ namespace BackBuddy.Integration_Test.V1.WebSocket
             await clientWebSocket.PollMessage("DeviceUpdateStatusAck", 1, CancellationToken.None);
 
             // Assert => No log should be created
-            JsonArray logs = await _deviceLogLib.GetLogs(_accessToken, deviceId);
+            (JsonArray logs, _) = await _deviceLogLib.GetLogs(_accessToken, deviceId);
             Assert.AreEqual(0, logs.Count);
 
             // Clean up
