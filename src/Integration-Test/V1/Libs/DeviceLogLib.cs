@@ -31,9 +31,9 @@ namespace BackBuddy.Integration_Test.V1.Libs
             return JsonSerializer.Deserialize<JsonObject>(content);
         }
 
-        public async Task<JsonArray> GetLogs(string accessToken, Guid deviceId, string logType = null, DateTime? startTime = null, DateTime? endTime = null, int page = 1, int pageSize = 10)
+        public async Task<JsonArray> GetLogs(string accessToken, Guid deviceId, string logType = null, bool descending = true, DateTime? startTime = null, DateTime? endTime = null, int page = 1, int pageSize = 10)
         {
-            string query = $"/api/v1/device/{deviceId}/DeviceLog?page={page}&pageSize={pageSize}";
+            string query = $"/api/v1/device/{deviceId}/DeviceLog?page={page}&pageSize={pageSize}&descending={descending}";
             if (logType != null)
                 query += $"&logType={logType}";
             if (startTime != null)

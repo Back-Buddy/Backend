@@ -49,13 +49,14 @@ namespace BackBuddy.Api.Service.V1.Device.Repositories
                 filters.Add(Builders<DeviceLogEntity>.Filter.Gte(x => x.StartTime, query.StartTime));
             if (query.EndTime != null)
                 filters.Add(Builders<DeviceLogEntity>.Filter.Lte(x => x.EndTime, query.EndTime));
-
+            
             FilterDefinition<DeviceLogEntity> finalFilter = Builders<DeviceLogEntity>.Filter.And(filters);
 
             FindOptions<DeviceLogEntity> findOptions = new()
             {
                 Limit = page.Size,
-                Skip = page.Offset()
+                Skip = page.Offset(),
+                Sort = query.Descending ? Builders<DeviceLogEntity>.Sort.Descending(x => x.StartTime) : Builders<DeviceLogEntity>.Sort.Ascending(x => x.StartTime)
             };
             IAsyncCursor<DeviceLogEntity> cursor = await _collection.FindAsync(finalFilter, findOptions, cancellationToken: cancellationToken);
             List<DeviceLogEntity> entities = await cursor.ToListAsync(cancellationToken);

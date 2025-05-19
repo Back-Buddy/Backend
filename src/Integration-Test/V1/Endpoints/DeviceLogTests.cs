@@ -122,5 +122,45 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             Assert.AreEqual(5, logs.Count);
             Assert.IsTrue(logs.All(x => x.AsObject()["logType"].GetValue<string>() == logType), $"All logs should be of type '{logType}'");
         }
+
+        [TestMethod]
+        public async Task Test_GetLogs_Mixed_Sorted_Descending()
+        {
+            // Arrange
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            string secret = device["secret"].GetValue<string>();
+            _deviceIds.Add(deviceId);
+
+            await DeviceLogLib.CreateSampleLogs(_webSocketUri, secret, 5, 5);
+
+            // Act
+            JsonArray logs = await _deviceLogLib.GetLogs(_accessToken, deviceId, descending: true);
+
+            // Assert
+            Assert.IsNotNull(logs);
+            Assert.AreEqual(10, logs.Count);
+            Assert.IsTrue(logs[0].AsObject()["startTime"].GetValue<DateTime>() >= logs[1].AsObject()["startTime"].GetValue<DateTime>(), "Logs should be sorted by start time in descending order");
+        }
+
+        [TestMethod]
+        public async Task Test_GetLogs_Mixed_Sorted_Ascending()
+        {
+            // Arrange
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            string secret = device["secret"].GetValue<string>();
+            _deviceIds.Add(deviceId);
+
+            await DeviceLogLib.CreateSampleLogs(_webSocketUri, secret, 5, 5);
+
+            // Act
+            JsonArray logs = await _deviceLogLib.GetLogs(_accessToken, deviceId, descending: false);
+
+            // Assert
+            Assert.IsNotNull(logs);
+            Assert.AreEqual(10, logs.Count);
+            Assert.IsTrue(logs[0].AsObject()["startTime"].GetValue<DateTime>() <= logs[1].AsObject()["startTime"].GetValue<DateTime>(), "Logs should be sorted by start time in ascending order");
+        }
     }
 }
