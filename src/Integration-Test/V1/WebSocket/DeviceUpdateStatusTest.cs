@@ -245,5 +245,81 @@ namespace BackBuddy.Integration_Test.V1.WebSocket
             await clientWebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Test completed", CancellationToken.None);
         }
 
+        [TestMethod]
+        public async Task Test_Update_Invalid_Status()
+        {
+            // Arrange
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            string secret = device["secret"].GetValue<string>();
+            _deviceIds.Add(deviceId);
+
+            using ClientWebSocket clientWebSocket = new();
+            clientWebSocket.Options.AddSubProtocol(secret);
+            await clientWebSocket.ConnectAsync(new Uri(_webSocketUri), CancellationToken.None);
+
+            // Act
+            JsonObject invalidStatus = DeviceLib.CreateUpdateStatus("Jumping");
+            await clientWebSocket.SendAsync(invalidStatus, int.MaxValue, CancellationToken.None);
+
+            // Assert
+            (JsonArray logs, _) = await _deviceLogLib.GetLogs(_accessToken, deviceId);
+            Assert.AreEqual(0, logs.Count, "No logs should be created for an invalid status");
+
+            // Clean up
+            await clientWebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Test completed", CancellationToken.None);
+        }
+
+        [TestMethod]
+        public async Task Test_Update_Parallel_Device_Status()
+        {
+            // Arrange
+            JsonObject device1 = await _deviceLib.CreateDevice(_accessToken, "TestDevice 1");
+            Guid deviceId1 = Guid.Parse(device1["deviceId"].GetValue<string>());
+            string secret1 = device1["secret"].GetValue<string>();
+            _deviceIds.Add(deviceId1);
+
+            JsonObject device2 = await _deviceLib.CreateDevice(_accessToken, "TestDevice 2");
+            Guid deviceId2 = Guid.Parse(device2["deviceId"].GetValue<string>());
+            string secret2 = device2["secret"].GetValue<string>();
+            _deviceIds.Add(deviceId2);
+
+            using ClientWebSocket clientWebSocket1 = new();
+            using ClientWebSocket clientWebSocket2 = new();
+            clientWebSocket1.Options.AddSubProtocol(secret1);
+            clientWebSocket2.Options.AddSubProtocol(secret2);
+            await clientWebSocket1.ConnectAsync(new Uri(_webSocketUri), CancellationToken.None);
+            await clientWebSocket2.ConnectAsync(new Uri(_webSocketUri), CancellationToken.None);
+
+            // Act
+            Task task1 = clientWebSocket1.SendAsync(DeviceLib.CreateUpdateStatus("Sitting"), int.MaxValue, CancellationToken.None);
+            Task task2 = clientWebSocket2.SendAsync(DeviceLib.CreateUpdateStatus("Sitting"), int.MaxValue, CancellationToken.None);
+            await Task.WhenAll(task1, task2);
+
+            task1 = clientWebSocket1.PollMessage("DeviceUpdateStatusAck", 2, CancellationToken.None);
+            task2 = clientWebSocket2.PollMessage("DeviceUpdateStatusAck", 2, CancellationToken.None);
+            await Task.WhenAll(task1, task2);
+
+
+            task1 = clientWebSocket1.SendAsync(DeviceLib.CreateUpdateStatus("Standing"), int.MaxValue, CancellationToken.None);
+            task2 = clientWebSocket2.SendAsync(DeviceLib.CreateUpdateStatus("Standing"), int.MaxValue, CancellationToken.None);
+            await Task.WhenAll(task1, task2);
+
+            task1 = clientWebSocket1.PollMessage("DeviceUpdateStatusAck", 1, CancellationToken.None);
+            task2 = clientWebSocket2.PollMessage("DeviceUpdateStatusAck", 1, CancellationToken.None);
+            await Task.WhenAll(task1, task2);
+
+            // Assert
+            (JsonArray logsDevice1, _) = await _deviceLogLib.GetLogs(_accessToken, deviceId1);
+            Assert.AreEqual(1, logsDevice1.Count, "Only one log should be created");
+
+            (JsonArray logsDevice2, _) = await _deviceLogLib.GetLogs(_accessToken, deviceId2);
+            Assert.AreEqual(1, logsDevice2.Count, "Only one log should be created");
+
+            // Clean up
+            await clientWebSocket1.CloseAsync(WebSocketCloseStatus.NormalClosure, "Test completed", CancellationToken.None);
+            await clientWebSocket2.CloseAsync(WebSocketCloseStatus.NormalClosure, "Test completed", CancellationToken.None);
+        }
+
     }
 }
