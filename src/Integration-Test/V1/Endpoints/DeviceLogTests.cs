@@ -57,6 +57,22 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
         }
 
         [TestMethod]
+        public async Task Test_GetLogs_Empty()
+        {
+            // Arrange
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "EmptyDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            _deviceIds.Add(deviceId);
+
+            // Act
+            (JsonArray logs, _) = await _deviceLogLib.GetLogs(_accessToken, deviceId);
+
+            // Assert
+            Assert.IsNotNull(logs);
+            Assert.AreEqual(0, logs.Count, "The log list should be empty");
+        }
+
+        [TestMethod]
         public async Task Test_GetLogs_All_Success()
         {
             // Arrange
