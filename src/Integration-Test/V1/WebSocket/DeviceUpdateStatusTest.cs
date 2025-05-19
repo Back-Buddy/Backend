@@ -203,5 +203,47 @@ namespace BackBuddy.Integration_Test.V1.WebSocket
             await clientWebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Test completed", CancellationToken.None);
         }
 
+        [TestMethod]
+        public async Task Test_Update_Double_Send_ACK_Failure()
+        {
+            // Arrange
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            string secret = device["secret"].GetValue<string>();
+            _deviceIds.Add(deviceId);
+
+            using ClientWebSocket clientWebSocket = new();
+            clientWebSocket.Options.AddSubProtocol(secret);
+            await clientWebSocket.ConnectAsync(new Uri(_webSocketUri), CancellationToken.None);
+
+            // Act
+            JsonObject sittingStatus = DeviceLib.CreateUpdateStatus("Sitting");
+            await clientWebSocket.SendAsync(sittingStatus, int.MaxValue, CancellationToken.None);
+
+            // Ignore ACK Failed
+            await clientWebSocket.PollMessage("DeviceUpdateStatusAck", 2, CancellationToken.None);
+
+            await clientWebSocket.SendAsync(sittingStatus, int.MaxValue, CancellationToken.None);
+
+            await clientWebSocket.PollMessage("DeviceUpdateStatusAck", 1, CancellationToken.None);
+
+            JsonObject standingStatus = DeviceLib.CreateUpdateStatus("Standing");
+            await clientWebSocket.SendAsync(standingStatus, int.MaxValue, CancellationToken.None);
+
+            // Ignore ACK Failed
+            await clientWebSocket.PollMessage("DeviceUpdateStatusAck", 1, CancellationToken.None);
+
+            await clientWebSocket.SendAsync(standingStatus, int.MaxValue, CancellationToken.None);
+
+            await clientWebSocket.PollMessage("DeviceUpdateStatusAck", 1, CancellationToken.None);
+
+            // Assert
+            (JsonArray logs, _) = await _deviceLogLib.GetLogs(_accessToken, deviceId);
+            Assert.AreEqual(2, logs.Count); // Two logs should be created because double sit status = failure
+
+            // Clean up
+            await clientWebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Test completed", CancellationToken.None);
+        }
+
     }
 }
