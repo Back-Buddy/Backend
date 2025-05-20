@@ -104,6 +104,11 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Services
             return true;
         }
 
+        public Task<bool> IsDeviceConnected(Guid deviceId)
+        {
+            return Task.FromResult(_connectionService.GetWebSocket(deviceId) != null);
+        }
+
         private static Func<Guid, IWebSocketMessageDto, object> CreateFactory(Type genericPayloadType, Type genericType)
         {
             ParameterExpression idParam = Expression.Parameter(typeof(Guid), "deviceId");

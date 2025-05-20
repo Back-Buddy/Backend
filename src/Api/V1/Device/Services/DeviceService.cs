@@ -84,13 +84,13 @@ namespace BackBuddy.Api.Service.V1.Device.Services
             DeviceEntity device = await _repository.Get(deviceId, cancellationToken) ?? throw new DeviceNotFoundException();
             if (device.UserId != userId)
                 throw new DeviceUnauthorizedException();
-            return device.ToDto();
+            return await device.ToDto(_webSocketService);
         }
 
         public async Task<Page<List<DeviceDto>>> GetAll(string userId, PageRequestDto page, CancellationToken cancellationToken = default)
         {
             Page<List<DeviceEntity>> devices = await _repository.GetAll(userId, page, cancellationToken);
-            List<DeviceDto> deviceDtos = devices.Items.ToDto();
+            List<DeviceDto> deviceDtos = await devices.Items.ToDto(_webSocketService);
 
             Page<List<DeviceDto>> deviceDtosPage = new()
             {
@@ -158,7 +158,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
             string storedSecret = await _secretProvider.GetSecret(device.Id.ToString(), cancellationToken);
             if (storedSecret != deviceSecret.Secret)
                 throw new DeviceUnauthorizedException();
-            return device.ToDto();
+            return await device.ToDto(_webSocketService);
         }
 
         public async Task TryUpdateSecret(Guid deviceId, CancellationToken cancellationToken = default)

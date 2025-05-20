@@ -10,5 +10,6 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Services
         Task OnDisconnect(WebSocket webSocket, WebSocketCloseStatus closeStatus = WebSocketCloseStatus.NormalClosure);
         Task OnReceive(WebSocket webSocket, string payload);
         Task<bool> SendMessage(Guid deviceId, IWebSocketMessageDto message);
+        Task<bool> IsDeviceConnected(Guid deviceId);
     }
 }
