@@ -5,7 +5,7 @@ namespace BackBuddy.Api.Service.V1.Database.KeyVault
     {
         private const string _secret = "ZGFzaXN0ZWludGVzdHNlY3JldGRhc2lzdGVpbnRlc3RzZWNyZXRkYXNpc3RlaW50ZXN0c2VjcmV0ZGFzaXN0ZWludGVzdHNlY3JldGRhc2lzdGVpbnRlc3RzZWNyZXRkYXNpc3RlaW50ZXN0c2VjcmV0";
 
-        public Task DeleteSecret(string secretName)
+        public Task DeleteSecret(string secretName, CancellationToken cancellationToken = default)
         {
             return Task.CompletedTask;
         }
@@ -15,12 +15,12 @@ namespace BackBuddy.Api.Service.V1.Database.KeyVault
             return _secret;
         }
 
-        public Task<string> GetSecret(string secretName)
+        public Task<string> GetSecret(string secretName, CancellationToken cancellationToken = default)
         {
             return Task.FromResult(_secret); // Test Secret
         }
 
-        public Task SetSecret(string secretName, string secretValue)
+        public Task SetSecret(string secretName, string secretValue, CancellationToken cancellationToken = default)
         {
             return Task.CompletedTask;
         }

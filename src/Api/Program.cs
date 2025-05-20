@@ -5,6 +5,7 @@ using BackBuddy.Api.Service.Swagger;
 using BackBuddy.Api.Service.V1.Auth.Extensions;
 using BackBuddy.Api.Service.V1.Database.KeyVault;
 using BackBuddy.Api.Service.V1.Database.MongoDB;
+using BackBuddy.Api.Service.V1.Database.Redis;
 using BackBuddy.Api.Service.V1.Device.Consumer;
 using BackBuddy.Api.Service.V1.Device.Entities;
 using BackBuddy.Api.Service.V1.Device.Repositories;
@@ -27,7 +28,7 @@ builder.ConfigureAuthentification();
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<AbstractBaseExceptionHandler>();
 
-if (builder.Environment.IsDevelopment())
+if (!builder.Environment.IsDevelopment())
 {
     SecretClient secretClient = new(new Uri(builder.Configuration.GetValue<string>("KEY_VAULT_URI") ?? throw new InvalidDataException("KEY_VAULT_URI is not set!")), new DefaultAzureCredential());
     builder.Services.AddKeyedSingleton(Constants.DEVICE_SECRET, secretClient);
@@ -38,16 +39,34 @@ else
     builder.Services.AddSingleton<ISecretProvider, DevSecretProvider>();
 }
 
+#region MongoDB
 IConfigurationSection mongoDBSection = builder.Configuration.GetSection("MongoDB");
 MongoDBConnectionConfig mongoConfig = mongoDBSection.Get<MongoDBConnectionConfig>() ?? throw new InvalidDataException("MongoDB information must be set!");
 
 builder.Services
     .AddMongoDB(mongoConfig.Connection, mongoConfig.DatabaseName)
     .Connect()
-    .AddCollection<DeviceEntity>(nameof(DeviceEntity));
+    .AddCollection<DeviceEntity>(nameof(DeviceEntity))
+    .AddCollection<DeviceLogEntity>(nameof(DeviceLogEntity));
+#endregion
 
-builder.Services.AddTransient<IDeviceRepository, DeviceRepository>();
-builder.Services.AddTransient<IDeviceService, DeviceService>();
+#region Redis
+IConfigurationSection redisSection = builder.Configuration.GetSection("Redis");
+RedisConnectionConfig redisConfig = redisSection.Get<RedisConnectionConfig>() ?? throw new InvalidDataException("Redis information must be set!");
+
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = redisConfig.Connection;
+    options.InstanceName = redisConfig.DatabaseName;
+});
+#endregion
+builder.Services.AddScoped<IDeviceLogRepository, DeviceLogRepository>();
+builder.Services.AddScoped<IDeviceStatusRepository, DeviceStatusRepository>();
+
+builder.Services.AddScoped<IDeviceRepository, DeviceRepository>();
+builder.Services.AddScoped<IDeviceService, DeviceService>();
+
+builder.Services.AddScoped<IDeviceLogService, DeviceLogService>();
 
 builder.Services.AddSingleton<IConnectionService, ConnectionService>();
 builder.Services.AddScoped<IWebSocketService, WebSocketService>();
@@ -59,6 +78,7 @@ builder.Services.AddMassTransit(x =>
     x.AddConsumer<DeviceWebSocketConnectedConsumer>();
     x.AddConsumer<DeviceNewSecretAckConsumer>();
     x.AddConsumer<DeviceAuthorizeConsumer>();
+    x.AddConsumer<DeviceUpdateStatusConsumer>();
 
     x.UsingInMemory((context, cfg) =>
     {
