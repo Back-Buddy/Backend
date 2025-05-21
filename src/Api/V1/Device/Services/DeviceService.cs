@@ -23,6 +23,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
         Task TryUpdateSecret(Guid deviceId, CancellationToken cancellationToken = default);
         Task AckNewSecret(Guid deviceId, string secret, CancellationToken cancellationToken = default);
         Task HandleStatusUpdate(Guid deviceId, DeviceUpdateStatusMessage status, CancellationToken cancellationToken = default);
+        Task<bool> IsDeviceConnected(Guid deviceId, CancellationToken cancellationToken = default);
     }
 
     public partial class DeviceService(IDeviceRepository repository, IDeviceStatusRepository deviceStatusRepository, IDeviceLogRepository deviceLogRepository, ISecretProvider secretProvider, IWebSocketService webSocketService) : IDeviceService
@@ -231,6 +232,11 @@ namespace BackBuddy.Api.Service.V1.Device.Services
             await _webSocketService.SendMessage(deviceId, new DeviceUpdateStatusAckMessage());
         }
 
+        public async Task<bool> IsDeviceConnected(Guid deviceId, CancellationToken cancellationToken = default)
+        {
+            return await _webSocketService.IsDeviceConnected(deviceId);
+        }
+
         private async Task LogDeviceError(Guid deviceId, DateTime startTime, DateTime endTime, CancellationToken cancellationToken)
         {
             DeviceLogEntity deviceLogEntity = new()
@@ -261,6 +267,5 @@ namespace BackBuddy.Api.Service.V1.Device.Services
 
         [GeneratedRegex(NAME_PATTERN)]
         private static partial Regex NameRegex();
-
     }
 }
