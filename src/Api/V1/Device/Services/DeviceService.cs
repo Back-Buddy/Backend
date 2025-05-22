@@ -6,6 +6,7 @@ using BackBuddy.Api.Service.V1.Device.Entities;
 using BackBuddy.Api.Service.V1.Device.Exceptions;
 using BackBuddy.Api.Service.V1.Device.Mapper;
 using BackBuddy.Api.Service.V1.Device.Repositories;
+using BackBuddy.Api.Service.V1.Exceptions;
 using BackBuddy.Api.Service.V1.Utilities;
 using BackBuddy.Api.Service.V1.WebSockets.Services;
 using System.Text.RegularExpressions;
