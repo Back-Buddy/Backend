@@ -19,7 +19,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
         Task Update(string userId, Guid deviceId, DeviceUpdateRequestDto request, CancellationToken cancellationToken = default);
         Task Delete(string userId, Guid deviceId, CancellationToken cancellationToken = default);
         Task<DeviceDto> Get(string userId, Guid deviceId, CancellationToken cancellationToken = default);
-        Task<Page<List<DeviceDto>>> GetAll(string userId, PageRequestDto page, CancellationToken cancellationToken = default);
+        Task<Page<List<DeviceDto>>> GetAll(string userId, PageRequestDto page, bool? active = null, CancellationToken cancellationToken = default);
         Task<DeviceDto> Authorize(string secret, CancellationToken cancellationToken = default);
         Task TryUpdateSecret(Guid deviceId, CancellationToken cancellationToken = default);
         Task AckNewSecret(Guid deviceId, string secret, CancellationToken cancellationToken = default);
@@ -89,9 +89,9 @@ namespace BackBuddy.Api.Service.V1.Device.Services
             return await device.ToDto(IsDeviceConnected);
         }
 
-        public async Task<Page<List<DeviceDto>>> GetAll(string userId, PageRequestDto page, CancellationToken cancellationToken = default)
+        public async Task<Page<List<DeviceDto>>> GetAll(string userId, PageRequestDto page, bool? active = null, CancellationToken cancellationToken = default)
         {
-            Page<List<DeviceEntity>> devices = await _repository.GetAll(userId, page, cancellationToken);
+            Page<List<DeviceEntity>> devices = await _repository.GetAll(userId, page, active, cancellationToken);
             List<DeviceDto> deviceDtos = await devices.Items.ToDto(IsDeviceConnected);
 
             Page<List<DeviceDto>> deviceDtosPage = new()

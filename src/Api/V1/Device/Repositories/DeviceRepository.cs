@@ -12,7 +12,7 @@ namespace BackBuddy.Api.Service.V1.Device.Repositories
         Task Update(DeviceEntity entity, CancellationToken cancellationToken = default);
         Task Delete(Guid id, CancellationToken cancellationToken = default);
         Task<DeviceEntity?> Get(Guid id, CancellationToken cancellationToken = default);
-        Task<Page<List<DeviceEntity>>> GetAll(string userId, PageRequestDto page, CancellationToken cancellationToken = default);
+        Task<Page<List<DeviceEntity>>> GetAll(string userId, PageRequestDto page, bool? active = null, CancellationToken cancellationToken = default);
         Task<bool> IsNameUnique(string userId, string name, CancellationToken cancellationToken = default);
         Task<bool> HasActiveDevices(string userId, CancellationToken cancellationToken = default);
         Task DeactivateAllDevices(string userId, Guid excludeDeviceId, CancellationToken cancellationToken = default);
@@ -36,10 +36,13 @@ namespace BackBuddy.Api.Service.V1.Device.Repositories
             return await cursor.FirstOrDefaultAsync(cancellationToken);
         }
 
-        public async Task<Page<List<DeviceEntity>>> GetAll(string userId, PageRequestDto page, CancellationToken cancellationToken = default)
+        public async Task<Page<List<DeviceEntity>>> GetAll(string userId, PageRequestDto page, bool? active = null, CancellationToken cancellationToken = default)
         {
             List<FilterDefinition<DeviceEntity>> filters = [];
             filters.Add(Builders<DeviceEntity>.Filter.Eq(x => x.UserId, userId));
+            
+            if (active.HasValue)
+                filters.Add(Builders<DeviceEntity>.Filter.Eq(x => x.Active, active.Value));
 
             FilterDefinition<DeviceEntity> finalFilter = Builders<DeviceEntity>.Filter.And(filters);
 
@@ -91,15 +94,18 @@ namespace BackBuddy.Api.Service.V1.Device.Repositories
 
         public async Task DeactivateAllDevices(string userId, Guid excludeDeviceId, CancellationToken cancellationToken = default)
         {
-            var activeDevices = await GetActiveDevices(userId, excludeDeviceId, cancellationToken);
+            List<DeviceEntity> activeDevices = await GetActiveDevices(userId, excludeDeviceId, cancellationToken);
 
-            foreach (var device in activeDevices)
+            IEnumerable<Task<ReplaceOneResult>> tasks = activeDevices.Select(device => 
             {
                 device.Active = false;
-                await collection.ReplaceOneAsync(
+                return collection.ReplaceOneAsync(
                     d => d.Id == device.Id, 
-                    device);
-            }
+                    device, 
+                    cancellationToken: cancellationToken);
+            });
+
+            await Task.WhenAll(tasks);
         }
         
         private async Task<List<DeviceEntity>> GetActiveDevices(string userId, Guid excludeDeviceId, CancellationToken cancellationToken = default)
