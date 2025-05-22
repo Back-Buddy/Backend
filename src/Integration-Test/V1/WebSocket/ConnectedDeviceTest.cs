@@ -132,6 +132,7 @@ namespace BackBuddy.Integration_Test.V1.WebSocket
 
             // Act
             clientWebSocket.Dispose(); // Simulate network error
+            await Task.Delay(1000); // Wait for the server to detect the disconnection
             JsonObject response = await _deviceLib.GetDevice(_accessToken, deviceId);
 
             // Assert
@@ -157,6 +158,7 @@ namespace BackBuddy.Integration_Test.V1.WebSocket
                 ["invalidKey"] = "invalidValue"
             };
             await clientWebSocket.SendAsync(invalidPayload, int.MaxValue, CancellationToken.None);
+            await Task.Delay(1000); // Wait for the server to detect the disconnection
             JsonObject response = await _deviceLib.GetDevice(_accessToken, deviceId);
 
             // Assert False because invalid payload => close connection
@@ -182,6 +184,7 @@ namespace BackBuddy.Integration_Test.V1.WebSocket
                 ["MessageType"] = "sadsadsad"
             };
             await clientWebSocket.SendAsync(invalidPayload, int.MaxValue, CancellationToken.None);
+            await Task.Delay(1000); // Wait for the server to detect the disconnection
             JsonObject response = await _deviceLib.GetDevice(_accessToken, deviceId);
 
             // Assert False because invalid payload => close connection
