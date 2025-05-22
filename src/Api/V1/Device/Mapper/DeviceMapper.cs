@@ -35,9 +35,9 @@ namespace BackBuddy.Api.Service.V1.Device.Mapper
 
         public async static Task<List<DeviceDto>> ToDto(this IEnumerable<DeviceEntity> entities, Func<Guid, Task<bool>> onlineFunc)
         {
-            IEnumerable<Task<DeviceDto>> dtos = entities.Select(entity => entity.ToDto(onlineFunc));
-            DeviceDto[] convertedDevices = await Task.WhenAll(dtos);
-            return [.. convertedDevices];
+            IEnumerable<Task<DeviceDto>> tasks = entities.Select(entity => entity.ToDto(onlineFunc));
+            DeviceDto[] dtos = await Task.WhenAll(tasks);
+            return [.. dtos];
         }
 
         public static DeviceSecret ToSecret(this DeviceEntity entity, string secret)
