@@ -21,9 +21,9 @@ namespace BackBuddy.Api.Service.V1.Device.Controllers
 
         [HttpGet]
         [ProducesResponseType(typeof(List<DeviceDto>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetDevices([FromQuery] PageRequestDto query)
+        public async Task<IActionResult> GetDevices([FromQuery] PageRequestDto pageQuery)
         {
-            Page<List<DeviceDto>> devices = await deviceService.GetAll(this.GetUserId(), query);
+            Page<List<DeviceDto>> devices = await deviceService.GetAll(this.GetUserId(), pageQuery);
             Response.AddPageHeader(devices.HasMoreEntries);
             return Ok(devices.Items);
         }
