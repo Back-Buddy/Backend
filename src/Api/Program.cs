@@ -12,6 +12,7 @@ using BackBuddy.Api.Service.V1.Device.Repositories;
 using BackBuddy.Api.Service.V1.Device.Services;
 using BackBuddy.Api.Service.V1.ExceptionHandlers;
 using BackBuddy.Api.Service.V1.WebSockets.Middleware;
+using BackBuddy.Api.Service.V1.WebSockets.Repositories;
 using BackBuddy.Api.Service.V1.WebSockets.Services;
 using MassTransit;
 using System.Text.Json.Serialization;
@@ -70,6 +71,8 @@ builder.Services.AddScoped<IDeviceLogService, DeviceLogService>();
 
 builder.Services.AddSingleton<IConnectionService, ConnectionService>();
 builder.Services.AddScoped<IWebSocketService, WebSocketService>();
+
+builder.Services.AddScoped<IConnectedDeviceRepository, ConnectedDeviceRepository>();
 
 builder.Services.AddMassTransit(x =>
 {

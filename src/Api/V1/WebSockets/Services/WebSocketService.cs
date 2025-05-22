@@ -4,8 +4,10 @@ using BackBuddy.Api.Service.V1.Exceptions;
 using BackBuddy.Api.Service.V1.WebSockets.Converter;
 using BackBuddy.Api.Service.V1.WebSockets.Dtos;
 using BackBuddy.Api.Service.V1.WebSockets.DTOs;
+using BackBuddy.Api.Service.V1.WebSockets.Entities;
 using BackBuddy.Api.Service.V1.WebSockets.Exceptions;
 using BackBuddy.Api.Service.V1.WebSockets.Mapper;
+using BackBuddy.Api.Service.V1.WebSockets.Repositories;
 using MassTransit;
 using System.Collections.Concurrent;
 using System.Linq.Expressions;
@@ -17,7 +19,7 @@ using System.Text.Json.Serialization;
 
 namespace BackBuddy.Api.Service.V1.WebSockets.Services
 {
-    public class WebSocketService(IConnectionService connectionService, IRequestClient<DeviceAuthorizeRequestMessage> deviceAuthRequestClient, IPublishEndpoint publishEndpoint) : IWebSocketService
+    public class WebSocketService(IConnectionService connectionService, IConnectedDeviceRepository connectedDeviceRepository, IRequestClient<DeviceAuthorizeRequestMessage> deviceAuthRequestClient, IPublishEndpoint publishEndpoint) : IWebSocketService
     {
         private static readonly ConcurrentDictionary<Enums.WebSocketMessageType, (Type GenericType, Func<Guid, IWebSocketMessageDto, object> Factory)> _messageFactoryCache = [];
 
@@ -27,6 +29,7 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Services
             Converters = { new WebSocketMessageConverter(), new JsonStringEnumConverter() }
         };
 
+        private readonly IConnectedDeviceRepository _connectedDeviceRepository = connectedDeviceRepository;
         private readonly IPublishEndpoint _publishEndpoint = publishEndpoint;
         private readonly IConnectionService _connectionService = connectionService;
         private readonly IRequestClient<DeviceAuthorizeRequestMessage> _deviceAuthRequestClient = deviceAuthRequestClient;
@@ -55,6 +58,8 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Services
                 return _connectionService.AddWebSocket(webSocket, deviceId);
             }
 
+            await _connectedDeviceRepository.Add(deviceId, new ConnectedDevice { ConnectedAt = DateTime.UtcNow });
+
             WebSocketConnectedMessage connectedMessage = new()
             {
                 DeviceId = deviceId
@@ -66,6 +71,11 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Services
 
         public async Task OnDisconnect(WebSocket webSocket, WebSocketCloseStatus closeStatus = WebSocketCloseStatus.NormalClosure)
         {
+            Guid? deviceId = _connectionService.GetDevice(webSocket);
+            if (deviceId == null)
+                return;
+
+            await _connectedDeviceRepository.Remove(deviceId.Value);
             await _connectionService.RemoveWebSocket(webSocket, "Disconnected", closeStatus);
         }
 
@@ -102,6 +112,12 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Services
             byte[] buffer = Encoding.UTF8.GetBytes(payload);
             await webSocket.SendAsync(new ArraySegment<byte>(buffer), System.Net.WebSockets.WebSocketMessageType.Text, true, CancellationToken.None);
             return true;
+        }
+
+        public async Task<bool> IsDeviceConnected(Guid deviceId)
+        {
+            ConnectedDevice? connectedDevice = await _connectedDeviceRepository.Get(deviceId);
+            return connectedDevice != null;
         }
 
         private static Func<Guid, IWebSocketMessageDto, object> CreateFactory(Type genericPayloadType, Type genericType)

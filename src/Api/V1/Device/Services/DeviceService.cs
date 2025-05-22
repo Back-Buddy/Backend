@@ -6,6 +6,7 @@ using BackBuddy.Api.Service.V1.Device.Entities;
 using BackBuddy.Api.Service.V1.Device.Exceptions;
 using BackBuddy.Api.Service.V1.Device.Mapper;
 using BackBuddy.Api.Service.V1.Device.Repositories;
+using BackBuddy.Api.Service.V1.Exceptions;
 using BackBuddy.Api.Service.V1.Utilities;
 using BackBuddy.Api.Service.V1.WebSockets.Services;
 using System.Text.RegularExpressions;
@@ -23,6 +24,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
         Task TryUpdateSecret(Guid deviceId, CancellationToken cancellationToken = default);
         Task AckNewSecret(Guid deviceId, string secret, CancellationToken cancellationToken = default);
         Task HandleStatusUpdate(Guid deviceId, DeviceUpdateStatusMessage status, CancellationToken cancellationToken = default);
+        Task<bool> IsDeviceConnected(Guid deviceId);
     }
 
     public partial class DeviceService(IDeviceRepository repository, IDeviceStatusRepository deviceStatusRepository, IDeviceLogRepository deviceLogRepository, ISecretProvider secretProvider, IWebSocketService webSocketService) : IDeviceService
@@ -84,13 +86,13 @@ namespace BackBuddy.Api.Service.V1.Device.Services
             DeviceEntity device = await _repository.Get(deviceId, cancellationToken) ?? throw new DeviceNotFoundException();
             if (device.UserId != userId)
                 throw new DeviceUnauthorizedException();
-            return device.ToDto();
+            return await device.ToDto(IsDeviceConnected);
         }
 
         public async Task<Page<List<DeviceDto>>> GetAll(string userId, PageRequestDto page, CancellationToken cancellationToken = default)
         {
             Page<List<DeviceEntity>> devices = await _repository.GetAll(userId, page, cancellationToken);
-            List<DeviceDto> deviceDtos = devices.Items.ToDto();
+            List<DeviceDto> deviceDtos = await devices.Items.ToDto(IsDeviceConnected);
 
             Page<List<DeviceDto>> deviceDtosPage = new()
             {
@@ -154,7 +156,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
             string storedSecret = await _secretProvider.GetSecret(device.Id.ToString(), cancellationToken);
             if (storedSecret != deviceSecret.Secret)
                 throw new DeviceUnauthorizedException();
-            return device.ToDto();
+            return await device.ToDto(IsDeviceConnected);
         }
 
         public async Task TryUpdateSecret(Guid deviceId, CancellationToken cancellationToken = default)
@@ -227,6 +229,11 @@ namespace BackBuddy.Api.Service.V1.Device.Services
             await _webSocketService.SendMessage(deviceId, new DeviceUpdateStatusAckMessage());
         }
 
+        public async Task<bool> IsDeviceConnected(Guid deviceId)
+        {
+            return await _webSocketService.IsDeviceConnected(deviceId);
+        }
+
         private async Task LogDeviceError(Guid deviceId, DateTime startTime, DateTime endTime, CancellationToken cancellationToken)
         {
             DeviceLogEntity deviceLogEntity = new()
@@ -257,6 +264,5 @@ namespace BackBuddy.Api.Service.V1.Device.Services
 
         [GeneratedRegex(NAME_PATTERN)]
         private static partial Regex NameRegex();
-
     }
 }
