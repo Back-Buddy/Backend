@@ -230,22 +230,24 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             _deviceIds.Add(deviceId1);
             await _deviceLib.UpdateDevice(_accessToken, deviceId1, active: true);
 
+            // Verify first device is active
+            JsonObject device1 = await _deviceLib.GetDevice(_accessToken, deviceId1);
+            Assert.IsTrue(device1["active"].GetValue<bool>(), "First device should be active");
+
             // Create second device
             string deviceName2 = "Chair 2";
             Guid deviceId2 = await _deviceLib.CreateSimpleDevice(_accessToken, deviceName2);
             _deviceIds.Add(deviceId2);
 
-            // Act & Assert - Attempt to activate the second device should fail
-            RequestFailedException requestFailedException = await Assert.ThrowsExactlyAsync<RequestFailedException>(
-                async () => await _deviceLib.UpdateDevice(_accessToken, deviceId2, active: true));
-            
-            // Verify that the correct status code is returned
-            Assert.AreEqual(System.Net.HttpStatusCode.Conflict, requestFailedException.ResponseMessage.StatusCode);
-            
-            // Verify that the correct error message is returned
-            string rawContent = await requestFailedException.ResponseMessage.Content.ReadAsStringAsync();
-            JsonArray errorInformation = JsonSerializer.Deserialize<JsonArray>(rawContent);
-            Assert.AreEqual("Device.ActiveConflict", errorInformation[0]["Code"].GetValue<string>());
+            // Act - Activate the second device (should succeed)
+            await _deviceLib.UpdateDevice(_accessToken, deviceId2, active: true);
+
+            // Assert - First device should now be inactive, second device should be active
+            JsonObject device1AfterUpdate = await _deviceLib.GetDevice(_accessToken, deviceId1);
+            Assert.IsFalse(device1AfterUpdate["active"].GetValue<bool>(), "First device should be automatically deactivated");
+
+            JsonObject device2 = await _deviceLib.GetDevice(_accessToken, deviceId2);
+            Assert.IsTrue(device2["active"].GetValue<bool>(), "Second device should be active");
         }
     }
 }

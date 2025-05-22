@@ -127,13 +127,9 @@ namespace BackBuddy.Api.Service.V1.Device.Services
             {
                 if (request.Active.Value)
                 {
-                    bool hasActiveDevice = await _repository.HasActiveDevices(userId, cancellationToken);
-                    if (hasActiveDevice)
-                    {
-                        throw new DeviceActiveConflictException();
-                    }
+                    await _repository.DeactivateAllDevices(userId, deviceId, cancellationToken);
                 }
-
+                
                 device.Active = request.Active.Value;
                 isDirty = true;
             }

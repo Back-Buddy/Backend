@@ -15,6 +15,7 @@ namespace BackBuddy.Api.Service.V1.Device.Repositories
         Task<Page<List<DeviceEntity>>> GetAll(string userId, PageRequestDto page, CancellationToken cancellationToken = default);
         Task<bool> IsNameUnique(string userId, string name, CancellationToken cancellationToken = default);
         Task<bool> HasActiveDevices(string userId, CancellationToken cancellationToken = default);
+        Task DeactivateAllDevices(string userId, Guid excludeDeviceId, CancellationToken cancellationToken = default);
     }
 
     public class DeviceRepository(IMongoCollection<DeviceEntity> collection) : IDeviceRepository
@@ -83,6 +84,31 @@ namespace BackBuddy.Api.Service.V1.Device.Repositories
                 );
             IAsyncCursor<DeviceEntity> cursor = await collection.FindAsync(filter, cancellationToken: cancellationToken);
             return await cursor.AnyAsync(cancellationToken);
+        }
+
+        public async Task DeactivateAllDevices(string userId, Guid excludeDeviceId, CancellationToken cancellationToken = default)
+        {
+            var activeDevices = await GetActiveDevices(userId, excludeDeviceId, cancellationToken);
+
+            foreach (var device in activeDevices)
+            {
+                device.Active = false;
+                await collection.ReplaceOneAsync(
+                    d => d.Id == device.Id, 
+                    device);
+            }
+        }
+        
+        private async Task<List<DeviceEntity>> GetActiveDevices(string userId, Guid excludeDeviceId, CancellationToken cancellationToken = default)
+        {
+            FilterDefinition<DeviceEntity> filter = Builders<DeviceEntity>.Filter
+                .And(
+                    Builders<DeviceEntity>.Filter.Eq(x => x.UserId, userId),
+                    Builders<DeviceEntity>.Filter.Ne(x => x.Id, excludeDeviceId),
+                    Builders<DeviceEntity>.Filter.Eq(x => x.Active, true)
+                );
+            
+            return await collection.Find(filter).ToListAsync(cancellationToken);
         }
     }
 }
