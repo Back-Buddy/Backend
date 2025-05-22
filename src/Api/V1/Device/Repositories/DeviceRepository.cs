@@ -37,15 +37,18 @@ namespace BackBuddy.Api.Service.V1.Device.Repositories
 
         public async Task<Page<List<DeviceEntity>>> GetAll(string userId, PageRequestDto page, CancellationToken cancellationToken = default)
         {
-            FilterDefinition<DeviceEntity> filter = Builders<DeviceEntity>.Filter
-                .Eq(x => x.UserId, userId);
+            List<FilterDefinition<DeviceEntity>> filters = [];
+            filters.Add(Builders<DeviceEntity>.Filter.Eq(x => x.UserId, userId));
+
+            FilterDefinition<DeviceEntity> finalFilter = Builders<DeviceEntity>.Filter.And(filters);
+
             FindOptions<DeviceEntity> findOptions = new()
             {
                 Limit = page.Size,
                 Skip = page.Offset()
             };
-            IAsyncCursor<DeviceEntity> cursor = await collection.FindAsync(filter, findOptions, cancellationToken: cancellationToken);
-            long total = await collection.CountDocumentsAsync(filter, cancellationToken: cancellationToken);
+            IAsyncCursor<DeviceEntity> cursor = await collection.FindAsync(finalFilter, findOptions, cancellationToken: cancellationToken);
+            long total = await collection.CountDocumentsAsync(finalFilter, cancellationToken: cancellationToken);
 
             List<DeviceEntity> deviceEntities = await cursor.ToListAsync(cancellationToken);
             bool hasMoreEntries = total > (page.Offset() + deviceEntities.Count);

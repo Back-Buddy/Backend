@@ -1,12 +1,11 @@
 ﻿using BackBuddy.Api.Service.V1.Device.DTOs;
 using BackBuddy.Api.Service.V1.Device.Entities;
-using BackBuddy.Api.Service.V1.WebSockets.Services;
 
 namespace BackBuddy.Api.Service.V1.Device.Mapper
 {
     public static class DeviceMapper
     {
-        public async static Task<DeviceDto> ToDto(this DeviceEntity entity, IWebSocketService webSocketService)
+        public async static Task<DeviceDto> ToDto(this DeviceEntity entity, Func<Guid, Task<bool>> onlineFunc)
         {
             return new DeviceDto()
             {
@@ -14,7 +13,7 @@ namespace BackBuddy.Api.Service.V1.Device.Mapper
                 Name = entity.Name,
                 Threshold = entity.Threshold,
                 Active = entity.Active,
-                Online = await webSocketService.IsDeviceConnected(entity.Id),
+                Online = await onlineFunc.Invoke(entity.Id),
             };
         }
 
@@ -34,12 +33,12 @@ namespace BackBuddy.Api.Service.V1.Device.Mapper
             return [.. entities.Select(e => e.ToDto())];
         }
 
-        public async static Task<List<DeviceDto>> ToDto(this IEnumerable<DeviceEntity> entities, IWebSocketService webSocketService)
+        public async static Task<List<DeviceDto>> ToDto(this IEnumerable<DeviceEntity> entities, Func<Guid, Task<bool>> onlineFunc)
         {
             List<DeviceDto> dtos = [];
             foreach (DeviceEntity entity in entities)
             {
-                dtos.Add(await entity.ToDto(webSocketService));
+                dtos.Add(await entity.ToDto(onlineFunc));
             }
             return dtos;
         }
