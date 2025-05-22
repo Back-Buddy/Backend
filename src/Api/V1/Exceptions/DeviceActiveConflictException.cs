@@ -1,6 +1,4 @@
-using BackBuddy.Api.Service.V1.Exceptions;
-
-namespace BackBuddy.Api.Service.V1.Device.Exceptions
+namespace BackBuddy.Api.Service.V1.Exceptions
 {
     public class DeviceActiveConflictException : AbstractBaseException
     {
