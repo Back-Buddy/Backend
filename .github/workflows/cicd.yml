@@ -60,14 +60,15 @@ jobs:
 
       - name: Tag Docker Images
         run: |
-          IMAGE=${{ vars.ACR_URL }}/backbuddy_api:latest
+          IMAGE=${{ vars.ACR_URL }}/backbuddy/api:latest
           VERSION=${{ vars.MAJOR_VERSION }}.${{ vars.MINOR_VERSION }}.${{ github.run_number }}
           
           docker tag $IMAGE $IMAGE:$VERSION
 
       - name: Save Docker Images
         run: |
-          docker save -o backbuddy_api.tar ${{ vars.ACR_URL }}/backbuddy_api
+          IMAGE=${{ vars.ACR_URL }}/backbuddy/api:latest
+          docker save -o backbuddy_api.tar $IMAGE
 
       - name: Upload Api Docker Image
         uses: actions/upload-artifact@v4
