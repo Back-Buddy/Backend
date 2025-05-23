@@ -63,7 +63,7 @@ jobs:
           IMAGE=${{ vars.ACR_URL }}/backbuddy/api:latest
           VERSION=${{ vars.MAJOR_VERSION }}.${{ vars.MINOR_VERSION }}.${{ github.run_number }}
           
-          docker tag $IMAGE $IMAGE:$VERSION
+          docker tag $IMAGE $VERSION
 
       - name: Save Docker Images
         run: |
