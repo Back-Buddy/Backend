@@ -136,10 +136,19 @@ jobs:
         run: |
           docker load -i backbuddy_api.tar
 
-      - name: Push Docker Images
+      - name: Push latest Docker Images
         working-directory: "${{ github.workspace }}/src/"
         env:
           DOCKER_BUILDKIT: 1
           DOCKER_REGISTRY: ${{ vars.ACR_URL }}/
+        run: |
+          docker compose -f docker-compose.yml push
+
+      - name: Push Docker Images with Version
+        working-directory: "${{ github.workspace }}/src/"
+        env:
+          DOCKER_BUILDKIT: 1
+          DOCKER_REGISTRY: ${{ vars.ACR_URL }}/
+          TAG: ${{ vars.MAJOR_VERSION }}.${{ vars.MINOR_VERSION }}.${{ github.run_number }}
         run: |
           docker compose -f docker-compose.yml push
