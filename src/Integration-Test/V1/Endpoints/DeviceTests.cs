@@ -254,45 +254,34 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
         public async Task Test_GetDevices_FilteredByActive()
         {
             // Arrange
-            List<Guid> activeDeviceIds = new();
-            List<Guid> inactiveDeviceIds = new();
+            List<Guid> deviceIds = new();
             
-            // Create active devices
-            for (int i = 0; i < 3; i++)
-            {
-                Guid deviceId = await _deviceLib.CreateSimpleDevice(_accessToken, $"Active Chair {i + 1}");
-                await _deviceLib.UpdateDevice(_accessToken, deviceId, active: true);
-                activeDeviceIds.Add(deviceId);
-                _deviceIds.Add(deviceId);
-            }
-            
-            // Create inactive devices
+            // Create 2 devices, with the second one becoming active
             for (int i = 0; i < 2; i++)
             {
-                Guid deviceId = await _deviceLib.CreateSimpleDevice(_accessToken, $"Inactive Chair {i + 1}");
-                inactiveDeviceIds.Add(deviceId);
+                Guid deviceId = await _deviceLib.CreateSimpleDevice(_accessToken, $"Chair {i + 1}");
+                deviceIds.Add(deviceId);
                 _deviceIds.Add(deviceId);
             }
-
+            
+            // Activate the second device (the first will be automatically deactivated)
+            await _deviceLib.UpdateDevice(_accessToken, deviceIds[1], active: true);
+            
             // Act & Assert - Get active devices
             (JsonArray activeDevices, _) = await _deviceLib.GetDevices(_accessToken, page: 0, active: true);
-            Assert.AreEqual(3, activeDevices.Count);
-            foreach (var device in activeDevices)
-            {
-                Assert.IsTrue(device.AsObject()["active"].GetValue<bool>(), "All devices should be active");
-            }
+            Assert.AreEqual(1, activeDevices.Count, "Only one device should be active");
+            Assert.IsTrue(activeDevices[0].AsObject()["active"].GetValue<bool>(), "The device should be active");
+            Assert.AreEqual("Chair 2", activeDevices[0].AsObject()["name"].GetValue<string>(), "The second created device should be active");
             
             // Act & Assert - Get inactive devices
             (JsonArray inactiveDevices, _) = await _deviceLib.GetDevices(_accessToken, page: 0, active: false);
-            Assert.AreEqual(2, inactiveDevices.Count);
-            foreach (var device in inactiveDevices)
-            {
-                Assert.IsFalse(device.AsObject()["active"].GetValue<bool>(), "All devices should be inactive");
-            }
+            Assert.AreEqual(1, inactiveDevices.Count, "One device should be inactive");
+            Assert.IsFalse(inactiveDevices[0].AsObject()["active"].GetValue<bool>(), "The device should be inactive");
+            Assert.AreEqual("Chair 1", inactiveDevices[0].AsObject()["name"].GetValue<string>(), "The first created device should be inactive");
             
             // Act & Assert - Get all devices
             (JsonArray allDevices, _) = await _deviceLib.GetDevices(_accessToken, page: 0);
-            Assert.AreEqual(5, allDevices.Count, "Should get all devices when no active filter is specified");
+            Assert.AreEqual(2, allDevices.Count, "Should return all devices when no active filter is specified");
         }
     }
 }
