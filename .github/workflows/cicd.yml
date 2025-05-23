@@ -53,16 +53,16 @@ jobs:
         working-directory: "${{ github.workspace }}/src/"
         env:
           DOCKER_BUILDKIT: 1
+          DOCKER_REGISTRY: ${{ vars.ACR_URL }}/
         run: |
           docker compose -f docker-compose.yml build \
             --build-arg ${DOCKER_FILE_ARGS:-""}
 
       - name: Tag Docker Images
         run: |
-          IMAGE=${{ vars.ACR_URL }}/backbuddy_api
+          IMAGE=${{ vars.ACR_URL }}/backbuddy_api:latest
           VERSION=${{ vars.MAJOR_VERSION }}.${{ vars.MINOR_VERSION }}.${{ github.run_number }}
           
-          docker tag $IMAGE $IMAGE:latest
           docker tag $IMAGE $IMAGE:$VERSION
 
       - name: Save Docker Images
