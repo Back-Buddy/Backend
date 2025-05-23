@@ -54,7 +54,7 @@ jobs:
         env:
           DOCKER_BUILDKIT: 1
         run: |
-          docker-compose -f docker-compose.yml build \
+          docker compose -f docker-compose.yml build \
             --build-arg ${DOCKER_FILE_ARGS:-""}
 
       - name: Tag Docker Images
