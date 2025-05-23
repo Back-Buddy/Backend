@@ -82,7 +82,6 @@ jobs:
     name: Integration Test
     runs-on: ubuntu-latest
     needs: [build, build_docker_artifacts]
-    if: github.event_name == 'pull_request' #TODO: Remove this after testing
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -109,7 +108,7 @@ jobs:
   deploy_docker_artifacts:
     name: Deploy Docker Artifacts
     runs-on: ubuntu-latest
-    needs: [build, build_docker_artifacts] #TODO: Add Integration Test after testing
+    needs: [build, build_docker_artifacts, integration]
     if: github.event_name != 'pull_request'
     steps:
       - name: Checkout
@@ -152,3 +151,35 @@ jobs:
           TAG: ${{ vars.MAJOR_VERSION }}.${{ vars.MINOR_VERSION }}.${{ github.run_number }}
         run: |
           docker compose -f docker-compose.yml push
+
+  deploy_2container_app:
+    name: Deploy to Container App
+    runs-on: ubuntu-latest
+    needs: [build, build_docker_artifacts, integration, deploy_docker_artifacts]
+    if: github.event_name != 'pull_request'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Deploy Api image to Container App
+        uses: azure/container-apps-deploy-action@v1
+        with:
+          imageToDeploy: ${{ vars.ACR_URL }}/backbuddy/api:latest
+          resourceGroup: ${{ vars.RESOURCE_GROUP }}
+          containerAppName: ${{ vars.CONTAINER_APP_NAME }}
+          environmentVariables: |
+            ASPNETCORE_ENVIRONMENT=Production
+            ASPNETCORE_HTTP_PORTS=8080
+            Auth__Authority={{ vars.AUTHORITY }}
+            Auth__ValidIssuer={{ vars.VALID_ISSUER }}
+            Auth__ValidAudience={{ vars.VALID_AUDIENCE }}
+            MongoDB__Connection=secretref:{{ secrets.MONGODB_CONNECTION }}
+            MongoDB__DatabaseName={{ vars.MONGODB_DATABASE_NAME }}
+            Redis__Connection=secretref:{{ secrets.REDIS_CONNECTION }}
+            Redis__DatabaseName={{ vars.REDIS_DATABASE_NAME }}
+            KEY_VAULT_URI={{ vars.KEY_VAULT_URI }}
+            AZURE_CLIENT_ID=secretref:{{ secrets.AZURE_CLIENT_ID }}
+            AZURE_CLIENT_SECRET=secretref:{{ secrets.AZURE_CLIENT_SECRET }}
+            AZURE_TENANT_ID=secretref:{{ secrets.AZURE_TENANT_ID }}
