@@ -91,7 +91,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
 
         public async Task<Page<List<DeviceDto>>> GetAll(string userId, PageRequestDto page, DeviceQueryDto query, CancellationToken cancellationToken = default)
         {
-            Page<List<DeviceEntity>> devices = await _repository.GetAll(userId, page, query.Active, cancellationToken);
+            Page<List<DeviceEntity>> devices = await _repository.GetAll(userId, page, query, cancellationToken);
             List<DeviceDto> deviceDtos = await devices.Items.ToDto(IsDeviceConnected);
 
             Page<List<DeviceDto>> deviceDtosPage = new()
