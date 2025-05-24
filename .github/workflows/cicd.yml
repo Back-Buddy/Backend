@@ -175,4 +175,3 @@ jobs:
           imageToDeploy: ${{ vars.ACR_URL }}/backbuddy/api:latest
           resourceGroup: ${{ vars.RESOURCE_GROUP }}
           containerAppName: ${{ vars.CONTAINER_APP_NAME }}
-          environmentVariables: "ASPNETCORE_ENVIRONMENT=Production ASPNETCORE_HTTP_PORTS=8080 Auth__Authority=${{ vars.AUTHORITY }} Auth__ValidIssuer=${{ vars.VALID_ISSUER }} Auth__ValidAudience=${{ vars.VALID_AUDIENCE }} MongoDB__Connection=${{ secrets.MONGODB_CONNECTION }} MongoDB__DatabaseName=${{ vars.MONGODB_DATABASE_NAME }} Redis__Connection=${{ secrets.REDIS_CONNECTION }} Redis__DatabaseName=${{ vars.REDIS_DATABASE_NAME }} KEY_VAULT_URI=${{ vars.KEY_VAULT_URI }} AZURE_CLIENT_ID=${{ secrets.KEY_VAULT_AZURE_CLIENT_ID }} AZURE_CLIENT_SECRET=${{ secrets.KEY_VAULT_AZURE_CLIENT_SECRET }} AZURE_TENANT_ID=${{ secrets.KEY_VAULT_AZURE_TENANT_ID }}"
