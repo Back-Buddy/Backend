@@ -28,6 +28,12 @@ namespace BackBuddy.Api.Service.V1.Device.Controllers
             return Ok(devices.Items);
         }
 
+        [HttpGet("test")] //TODO: Remove this endpoint in production
+        public IActionResult TestEndpoint()
+        {
+            return Ok("Test endpoint is working!");
+        }
+
         [HttpPost]
         [ProducesResponseType(typeof(DeviceSecretDto), StatusCodes.Status201Created)]
         public async Task<IActionResult> CreateDevice([FromBody] DeviceCreateRequestDto request)
