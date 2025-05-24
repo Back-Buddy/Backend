@@ -268,19 +268,19 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             await _deviceLib.UpdateDevice(_accessToken, deviceIds[1], active: true);
             
             // Act & Assert - Get active devices
-            (JsonArray activeDevices, _) = await _deviceLib.GetDevices(_accessToken, page: 0, active: true);
+            (JsonArray activeDevices, _) = await _deviceLib.GetDevices(_accessToken, active: true);
             Assert.AreEqual(1, activeDevices.Count, "Only one device should be active");
             Assert.IsTrue(activeDevices[0].AsObject()["active"].GetValue<bool>(), "The device should be active");
             Assert.AreEqual("Chair 2", activeDevices[0].AsObject()["name"].GetValue<string>(), "The second created device should be active");
             
             // Act & Assert - Get inactive devices
-            (JsonArray inactiveDevices, _) = await _deviceLib.GetDevices(_accessToken, page: 0, active: false);
+            (JsonArray inactiveDevices, _) = await _deviceLib.GetDevices(_accessToken, active: false);
             Assert.AreEqual(1, inactiveDevices.Count, "One device should be inactive");
             Assert.IsFalse(inactiveDevices[0].AsObject()["active"].GetValue<bool>(), "The device should be inactive");
             Assert.AreEqual("Chair 1", inactiveDevices[0].AsObject()["name"].GetValue<string>(), "The first created device should be inactive");
             
             // Act & Assert - Get all devices
-            (JsonArray allDevices, _) = await _deviceLib.GetDevices(_accessToken, page: 0);
+            (JsonArray allDevices, _) = await _deviceLib.GetDevices(_accessToken);
             Assert.AreEqual(2, allDevices.Count, "Should return all devices when no active filter is specified");
         }
     }
