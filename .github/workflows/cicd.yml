@@ -2,7 +2,7 @@ name: CI/CD
 
 on:
   push:
-    branches: ["main", "cidcd_pipeline"]
+    branches: ["main"]
   pull_request:
     branches: ["main"]
 
