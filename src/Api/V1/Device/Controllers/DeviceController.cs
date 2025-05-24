@@ -28,7 +28,7 @@ namespace BackBuddy.Api.Service.V1.Device.Controllers
             return Ok(devices.Items);
         }
 
-        [HttpGet("test")] //TODO: Remove this endpoint in production
+        [HttpGet("test2")] //TODO: Remove this endpoint in production
         public IActionResult TestEndpoint()
         {
             return Ok("Test endpoint is working!");
