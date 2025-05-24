@@ -88,6 +88,15 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Download Api Docker Image
+        uses: actions/download-artifact@v4
+        with:
+          name: backbuddy_api
+
+      - name: Load Docker Image
+        run: |
+          docker load -i backbuddy_api.tar
+
       - name: Run Services
         uses: hoverkraft-tech/compose-action@v2.0.2
         with:
