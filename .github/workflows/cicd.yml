@@ -102,6 +102,8 @@ jobs:
         with:
           cwd: "${{ github.workspace }}/src/"
           compose-file: "docker-compose.override.yml"
+        env:
+          DOCKER_REGISTRY: ${{ vars.ACR_URL }}/
 
       - name: Install .NET Core
         uses: actions/setup-dotnet@v4
