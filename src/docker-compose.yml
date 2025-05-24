@@ -2,6 +2,7 @@ name: 'backbuddy'
 
 services:
   api:
+    image: ${DOCKER_REGISTRY-}backbuddy/api:${TAG:-latest}
     build:
       context: .
       dockerfile: Api/Dockerfile
