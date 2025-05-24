@@ -175,7 +175,7 @@ jobs:
           imageToDeploy: ${{ vars.ACR_URL }}/backbuddy/api:latest
           resourceGroup: ${{ vars.RESOURCE_GROUP }}
           containerAppName: ${{ vars.CONTAINER_APP_NAME }}
-          environmentVariables: |
+          environmentVariables: >
             ASPNETCORE_ENVIRONMENT=Production
             ASPNETCORE_HTTP_PORTS=8080
             Auth__Authority=${{ vars.AUTHORITY }}
