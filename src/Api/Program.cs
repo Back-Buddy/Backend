@@ -48,7 +48,8 @@ builder.Services
     .AddMongoDB(mongoConfig.Connection, mongoConfig.DatabaseName)
     .Connect()
     .AddCollection<DeviceEntity>(nameof(DeviceEntity))
-    .AddCollection<DeviceLogEntity>(nameof(DeviceLogEntity));
+    .AddCollection<DeviceLogEntity>(nameof(DeviceLogEntity))
+    .AddCollection<ReportEntity>(nameof(ReportEntity));
 #endregion
 
 #region Redis
@@ -61,13 +62,16 @@ builder.Services.AddStackExchangeRedisCache(options =>
     options.InstanceName = redisConfig.DatabaseName;
 });
 #endregion
-builder.Services.AddScoped<IDeviceLogRepository, DeviceLogRepository>();
 builder.Services.AddScoped<IDeviceStatusRepository, DeviceStatusRepository>();
+
+builder.Services.AddScoped<IDeviceLogService, DeviceLogService>();
+builder.Services.AddScoped<IDeviceLogRepository, DeviceLogRepository>();
 
 builder.Services.AddScoped<IDeviceRepository, DeviceRepository>();
 builder.Services.AddScoped<IDeviceService, DeviceService>();
 
-builder.Services.AddScoped<IDeviceLogService, DeviceLogService>();
+builder.Services.AddScoped<IReportRepository, ReportRepository>();
+builder.Services.AddScoped<IReportService, ReportService>();
 
 builder.Services.AddSingleton<IConnectionService, ConnectionService>();
 builder.Services.AddScoped<IWebSocketService, WebSocketService>();
