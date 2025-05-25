@@ -86,9 +86,13 @@ namespace BackBuddy.Integration_Test.V1.Libs
             return secretObj;
         }
 
-        public async Task<(JsonArray, bool)> GetDevices(string accessToken, int page = 0, int size = 10)
+        public async Task<(JsonArray, bool)> GetDevices(string accessToken, int page = 1, int size = 10, bool? active = null)
         {
-            HttpRequestMessage requestMessage = new(HttpMethod.Get, $"/api/v1/device?page={page}&size={size}");
+            string query = $"/api/v1/device?page={page}&size={size}";
+            if (active.HasValue)
+                query += $"&active={active.Value}";
+                
+            HttpRequestMessage requestMessage = new(HttpMethod.Get, query);
             requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
             HttpResponseMessage responseMessage = await _httpClient.SendAsync(requestMessage);

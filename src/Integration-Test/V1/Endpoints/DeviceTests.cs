@@ -230,22 +230,58 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             _deviceIds.Add(deviceId1);
             await _deviceLib.UpdateDevice(_accessToken, deviceId1, active: true);
 
+            // Verify first device is active
+            JsonObject device1 = await _deviceLib.GetDevice(_accessToken, deviceId1);
+            Assert.IsTrue(device1["active"].GetValue<bool>(), "First device should be active");
+
             // Create second device
             string deviceName2 = "Chair 2";
             Guid deviceId2 = await _deviceLib.CreateSimpleDevice(_accessToken, deviceName2);
             _deviceIds.Add(deviceId2);
 
-            // Act & Assert - Attempt to activate the second device should fail
-            RequestFailedException requestFailedException = await Assert.ThrowsExactlyAsync<RequestFailedException>(
-                async () => await _deviceLib.UpdateDevice(_accessToken, deviceId2, active: true));
+            // Act - Activate the second device (should succeed)
+            await _deviceLib.UpdateDevice(_accessToken, deviceId2, active: true);
+
+            // Assert - First device should now be inactive, second device should be active
+            JsonObject device1AfterUpdate = await _deviceLib.GetDevice(_accessToken, deviceId1);
+            Assert.IsFalse(device1AfterUpdate["active"].GetValue<bool>(), "First device should be automatically deactivated");
+
+            JsonObject device2 = await _deviceLib.GetDevice(_accessToken, deviceId2);
+            Assert.IsTrue(device2["active"].GetValue<bool>(), "Second device should be active");
+        }
+
+        [TestMethod]
+        public async Task Test_GetDevices_FilteredByActive()
+        {
+            // Arrange
+            List<Guid> deviceIds = new();
             
-            // Verify that the correct status code is returned
-            Assert.AreEqual(System.Net.HttpStatusCode.Conflict, requestFailedException.ResponseMessage.StatusCode);
+            // Create 2 devices, with the second one becoming active
+            for (int i = 0; i < 2; i++)
+            {
+                Guid deviceId = await _deviceLib.CreateSimpleDevice(_accessToken, $"Chair {i + 1}");
+                deviceIds.Add(deviceId);
+                _deviceIds.Add(deviceId);
+            }
             
-            // Verify that the correct error message is returned
-            string rawContent = await requestFailedException.ResponseMessage.Content.ReadAsStringAsync();
-            JsonArray errorInformation = JsonSerializer.Deserialize<JsonArray>(rawContent);
-            Assert.AreEqual("Device.ActiveConflict", errorInformation[0]["Code"].GetValue<string>());
+            // Activate the second device (the first will be automatically deactivated)
+            await _deviceLib.UpdateDevice(_accessToken, deviceIds[1], active: true);
+            
+            // Act & Assert - Get active devices
+            (JsonArray activeDevices, _) = await _deviceLib.GetDevices(_accessToken, active: true);
+            Assert.AreEqual(1, activeDevices.Count, "Only one device should be active");
+            Assert.IsTrue(activeDevices[0].AsObject()["active"].GetValue<bool>(), "The device should be active");
+            Assert.AreEqual("Chair 2", activeDevices[0].AsObject()["name"].GetValue<string>(), "The second created device should be active");
+            
+            // Act & Assert - Get inactive devices
+            (JsonArray inactiveDevices, _) = await _deviceLib.GetDevices(_accessToken, active: false);
+            Assert.AreEqual(1, inactiveDevices.Count, "One device should be inactive");
+            Assert.IsFalse(inactiveDevices[0].AsObject()["active"].GetValue<bool>(), "The device should be inactive");
+            Assert.AreEqual("Chair 1", inactiveDevices[0].AsObject()["name"].GetValue<string>(), "The first created device should be inactive");
+            
+            // Act & Assert - Get all devices
+            (JsonArray allDevices, _) = await _deviceLib.GetDevices(_accessToken);
+            Assert.AreEqual(2, allDevices.Count, "Should return all devices when no active filter is specified");
         }
     }
 }

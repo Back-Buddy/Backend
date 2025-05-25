@@ -1,5 +1,6 @@
 ﻿using BackBuddy.Api.Service.V1.Device.Entities;
 using BackBuddy.Api.Service.V1.Utilities;
+using BackBuddy.Api.Service.V1.Device.DTOs.Http;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using System.Text.RegularExpressions;
@@ -12,9 +13,10 @@ namespace BackBuddy.Api.Service.V1.Device.Repositories
         Task Update(DeviceEntity entity, CancellationToken cancellationToken = default);
         Task Delete(Guid id, CancellationToken cancellationToken = default);
         Task<DeviceEntity?> Get(Guid id, CancellationToken cancellationToken = default);
-        Task<Page<List<DeviceEntity>>> GetAll(string userId, PageRequestDto page, CancellationToken cancellationToken = default);
+        Task<Page<List<DeviceEntity>>> GetAll(string userId, PageRequestDto page, DeviceQueryDto query, CancellationToken cancellationToken = default);
         Task<bool> IsNameUnique(string userId, string name, CancellationToken cancellationToken = default);
         Task<bool> HasActiveDevices(string userId, CancellationToken cancellationToken = default);
+        Task DeactivateAllDevices(string userId, Guid excludeDeviceId, CancellationToken cancellationToken = default);
     }
 
     public class DeviceRepository(IMongoCollection<DeviceEntity> collection) : IDeviceRepository
@@ -35,10 +37,13 @@ namespace BackBuddy.Api.Service.V1.Device.Repositories
             return await cursor.FirstOrDefaultAsync(cancellationToken);
         }
 
-        public async Task<Page<List<DeviceEntity>>> GetAll(string userId, PageRequestDto page, CancellationToken cancellationToken = default)
+        public async Task<Page<List<DeviceEntity>>> GetAll(string userId, PageRequestDto page, DeviceQueryDto query, CancellationToken cancellationToken = default)
         {
             List<FilterDefinition<DeviceEntity>> filters = [];
             filters.Add(Builders<DeviceEntity>.Filter.Eq(x => x.UserId, userId));
+            
+            if (query.Active.HasValue)
+                filters.Add(Builders<DeviceEntity>.Filter.Eq(x => x.Active, query.Active.Value));
 
             FilterDefinition<DeviceEntity> finalFilter = Builders<DeviceEntity>.Filter.And(filters);
 
@@ -86,6 +91,34 @@ namespace BackBuddy.Api.Service.V1.Device.Repositories
                 );
             IAsyncCursor<DeviceEntity> cursor = await collection.FindAsync(filter, cancellationToken: cancellationToken);
             return await cursor.AnyAsync(cancellationToken);
+        }
+
+        public async Task DeactivateAllDevices(string userId, Guid excludeDeviceId, CancellationToken cancellationToken = default)
+        {
+            List<DeviceEntity> activeDevices = await GetActiveDevices(userId, excludeDeviceId, cancellationToken);
+
+            IEnumerable<Task<ReplaceOneResult>> tasks = activeDevices.Select(device => 
+            {
+                device.Active = false;
+                return collection.ReplaceOneAsync(
+                    d => d.Id == device.Id, 
+                    device, 
+                    cancellationToken: cancellationToken);
+            });
+
+            await Task.WhenAll(tasks);
+        }
+        
+        private async Task<List<DeviceEntity>> GetActiveDevices(string userId, Guid excludeDeviceId, CancellationToken cancellationToken = default)
+        {
+            FilterDefinition<DeviceEntity> filter = Builders<DeviceEntity>.Filter
+                .And(
+                    Builders<DeviceEntity>.Filter.Eq(x => x.UserId, userId),
+                    Builders<DeviceEntity>.Filter.Ne(x => x.Id, excludeDeviceId),
+                    Builders<DeviceEntity>.Filter.Eq(x => x.Active, true)
+                );
+            
+            return await collection.Find(filter).ToListAsync(cancellationToken);
         }
     }
 }
