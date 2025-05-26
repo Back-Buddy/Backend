@@ -100,20 +100,17 @@ app.UseSwaggerUI();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapControllers()
-    .RequireAuthorization();
-
 app.UseWebSockets(new WebSocketOptions
 {
     KeepAliveInterval = TimeSpan.FromSeconds(5)
 });
 
+app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()); //TODO: Remove this after presentation
+
+app.MapControllers()
+    .RequireAuthorization();
+
 app.UseExceptionHandler();
 app.UseMiddleware<CustomWebSocketMiddleware>();
-
-if (app.Environment.IsDevelopment())
-{
-    app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
-}
 
 await app.RunAsync();
