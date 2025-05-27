@@ -39,6 +39,7 @@ namespace BackBuddy.Integration_Test.Extensions
                 if (response["MessageType"].GetValue<string>().Equals(messageType, StringComparison.InvariantCultureIgnoreCase))
                     return response;
                 attempts++;
+                Console.WriteLine($"Received message of type '{response["MessageType"].GetValue<string>()}', expected '{messageType}'. Attempt {attempts}/{maxAttempts}.");
             } while (maxAttempts > attempts && !cancellationToken.IsCancellationRequested);
 
             throw new PollFailedException();
