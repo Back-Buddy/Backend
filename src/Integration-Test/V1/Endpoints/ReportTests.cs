@@ -208,19 +208,19 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             string secret = device["secret"].GetValue<string>();
             _deviceIds.Add(deviceId);
 
-            await _reportLib.CreateSampleReports(_webSocketUri, secret, _accessToken, deviceId, 11, TimeSpan.FromSeconds(1));
+            await _reportLib.CreateSampleReports(_webSocketUri, secret, _accessToken, deviceId, 8, TimeSpan.FromSeconds(2));
 
             // Act & Assert
-            (JsonArray result, bool hasMoreResults) = await _reportLib.GetReports(_accessToken, [deviceId], pageSize: 5, page: 1);
-            Assert.AreEqual(5, result.Count);
+            (JsonArray result, bool hasMoreResults) = await _reportLib.GetReports(_accessToken, [deviceId], pageSize: 3, page: 1);
+            Assert.AreEqual(3, result.Count);
             Assert.IsTrue(hasMoreResults, "There should be more results available");
 
-            (JsonArray nextPageResult, bool hasMoreNextPageResults) = await _reportLib.GetReports(_accessToken, [deviceId], pageSize: 5, page: 2);
-            Assert.AreEqual(5, nextPageResult.Count);
+            (JsonArray nextPageResult, bool hasMoreNextPageResults) = await _reportLib.GetReports(_accessToken, [deviceId], pageSize: 3, page: 2);
+            Assert.AreEqual(3, nextPageResult.Count);
             Assert.IsTrue(hasMoreNextPageResults, "There should be more results available");
 
-            (JsonArray lastPageResult, bool hasMoreLastPageResults) = await _reportLib.GetReports(_accessToken, [deviceId], pageSize: 5, page: 3);
-            Assert.AreEqual(1, lastPageResult.Count);
+            (JsonArray lastPageResult, bool hasMoreLastPageResults) = await _reportLib.GetReports(_accessToken, [deviceId], pageSize: 3, page: 3);
+            Assert.AreEqual(2, lastPageResult.Count);
             Assert.IsFalse(hasMoreLastPageResults, "There should not be more results available on the last page");
         }
 
@@ -312,8 +312,8 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
 
             List<Task> tasks =
                 [
-                _reportLib.CreateSampleReports(_webSocketUri, secret, _accessToken, deviceId, 5, TimeSpan.FromSeconds(1)),
-                _reportLib.CreateSampleReports(_webSocketUri, secret2, _accessToken, device2Id, 6, TimeSpan.FromSeconds(1))
+                _reportLib.CreateSampleReports(_webSocketUri, secret, _accessToken, deviceId, 5, TimeSpan.FromSeconds(2)),
+                _reportLib.CreateSampleReports(_webSocketUri, secret2, _accessToken, device2Id, 6, TimeSpan.FromSeconds(2))
                 ];
             await Task.WhenAll(tasks);
 
