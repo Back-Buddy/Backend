@@ -10,7 +10,6 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
     public class ReportTests
     {
         private static DeviceLib _deviceLib;
-        private static DeviceLogLib _deviceLogLib;
         private static ReportLib _reportLib;
         private static string _accessToken;
         private static string _userId;
@@ -28,7 +27,6 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             Uri baseUri = new(Environment.GetEnvironmentVariable("E2E_BASE_URI") ?? "http://localhost:8080/");
 
             _deviceLib = new DeviceLib(baseUri.ToString());
-            _deviceLogLib = new DeviceLogLib(baseUri.ToString());
             _reportLib = new ReportLib(baseUri.ToString());
 
             if (_accessToken == null)
@@ -52,6 +50,11 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
 
         [TestCleanup]
         public async Task TestCleanup()
+        {
+            await CleanUpDevices();
+        }
+
+        private async Task CleanUpDevices()
         {
             foreach (Guid deviceId in _deviceIds)
             {
@@ -112,7 +115,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             Assert.IsTrue(report.ContainsKey("id"));
             Assert.AreEqual(deviceId, Guid.Parse(report["deviceId"].GetValue<string>()));
 
-            Assert.AreEqual(0, report["usedLogs"].AsArray().Count);
+            Assert.IsEmpty(report["usedLogs"].AsArray());
         }
 
         [TestMethod]
@@ -292,7 +295,11 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
         [TestMethod]
         public async Task Test_GetReports_Device()
         {
-            // Arrange 
+            // Arrange
+
+            // CleanUp previous devices
+            await CleanUpDevices();
+
             JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
             Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
             string secret = device["secret"].GetValue<string>();

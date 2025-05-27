@@ -6,7 +6,6 @@ using BackBuddy.Api.Service.V1.Device.Entities;
 using BackBuddy.Api.Service.V1.Device.Exceptions;
 using BackBuddy.Api.Service.V1.Device.Mapper;
 using BackBuddy.Api.Service.V1.Device.Repositories;
-using BackBuddy.Api.Service.V1.Exceptions;
 using BackBuddy.Api.Service.V1.Utilities;
 using BackBuddy.Api.Service.V1.WebSockets.Services;
 using System.Text.RegularExpressions;
@@ -27,7 +26,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
         Task<bool> IsDeviceConnected(Guid deviceId);
     }
 
-    public partial class DeviceService(IDeviceRepository repository, IDeviceStatusRepository deviceStatusRepository, IDeviceLogRepository deviceLogRepository, ISecretProvider secretProvider, IWebSocketService webSocketService) : IDeviceService
+    public partial class DeviceService(IDeviceRepository repository, IDeviceStatusRepository deviceStatusRepository, IDeviceLogRepository deviceLogRepository, IReportRepository reportRepository, ISecretProvider secretProvider, IWebSocketService webSocketService) : IDeviceService
     {
         private const string NAME_PATTERN = @"^[a-zA-Z0-9 \-]{3,16}$";
         private readonly static TimeSpan SECRET_EXPIRATION_TIME = TimeSpan.FromSeconds(1);
@@ -35,6 +34,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
         private readonly IDeviceRepository _repository = repository;
         private readonly IDeviceStatusRepository _deviceStatusRepository = deviceStatusRepository;
         private readonly IDeviceLogRepository _deviceLogRepository = deviceLogRepository;
+        private readonly IReportRepository _reportRepository = reportRepository;
         private readonly ISecretProvider _secretProvider = secretProvider;
         private readonly IWebSocketService _webSocketService = webSocketService;
 
@@ -76,6 +76,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
                 throw new DeviceUnauthorizedException();
 
             await _secretProvider.DeleteSecret(deviceId.ToString(), cancellationToken);
+            await _reportRepository.DeleteFromDevice(deviceId, cancellationToken);
             await _deviceStatusRepository.DeleteCurrentStatus(deviceId, cancellationToken);
             await _deviceLogRepository.DeleteLogs(deviceId, cancellationToken);
             await _repository.Delete(deviceId, cancellationToken);
@@ -131,7 +132,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
                 {
                     await _repository.DeactivateAllDevices(userId, deviceId, cancellationToken);
                 }
-                
+
                 device.Active = request.Active.Value;
                 isDirty = true;
             }

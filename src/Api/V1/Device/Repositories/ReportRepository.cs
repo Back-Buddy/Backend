@@ -11,6 +11,7 @@ namespace BackBuddy.Api.Service.V1.Device.Repositories
         Task<Page<List<ReportEntity>>> GetAll(string userId, ReportQueryDto query, PageRequestDto page, CancellationToken cancellationToken = default);
         Task Add(ReportEntity entity, CancellationToken cancellationToken = default);
         Task Delete(Guid id, CancellationToken cancellationToken = default);
+        Task DeleteFromDevice(Guid deviceId, CancellationToken cancellationToken = default);
     }
 
     public class ReportRepository(IMongoCollection<ReportEntity> collection) : IReportRepository
@@ -25,6 +26,11 @@ namespace BackBuddy.Api.Service.V1.Device.Repositories
         public async Task Delete(Guid id, CancellationToken cancellationToken = default)
         {
             await _collection.DeleteOneAsync(x => x.Id == id, cancellationToken: cancellationToken);
+        }
+
+        public async Task DeleteFromDevice(Guid deviceId, CancellationToken cancellationToken = default)
+        {
+            await _collection.DeleteManyAsync(x => x.DeviceId == deviceId, cancellationToken: cancellationToken);
         }
 
         public async Task<ReportEntity?> Get(Guid id, CancellationToken cancellationToken = default)
