@@ -1,4 +1,5 @@
-﻿using BackBuddy.Integration_Test.V1.DTOs;
+﻿using BackBuddy.Integration_Test.Exceptions;
+using BackBuddy.Integration_Test.V1.DTOs;
 using BackBuddy.Integration_Test.V1.Libs;
 using System.Globalization;
 using System.Text.Json.Nodes;
@@ -168,6 +169,158 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             Assert.AreEqual(startTime.ToString("f"), getReport["startTime"].GetValue<DateTime>().ToString("f"));
             Assert.AreEqual(endTime.ToString("f"), getReport["endTime"].GetValue<DateTime>().ToString("f"));
             Assert.AreEqual(1, getReport["usedLogs"].AsArray().Count);
+        }
+
+        [TestMethod]
+        public async Task Test_DeleteReport_Success()
+        {
+            // Arrange 
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            string secret = device["secret"].GetValue<string>();
+            _deviceIds.Add(deviceId);
+
+            TimeSpan sitDuration = TimeSpan.FromSeconds(1);
+            await DeviceLogLib.CreateSampleLogs(_webSocketUri, secret, 1, 0, sitDuration);
+
+            DateTime startTime = DateTime.UtcNow.AddSeconds(-10);
+            DateTime endTime = DateTime.UtcNow;
+            JsonObject createdReport = await _reportLib.CreateReport(_accessToken, deviceId, startTime, endTime);
+            Guid reportId = Guid.Parse(createdReport["id"].GetValue<string>());
+
+            // Act
+            await _reportLib.DeleteReport(_accessToken, reportId);
+
+            // Assert
+            RequestFailedException exception = await Assert.ThrowsExactlyAsync<RequestFailedException>(async () => await _reportLib.GetReport(_accessToken, reportId));
+            Assert.AreEqual(System.Net.HttpStatusCode.NotFound, exception.ResponseMessage.StatusCode);
+        }
+
+        [TestMethod]
+        public async Task Test_GetReports_Pagination()
+        {
+            // Arrange 
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            string secret = device["secret"].GetValue<string>();
+            _deviceIds.Add(deviceId);
+
+            await _reportLib.CreateSampleReports(_webSocketUri, secret, _accessToken, deviceId, 11, TimeSpan.FromSeconds(1));
+
+            // Act & Assert
+            (JsonArray result, bool hasMoreResults) = await _reportLib.GetReports(_accessToken, [deviceId], pageSize: 5, page: 1);
+            Assert.AreEqual(5, result.Count);
+            Assert.IsTrue(hasMoreResults, "There should be more results available");
+
+            (JsonArray nextPageResult, bool hasMoreNextPageResults) = await _reportLib.GetReports(_accessToken, [deviceId], pageSize: 5, page: 2);
+            Assert.AreEqual(5, nextPageResult.Count);
+            Assert.IsTrue(hasMoreNextPageResults, "There should be more results available");
+
+            (JsonArray lastPageResult, bool hasMoreLastPageResults) = await _reportLib.GetReports(_accessToken, [deviceId], pageSize: 5, page: 3);
+            Assert.AreEqual(1, lastPageResult.Count);
+            Assert.IsFalse(hasMoreLastPageResults, "There should not be more results available on the last page");
+        }
+
+        [TestMethod]
+        public async Task Test_GetReports_Sorting()
+        {
+            // Arrange 
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            string secret = device["secret"].GetValue<string>();
+            _deviceIds.Add(deviceId);
+
+            await _reportLib.CreateSampleReports(_webSocketUri, secret, _accessToken, deviceId, 5, TimeSpan.FromSeconds(1));
+
+            // Act
+            (JsonArray resultDescending, _) = await _reportLib.GetReports(_accessToken, [deviceId], descending: true, pageSize: 5, page: 1);
+            (JsonArray resultAscending, _) = await _reportLib.GetReports(_accessToken, [deviceId], descending: false, pageSize: 5, page: 1);
+
+            // Assert
+            Assert.AreEqual(5, resultDescending.Count);
+            Assert.AreEqual(5, resultAscending.Count);
+
+            Assert.IsTrue(resultDescending[0]["startTime"].GetValue<DateTime>() >= resultDescending[4]["startTime"].GetValue<DateTime>(), "Descending order failed");
+            Assert.IsTrue(resultAscending[0]["startTime"].GetValue<DateTime>() <= resultAscending[4]["startTime"].GetValue<DateTime>(), "Ascending order failed");
+            Assert.AreEqual(resultDescending[0]["id"].GetValue<string>(), resultAscending[4]["id"].GetValue<string>(), "First report in descending order should match last report in ascending order");
+        }
+
+        [TestMethod]
+        public async Task Test_GetReports_StartDate()
+        {
+            // Arrange 
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            string secret = device["secret"].GetValue<string>();
+            _deviceIds.Add(deviceId);
+
+            await _reportLib.CreateSampleReports(_webSocketUri, secret, _accessToken, deviceId, 5, TimeSpan.FromSeconds(1));
+            (JsonArray result, _) = await _reportLib.GetReports(_accessToken, [deviceId], descending: false, pageSize: 5, page: 1);
+
+            // Act
+            DateTime startTime = result[0].AsObject()["startTime"].GetValue<DateTime>();
+            (JsonArray filteredResult, _) = await _reportLib.GetReports(_accessToken, [deviceId], descending: false, startTime: startTime.AddSeconds(1), pageSize: 5, page: 1);
+
+            // Assert
+            Assert.IsNotEmpty(filteredResult);
+            Assert.AreNotEqual(filteredResult[0]["id"].GetValue<string>, result[0]["id"].GetValue<string>);
+            Assert.AreNotEqual(result.Count, filteredResult.Count, "Filtered result should not contain the first report");
+        }
+
+        [TestMethod]
+        public async Task Test_GetReports_EndDate()
+        {
+            // Arrange 
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            string secret = device["secret"].GetValue<string>();
+            _deviceIds.Add(deviceId);
+
+            await _reportLib.CreateSampleReports(_webSocketUri, secret, _accessToken, deviceId, 5, TimeSpan.FromSeconds(1));
+            (JsonArray result, _) = await _reportLib.GetReports(_accessToken, [deviceId], descending: true, pageSize: 5, page: 1);
+
+            // Act
+            DateTime endTime = result[0].AsObject()["endTime"].GetValue<DateTime>();
+            (JsonArray filteredResult, _) = await _reportLib.GetReports(_accessToken, [deviceId], descending: false, endTime: endTime.AddSeconds(-1), pageSize: 5, page: 1);
+
+            // Assert
+            Assert.IsNotEmpty(filteredResult);
+            Assert.AreNotEqual(filteredResult[0]["id"].GetValue<string>, result[0]["id"].GetValue<string>);
+            Assert.AreNotEqual(result.Count, filteredResult.Count, "Filtered result should not contain the first report");
+        }
+
+        [TestMethod]
+        public async Task Test_GetReports_Device()
+        {
+            // Arrange 
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            string secret = device["secret"].GetValue<string>();
+            _deviceIds.Add(deviceId);
+
+            JsonObject device2 = await _deviceLib.CreateDevice(_accessToken, "TestDevice2");
+            Guid device2Id = Guid.Parse(device2["deviceId"].GetValue<string>());
+            string secret2 = device2["secret"].GetValue<string>();
+            _deviceIds.Add(device2Id);
+
+            List<Task> tasks =
+                [
+                _reportLib.CreateSampleReports(_webSocketUri, secret, _accessToken, deviceId, 5, TimeSpan.FromSeconds(1)),
+                _reportLib.CreateSampleReports(_webSocketUri, secret2, _accessToken, device2Id, 6, TimeSpan.FromSeconds(1))
+                ];
+            await Task.WhenAll(tasks);
+
+            // Act
+            (JsonArray allReports, _) = await _reportLib.GetReports(_accessToken, [], descending: true, pageSize: 20, page: 1);
+            (JsonArray allReportsFiltered, _) = await _reportLib.GetReports(_accessToken, [deviceId, device2Id], descending: true, pageSize: 20, page: 1);
+            (JsonArray device1Reports, _) = await _reportLib.GetReports(_accessToken, [deviceId], descending: true, pageSize: 20, page: 1);
+            (JsonArray device2Reports, _) = await _reportLib.GetReports(_accessToken, [device2Id], descending: true, pageSize: 20, page: 1);
+
+            // Assert
+            Assert.AreEqual(11, allReports.Count, "All reports should contain 11 entries");
+            Assert.AreEqual(11, allReportsFiltered.Count, "Filtered reports should contain 11 entries");
+            Assert.AreEqual(5, device1Reports.Count, "Device 1 reports should contain 5 entries");
+            Assert.AreEqual(6, device2Reports.Count, "Device 2 reports should contain 6 entries");
         }
 
     }

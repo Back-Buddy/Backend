@@ -66,9 +66,9 @@ namespace BackBuddy.Integration_Test.V1.Libs
                 queryBuilder.Append($"&Devices={deviceId}");
             }
             if (startTime.HasValue)
-                queryBuilder.Append($"&startTime={startTime.Value}");
+                queryBuilder.Append($"&startTime={startTime.Value:o}");
             if (endTime.HasValue)
-                queryBuilder.Append($"&endTime={endTime.Value}");
+                queryBuilder.Append($"&endTime={endTime.Value:o}");
             queryBuilder.Append($"&descending={descending}");
 
             HttpRequestMessage requestMessage = new(HttpMethod.Get, $"/api/v1/report{queryBuilder}");
@@ -92,6 +92,16 @@ namespace BackBuddy.Integration_Test.V1.Libs
             HttpResponseMessage responseMessage = await _httpClient.SendAsync(requestMessage);
             if (!responseMessage.IsSuccessStatusCode)
                 throw new RequestFailedException(responseMessage);
+        }
+
+        public async Task CreateSampleReports(string websocketUri, string deviceSecret, string accessToken, Guid deviceId, int count, TimeSpan delay)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                DateTime start = DateTime.UtcNow;
+                await DeviceLogLib.CreateSampleLogs(websocketUri, deviceSecret, 1, 0, delay);
+                await CreateReport(accessToken, deviceId, start, DateTime.UtcNow);
+            }
         }
 
     }
