@@ -29,7 +29,7 @@ builder.ConfigureAuthentification();
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<AbstractBaseExceptionHandler>();
 
-if (!builder.Environment.IsDevelopment())
+if (builder.Environment.IsDevelopment())
 {
     SecretClient secretClient = new(new Uri(builder.Configuration.GetValue<string>("KEY_VAULT_URI") ?? throw new InvalidDataException("KEY_VAULT_URI is not set!")), new DefaultAzureCredential());
     builder.Services.AddKeyedSingleton(Constants.DEVICE_SECRET, secretClient);
@@ -83,10 +83,23 @@ builder.Services.AddMassTransit(x =>
     x.AddConsumer<DeviceAuthorizeConsumer>();
     x.AddConsumer<DeviceUpdateStatusConsumer>();
 
-    x.UsingInMemory((context, cfg) =>
+    string connection = builder.Configuration.GetValue<string>($"MESSAGE_QUEUE_CONNECTION") ?? throw new InvalidOperationException("MESSAGE_QUEUE_CONNECTION is not set!");
+    if (builder.Environment.IsDevelopment())
     {
-        cfg.ConfigureEndpoints(context);
-    });
+        x.UsingRabbitMq((context, cfg) =>
+        {
+            cfg.Host(connection);
+            cfg.ConfigureEndpoints(context);
+        });
+    }
+    else
+    {
+        x.UsingAzureServiceBus((context, cfg) =>
+        {
+            cfg.Host(connection);
+            cfg.ConfigureEndpoints(context);
+        });
+    }
 });
 
 builder.Services.ConfigureFullSwaggerConfig();
@@ -105,7 +118,7 @@ app.UseWebSockets(new WebSocketOptions
     KeepAliveInterval = TimeSpan.FromSeconds(5)
 });
 
-app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()); //TODO: Remove this after presentation
+app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 
 app.MapControllers()
     .RequireAuthorization();
