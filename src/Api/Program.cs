@@ -29,7 +29,7 @@ builder.ConfigureAuthentification();
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<AbstractBaseExceptionHandler>();
 
-if (builder.Environment.IsDevelopment())
+if (!builder.Environment.IsDevelopment())
 {
     SecretClient secretClient = new(new Uri(builder.Configuration.GetValue<string>("KEY_VAULT_URI") ?? throw new InvalidDataException("KEY_VAULT_URI is not set!")), new DefaultAzureCredential());
     builder.Services.AddKeyedSingleton(Constants.DEVICE_SECRET, secretClient);
@@ -82,6 +82,15 @@ builder.Services.AddMassTransit(x =>
     x.AddConsumer<DeviceNewSecretAckConsumer>();
     x.AddConsumer<DeviceAuthorizeConsumer>();
     x.AddConsumer<DeviceUpdateStatusConsumer>();
+
+    x.AddConfigureEndpointsCallback((_, cfg) =>
+    {
+        if (cfg is IServiceBusReceiveEndpointConfigurator sb)
+        {
+            sb.ConfigureDeadLetterQueueErrorTransport();
+            sb.ConfigureDeadLetterQueueDeadLetterTransport();
+        }
+    });
 
     string connection = builder.Configuration.GetValue<string>($"MESSAGE_QUEUE_CONNECTION") ?? throw new InvalidOperationException("MESSAGE_QUEUE_CONNECTION is not set!");
     if (builder.Environment.IsDevelopment())
