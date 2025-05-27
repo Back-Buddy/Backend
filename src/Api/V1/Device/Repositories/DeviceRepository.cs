@@ -47,11 +47,17 @@ namespace BackBuddy.Api.Service.V1.Device.Repositories
 
             FilterDefinition<DeviceEntity> finalFilter = Builders<DeviceEntity>.Filter.And(filters);
 
+            SortDefinition<DeviceEntity> sortDefinition = query.Descending
+                ? Builders<DeviceEntity>.Sort.Descending(x => x.Name)
+                : Builders<DeviceEntity>.Sort.Ascending(x => x.Name);
+
             FindOptions<DeviceEntity> findOptions = new()
             {
                 Limit = page.Size,
-                Skip = page.Offset()
+                Skip = page.Offset(),
+                Sort = sortDefinition
             };
+
             IAsyncCursor<DeviceEntity> cursor = await collection.FindAsync(finalFilter, findOptions, cancellationToken: cancellationToken);
             long total = await collection.CountDocumentsAsync(finalFilter, cancellationToken: cancellationToken);
 

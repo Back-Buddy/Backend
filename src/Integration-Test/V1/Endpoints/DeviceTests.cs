@@ -283,5 +283,35 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             (JsonArray allDevices, _) = await _deviceLib.GetDevices(_accessToken);
             Assert.AreEqual(2, allDevices.Count, "Should return all devices when no active filter is specified");
         }
+
+        [TestMethod]
+        public async Task Test_GetDevices_SortedByName_Ascending()
+        {
+            // Arrange
+            List<string> deviceNames = ["Z Chair", "A Chair", "M Chair"];
+
+            foreach (string name in deviceNames)
+            {
+                Guid deviceId = await _deviceLib.CreateSimpleDevice(_accessToken, name);
+                _deviceIds.Add(deviceId);
+            }
+
+            // Act & assert - test ascending order
+            (JsonArray devicesAscending, _) = await _deviceLib.GetDevices(_accessToken, descending: false);
+
+            Assert.AreEqual(3, devicesAscending.Count, "Should return all 3 devices");
+            Assert.AreEqual("A Chair", devicesAscending[0].AsObject()["name"].GetValue<string>(), "First device should be A Chair");
+            Assert.AreEqual("M Chair", devicesAscending[1].AsObject()["name"].GetValue<string>(), "Second device should be M Chair");
+            Assert.AreEqual("Z Chair", devicesAscending[2].AsObject()["name"].GetValue<string>(), "Third device should be Z Chair");
+            
+            // Act & assert - test descending order
+            (JsonArray devicesDescending, _) = await _deviceLib.GetDevices(_accessToken, descending: true);
+            
+            Assert.AreEqual(3, devicesDescending.Count, "Should return all 3 devices");
+            Assert.AreEqual("Z Chair", devicesDescending[0].AsObject()["name"].GetValue<string>(), "First device should be Z Chair");
+            Assert.AreEqual("M Chair", devicesDescending[1].AsObject()["name"].GetValue<string>(), "Second device should be M Chair");
+            Assert.AreEqual("A Chair", devicesDescending[2].AsObject()["name"].GetValue<string>(), "Third device should be A Chair");
+
+        }
     }
 }
