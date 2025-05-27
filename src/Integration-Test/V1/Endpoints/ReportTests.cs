@@ -266,7 +266,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
 
             // Assert
             Assert.IsNotEmpty(filteredResult);
-            Assert.AreNotEqual(filteredResult[0]["id"].GetValue<string>, result[0]["id"].GetValue<string>);
+            Assert.AreNotEqual(filteredResult[0]["id"].GetValue<string>(), result[0]["id"].GetValue<string>());
             Assert.AreNotEqual(result.Count, filteredResult.Count, "Filtered result should not contain the first report");
         }
 
@@ -288,7 +288,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
 
             // Assert
             Assert.IsNotEmpty(filteredResult);
-            Assert.AreNotEqual(filteredResult[0]["id"].GetValue<string>, result[0]["id"].GetValue<string>);
+            Assert.AreNotEqual(filteredResult[0]["id"].GetValue<string>(), result[0]["id"].GetValue<string>());
             Assert.AreNotEqual(result.Count, filteredResult.Count, "Filtered result should not contain the first report");
         }
 
