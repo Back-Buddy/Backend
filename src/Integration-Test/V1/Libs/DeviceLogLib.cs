@@ -68,7 +68,7 @@ namespace BackBuddy.Integration_Test.V1.Libs
 
                 JsonObject standingStatus = DeviceLib.CreateUpdateStatus("Standing");
                 await clientWebSocket.SendAsync(standingStatus, int.MaxValue, CancellationToken.None);
-                await clientWebSocket.PollMessage("DeviceUpdateStatusAck", 1, CancellationToken.None);
+                await clientWebSocket.PollMessage("DeviceUpdateStatusAck", 2, CancellationToken.None);
             }
 
             // Set default status to "Sitting" for errorCount
@@ -83,7 +83,7 @@ namespace BackBuddy.Integration_Test.V1.Libs
             {
                 JsonObject sittingStatus = DeviceLib.CreateUpdateStatus("Sitting");
                 await clientWebSocket.SendAsync(sittingStatus, int.MaxValue, CancellationToken.None);
-                await clientWebSocket.PollMessage("DeviceUpdateStatusAck", 1, CancellationToken.None);
+                await clientWebSocket.PollMessage("DeviceUpdateStatusAck", 2, CancellationToken.None);
 
                 if (delay != null)
                     await Task.Delay(delay.Value);

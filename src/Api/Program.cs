@@ -52,6 +52,7 @@ builder.Services
     .Connect()
     .AddCollection<DeviceEntity>(nameof(DeviceEntity))
     .AddCollection<DeviceLogEntity>(nameof(DeviceLogEntity))
+    .AddCollection<ReportEntity>(nameof(ReportEntity));
     .AddCollection<NotificationEntity>(nameof(NotificationEntity));
 #endregion
 
@@ -65,13 +66,16 @@ builder.Services.AddStackExchangeRedisCache(options =>
     options.InstanceName = redisConfig.DatabaseName;
 });
 #endregion
-builder.Services.AddScoped<IDeviceLogRepository, DeviceLogRepository>();
 builder.Services.AddScoped<IDeviceStatusRepository, DeviceStatusRepository>();
+
+builder.Services.AddScoped<IDeviceLogService, DeviceLogService>();
+builder.Services.AddScoped<IDeviceLogRepository, DeviceLogRepository>();
 
 builder.Services.AddScoped<IDeviceRepository, DeviceRepository>();
 builder.Services.AddScoped<IDeviceService, DeviceService>();
 
-builder.Services.AddScoped<IDeviceLogService, DeviceLogService>();
+builder.Services.AddScoped<IReportRepository, ReportRepository>();
+builder.Services.AddScoped<IReportService, ReportService>();
 
 builder.Services.AddSingleton<IConnectionService, ConnectionService>();
 builder.Services.AddScoped<IWebSocketService, WebSocketService>();
@@ -90,10 +94,32 @@ builder.Services.AddMassTransit(x =>
     x.AddConsumer<DeviceAuthorizeConsumer>();
     x.AddConsumer<DeviceUpdateStatusConsumer>();
 
-    x.UsingInMemory((context, cfg) =>
+    x.AddConfigureEndpointsCallback((_, cfg) =>
     {
-        cfg.ConfigureEndpoints(context);
+        if (cfg is IServiceBusReceiveEndpointConfigurator sb)
+        {
+            sb.ConfigureDeadLetterQueueErrorTransport();
+            sb.ConfigureDeadLetterQueueDeadLetterTransport();
+        }
     });
+
+    string connection = builder.Configuration.GetValue<string>($"MESSAGE_QUEUE_CONNECTION") ?? throw new InvalidOperationException("MESSAGE_QUEUE_CONNECTION is not set!");
+    if (builder.Environment.IsDevelopment())
+    {
+        x.UsingRabbitMq((context, cfg) =>
+        {
+            cfg.Host(connection);
+            cfg.ConfigureEndpoints(context);
+        });
+    }
+    else
+    {
+        x.UsingAzureServiceBus((context, cfg) =>
+        {
+            cfg.Host(connection);
+            cfg.ConfigureEndpoints(context);
+        });
+    }
 });
 
 builder.Services.ConfigureFullSwaggerConfig();
@@ -112,7 +138,7 @@ app.UseWebSockets(new WebSocketOptions
     KeepAliveInterval = TimeSpan.FromSeconds(5)
 });
 
-app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()); //TODO: Remove this after presentation
+app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 
 app.MapControllers()
     .RequireAuthorization();

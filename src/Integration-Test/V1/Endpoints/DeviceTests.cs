@@ -1,7 +1,7 @@
 ﻿using BackBuddy.Integration_Test.Exceptions;
 using BackBuddy.Integration_Test.V1.DTOs;
 using BackBuddy.Integration_Test.V1.Libs;
-using System;
+using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
@@ -26,7 +26,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
 
             _deviceLib = new DeviceLib(baseUri.ToString());
 
-            if(_accessToken == null)
+            if (_accessToken == null)
             {
                 _firebaseLib = new("http://localhost:9099/identitytoolkit.googleapis.com/v1/", "change-me");
                 await _firebaseLib.RegisterUserAsync("test@gmail.com", "stringG.1212"); //NOT A REAL SECRET
@@ -48,7 +48,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
         [TestCleanup]
         public async Task TestCleanup()
         {
-            foreach(Guid deviceId in _deviceIds)
+            foreach (Guid deviceId in _deviceIds)
             {
                 await _deviceLib.DeleteDevice(_accessToken, deviceId);
             }
@@ -83,7 +83,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             // Act & Assert
             RequestFailedException requestFailedException = await Assert.ThrowsExactlyAsync<RequestFailedException>(async () => await _deviceLib.CreateDevice(_accessToken, deviceName.ToLower()));
             Assert.AreEqual(System.Net.HttpStatusCode.Conflict, requestFailedException.ResponseMessage.StatusCode);
-            
+
             string rawContent = await requestFailedException.ResponseMessage.Content.ReadAsStringAsync();
             JsonArray errorInformation = JsonSerializer.Deserialize<JsonArray>(rawContent);
             Assert.AreEqual("Device.NameIsNotUnique", errorInformation[0]["Code"].GetValue<string>());
@@ -111,9 +111,9 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
         }
 
         [TestMethod]
-        [DataRow("Ch")]               
+        [DataRow("Ch")]
         [DataRow("Chair_Name")]
-        [DataRow("Deluxe*Chair")]   
+        [DataRow("Deluxe*Chair")]
         [DataRow("ExtraComfortEdition")]
         [DataRow("Chair@Home")]
         [DataRow("Chair!")]
@@ -149,7 +149,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             Assert.IsNotNull(deviceObj);
 
             Assert.AreEqual(afterDeviceName, deviceObj["name"].GetValue<string>());
-            Assert.AreEqual(threshold, TimeSpan.Parse(deviceObj["threshold"].GetValue<string>()));
+            Assert.AreEqual(threshold, TimeSpan.Parse(deviceObj["threshold"].GetValue<string>(), new CultureInfo("en-US")));
         }
 
         [TestMethod]
@@ -254,8 +254,8 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
         public async Task Test_GetDevices_FilteredByActive()
         {
             // Arrange
-            List<Guid> deviceIds = new();
-            
+            List<Guid> deviceIds = [];
+
             // Create 2 devices, with the second one becoming active
             for (int i = 0; i < 2; i++)
             {
@@ -263,22 +263,22 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
                 deviceIds.Add(deviceId);
                 _deviceIds.Add(deviceId);
             }
-            
+
             // Activate the second device (the first will be automatically deactivated)
             await _deviceLib.UpdateDevice(_accessToken, deviceIds[1], active: true);
-            
+
             // Act & Assert - Get active devices
             (JsonArray activeDevices, _) = await _deviceLib.GetDevices(_accessToken, active: true);
             Assert.AreEqual(1, activeDevices.Count, "Only one device should be active");
             Assert.IsTrue(activeDevices[0].AsObject()["active"].GetValue<bool>(), "The device should be active");
             Assert.AreEqual("Chair 2", activeDevices[0].AsObject()["name"].GetValue<string>(), "The second created device should be active");
-            
+
             // Act & Assert - Get inactive devices
             (JsonArray inactiveDevices, _) = await _deviceLib.GetDevices(_accessToken, active: false);
             Assert.AreEqual(1, inactiveDevices.Count, "One device should be inactive");
             Assert.IsFalse(inactiveDevices[0].AsObject()["active"].GetValue<bool>(), "The device should be inactive");
             Assert.AreEqual("Chair 1", inactiveDevices[0].AsObject()["name"].GetValue<string>(), "The first created device should be inactive");
-            
+
             // Act & Assert - Get all devices
             (JsonArray allDevices, _) = await _deviceLib.GetDevices(_accessToken);
             Assert.AreEqual(2, allDevices.Count, "Should return all devices when no active filter is specified");
@@ -303,10 +303,10 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             Assert.AreEqual("A Chair", devicesAscending[0].AsObject()["name"].GetValue<string>(), "First device should be A Chair");
             Assert.AreEqual("M Chair", devicesAscending[1].AsObject()["name"].GetValue<string>(), "Second device should be M Chair");
             Assert.AreEqual("Z Chair", devicesAscending[2].AsObject()["name"].GetValue<string>(), "Third device should be Z Chair");
-            
+
             // Act & assert - test descending order
             (JsonArray devicesDescending, _) = await _deviceLib.GetDevices(_accessToken, descending: true);
-            
+
             Assert.AreEqual(3, devicesDescending.Count, "Should return all 3 devices");
             Assert.AreEqual("Z Chair", devicesDescending[0].AsObject()["name"].GetValue<string>(), "First device should be Z Chair");
             Assert.AreEqual("M Chair", devicesDescending[1].AsObject()["name"].GetValue<string>(), "Second device should be M Chair");
