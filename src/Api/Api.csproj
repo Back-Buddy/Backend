@@ -23,4 +23,10 @@
     <PackageReference Include="Swashbuckle.AspNetCore" />
   </ItemGroup>
 
+	<ItemGroup>
+		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+			<_Parameter1>BackBuddy.Api.Test</_Parameter1>
+		</AssemblyAttribute>
+	</ItemGroup>
+
 </Project>
