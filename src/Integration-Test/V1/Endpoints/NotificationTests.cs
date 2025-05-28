@@ -66,5 +66,23 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             await Assert.ThrowsExceptionAsync<RequestFailedException>(async () => 
                 await _notificationLib.SetFcmToken(_accessToken, token));
         }
+
+        [TestMethod]
+        public async Task Test_UpdateFcmToken_Success()
+        {
+            // Arrange
+            string initialToken = "fcm-test-token-" + Guid.NewGuid().ToString();
+            string updatedToken = "fcm-updated-token-" + Guid.NewGuid().ToString();
+
+            // Act
+            // Setze zuerst das initiale Token
+            await _notificationLib.SetFcmToken(_accessToken, initialToken);
+            
+            // Aktualisiere dann mit einem neuen Token (sollte upsert verwenden)
+            await _notificationLib.SetFcmToken(_accessToken, updatedToken);
+
+            // Assert
+            // Keine Exception bedeutet Erfolg, da der Endpunkt 204 No Content zurückgibt
+        }
     }
 }
