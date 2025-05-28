@@ -79,7 +79,6 @@ builder.Services.AddScoped<IWebSocketService, WebSocketService>();
 builder.Services.AddScoped<IConnectedDeviceRepository, ConnectedDeviceRepository>();
 
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
-
 builder.Services.AddScoped<INotificationService, NotificationService>();
 
 builder.Services.AddMassTransit(x =>

@@ -12,7 +12,6 @@ namespace BackBuddy.Api.Service.V1.Notification.Services
 
     public partial class NotificationService(INotificationRepository repository) : INotificationService
     {
-
         private readonly INotificationRepository _repository = repository;
         public async Task SetFcmToken(string userId, string token, CancellationToken cancellationToken = default)
         {
