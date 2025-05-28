@@ -11,6 +11,8 @@ using BackBuddy.Api.Service.V1.Device.Entities;
 using BackBuddy.Api.Service.V1.Device.Repositories;
 using BackBuddy.Api.Service.V1.Device.Services;
 using BackBuddy.Api.Service.V1.ExceptionHandlers;
+using BackBuddy.Api.Service.V1.WebSockets.BackgroundServices;
+using BackBuddy.Api.Service.V1.WebSockets.Dtos;
 using BackBuddy.Api.Service.V1.WebSockets.Middleware;
 using BackBuddy.Api.Service.V1.WebSockets.Repositories;
 using BackBuddy.Api.Service.V1.WebSockets.Services;
@@ -76,7 +78,19 @@ builder.Services.AddScoped<IReportService, ReportService>();
 builder.Services.AddSingleton<IConnectionService, ConnectionService>();
 builder.Services.AddScoped<IWebSocketService, WebSocketService>();
 
-builder.Services.AddScoped<IConnectedDeviceRepository, ConnectedDeviceRepository>();
+builder.Services.AddSingleton<IConnectedDeviceRepository, ConnectedDeviceRepository>();
+
+builder.Services.AddSingleton<ConnectedDeviceHeartbeatService>();
+
+builder.Services.AddHostedService(x =>
+{
+    return x.GetRequiredService<ConnectedDeviceHeartbeatService>();
+});
+
+builder.Services.AddOptions<ConnectedDeviceConfig>()
+    .Bind(builder.Configuration.GetSection("ConnectedDeviceConfig"))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
 
 builder.Services.AddMassTransit(x =>
 {
@@ -118,7 +132,6 @@ builder.Services.AddMassTransit(x =>
 builder.Services.ConfigureFullSwaggerConfig();
 
 var app = builder.Build();
-
 
 app.UseSwagger();
 app.UseSwaggerUI();

@@ -28,8 +28,9 @@ namespace BackBuddy.Api.Service.V1.Device.Repositories
 
         public async Task SetCurrentStatus(Guid deviceId, DeviceStatusEntity deviceStatus, CancellationToken cancellationToken = default)
         {
-            await _cache.SetAsync(GetCacheKey(deviceId), deviceStatus, _jsonOptions, cancellationToken);
+            await _cache.SetAsync(GetCacheKey(deviceId), deviceStatus, jsonOptions: _jsonOptions, cancellationToken: cancellationToken);
         }
+
         public async Task DeleteCurrentStatus(Guid deviceId, CancellationToken cancellationToken = default)
         {
             await _cache.RemoveAsync(GetCacheKey(deviceId), cancellationToken);

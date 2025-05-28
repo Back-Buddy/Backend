@@ -236,5 +236,29 @@ namespace BackBuddy.Integration_Test.V1.WebSocket
             // Clean up
             await clientWebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Test completed", CancellationToken.None);
         }
+
+        [TestMethod]
+        public async Task Test_Long_Connected()
+        {
+            // Arrange
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            string secret = device["secret"].GetValue<string>();
+            _deviceIds.Add(deviceId);
+
+            using ClientWebSocket clientWebSocket = new();
+            clientWebSocket.Options.AddSubProtocol(secret);
+            await clientWebSocket.ConnectAsync(new Uri(_webSocketUri), CancellationToken.None);
+
+            // Act
+            await Task.Delay(TimeSpan.FromSeconds(35)); // Simulate a long connection
+            JsonObject response = await _deviceLib.GetDevice(_accessToken, deviceId);
+
+            // Assert
+            Assert.IsTrue(response["online"].GetValue<bool>());
+
+            // Clean up
+            await clientWebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Test completed", CancellationToken.None);
+        }
     }
 }

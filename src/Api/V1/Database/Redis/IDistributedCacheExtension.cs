@@ -13,10 +13,13 @@ namespace BackBuddy.Api.Service.V1.Database.Redis
             return JsonSerializer.Deserialize<T>(data, options);
         }
 
-        public static async Task SetAsync<T>(this IDistributedCache cache, string key, T payload, JsonSerializerOptions? options = null, CancellationToken cancellationToken = default) where T : class
+        public static async Task SetAsync<T>(this IDistributedCache cache, string key, T payload, JsonSerializerOptions? jsonOptions = null, DistributedCacheEntryOptions? distributedCacheEntryOptions = null, CancellationToken cancellationToken = default) where T : class
         {
-            string payloadString = JsonSerializer.Serialize<T>(payload, options);
-            await cache.SetStringAsync(key, payloadString, cancellationToken);
+            string payloadString = JsonSerializer.Serialize(payload, jsonOptions);
+            if (distributedCacheEntryOptions != null)
+                await cache.SetStringAsync(key, payloadString, distributedCacheEntryOptions, cancellationToken);
+            else
+                await cache.SetStringAsync(key, payloadString, cancellationToken);
         }
     }
 }
