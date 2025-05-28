@@ -9,7 +9,7 @@ namespace BackBuddy.Api.Service.V1.Notification.Controllers
     [Route("api/v{version:apiVersion}/[controller]")]
     public class NotificationController(INotificationService notificationService) : ControllerBase
     {
-        [HttpPost("{FCMToken}")]
+        [HttpPost]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> SetFcmToken([FromBody] FCMTokenRequestDto request)
         {

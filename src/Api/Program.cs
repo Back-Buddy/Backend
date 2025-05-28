@@ -11,6 +11,9 @@ using BackBuddy.Api.Service.V1.Device.Entities;
 using BackBuddy.Api.Service.V1.Device.Repositories;
 using BackBuddy.Api.Service.V1.Device.Services;
 using BackBuddy.Api.Service.V1.ExceptionHandlers;
+using BackBuddy.Api.Service.V1.Notification.Entities;
+using BackBuddy.Api.Service.V1.Notification.Repositories;
+using BackBuddy.Api.Service.V1.Notification.Services;
 using BackBuddy.Api.Service.V1.WebSockets.Middleware;
 using BackBuddy.Api.Service.V1.WebSockets.Repositories;
 using BackBuddy.Api.Service.V1.WebSockets.Services;
@@ -48,7 +51,8 @@ builder.Services
     .AddMongoDB(mongoConfig.Connection, mongoConfig.DatabaseName)
     .Connect()
     .AddCollection<DeviceEntity>(nameof(DeviceEntity))
-    .AddCollection<DeviceLogEntity>(nameof(DeviceLogEntity));
+    .AddCollection<DeviceLogEntity>(nameof(DeviceLogEntity))
+    .AddCollection<NotificationEntity>(nameof(NotificationEntity));
 #endregion
 
 #region Redis
@@ -73,6 +77,10 @@ builder.Services.AddSingleton<IConnectionService, ConnectionService>();
 builder.Services.AddScoped<IWebSocketService, WebSocketService>();
 
 builder.Services.AddScoped<IConnectedDeviceRepository, ConnectedDeviceRepository>();
+
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+
+builder.Services.AddScoped<INotificationService, NotificationService>();
 
 builder.Services.AddMassTransit(x =>
 {
