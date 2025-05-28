@@ -4,8 +4,8 @@ namespace BackBuddy.Api.Service.V1.Notification.Exceptions
 {
     public class FcmTokenIsNullException : AbstractBaseException
     {
-        public FcmTokenIsNullException() : base("Device.FcmTokenIsNull", "The FCM token cannot be null or empty.", StatusCodes.Status400BadRequest)
+        public FcmTokenIsNullException() : base("Notification.FcmTokenIsNull", "The FCM token cannot be null or empty.", StatusCodes.Status400BadRequest)
         {
         }
     }
-}   
+}
