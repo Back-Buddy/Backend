@@ -83,10 +83,32 @@ builder.Services.AddMassTransit(x =>
     x.AddConsumer<DeviceAuthorizeConsumer>();
     x.AddConsumer<DeviceUpdateStatusConsumer>();
 
-    x.UsingInMemory((context, cfg) =>
+    x.AddConfigureEndpointsCallback((_, cfg) =>
     {
-        cfg.ConfigureEndpoints(context);
+        if (cfg is IServiceBusReceiveEndpointConfigurator sb)
+        {
+            sb.ConfigureDeadLetterQueueErrorTransport();
+            sb.ConfigureDeadLetterQueueDeadLetterTransport();
+        }
     });
+
+    string connection = builder.Configuration.GetValue<string>($"MESSAGE_QUEUE_CONNECTION") ?? throw new InvalidOperationException("MESSAGE_QUEUE_CONNECTION is not set!");
+    if (builder.Environment.IsDevelopment())
+    {
+        x.UsingRabbitMq((context, cfg) =>
+        {
+            cfg.Host(connection);
+            cfg.ConfigureEndpoints(context);
+        });
+    }
+    else
+    {
+        x.UsingAzureServiceBus((context, cfg) =>
+        {
+            cfg.Host(connection);
+            cfg.ConfigureEndpoints(context);
+        });
+    }
 });
 
 builder.Services.ConfigureFullSwaggerConfig();
@@ -105,7 +127,7 @@ app.UseWebSockets(new WebSocketOptions
     KeepAliveInterval = TimeSpan.FromSeconds(5)
 });
 
-app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()); //TODO: Remove this after presentation
+app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 
 app.MapControllers()
     .RequireAuthorization();
