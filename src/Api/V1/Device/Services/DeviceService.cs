@@ -1,4 +1,5 @@
 ﻿using BackBuddy.Api.Service.V1.Database.KeyVault;
+using BackBuddy.Api.Service.V1.Database.Redis;
 using BackBuddy.Api.Service.V1.Device.DTOs;
 using BackBuddy.Api.Service.V1.Device.DTOs.Http;
 using BackBuddy.Api.Service.V1.Device.DTOs.WebSocket;
