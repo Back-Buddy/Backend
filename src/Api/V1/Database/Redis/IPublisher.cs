@@ -2,7 +2,7 @@
 using StackExchange.Redis;
 using System.Text.Json;
 
-namespace BackBuddy.Api.Service.V1.Utilities
+namespace BackBuddy.Api.Service.V1.Database.Redis
 {
     public interface IPublisher
     {

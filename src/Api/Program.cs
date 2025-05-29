@@ -11,7 +11,6 @@ using BackBuddy.Api.Service.V1.Device.Entities;
 using BackBuddy.Api.Service.V1.Device.Repositories;
 using BackBuddy.Api.Service.V1.Device.Services;
 using BackBuddy.Api.Service.V1.ExceptionHandlers;
-using BackBuddy.Api.Service.V1.Utilities;
 using BackBuddy.Api.Service.V1.WebSockets.BackgroundServices;
 using BackBuddy.Api.Service.V1.WebSockets.Middleware;
 using BackBuddy.Api.Service.V1.WebSockets.Repositories;
