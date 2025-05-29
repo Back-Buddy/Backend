@@ -26,7 +26,7 @@ namespace BackBuddy.Api.Service.V1.WebSockets.BackgroundServices
                     using IServiceScope scope = _serviceScopeFactory.CreateScope();
 
                     WebSocketSendMessage webSocketMessage = JsonSerializer.Deserialize<WebSocketSendMessage>(message!, WebSocketService.JsonOptions) ?? throw new JsonException();
-                    _logger.LogInformation("Received WebSocket message for target {Target} with type {MessageType}", webSocketMessage.Target, webSocketMessage.WebSocketMessageType);
+                    _logger.LogDebug("Received WebSocket message for target {Target} with type {MessageType}", webSocketMessage.Target, webSocketMessage.WebSocketMessageType);
 
                     IWebSocketService webSocketService = scope.ServiceProvider.GetRequiredService<IWebSocketService>();
                     object rawWebSocketMessage = JsonSerializer.Deserialize(webSocketMessage.Payload, webSocketMessage.WebSocketMessageType.GetMessageType(), WebSocketService.JsonOptions) ?? throw new JsonException();
