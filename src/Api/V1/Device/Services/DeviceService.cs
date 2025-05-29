@@ -1,4 +1,5 @@
 ﻿using BackBuddy.Api.Service.V1.Database.KeyVault;
+using BackBuddy.Api.Service.V1.Database.Redis;
 using BackBuddy.Api.Service.V1.Device.DTOs;
 using BackBuddy.Api.Service.V1.Device.DTOs.Http;
 using BackBuddy.Api.Service.V1.Device.DTOs.WebSocket;
@@ -7,6 +8,7 @@ using BackBuddy.Api.Service.V1.Device.Exceptions;
 using BackBuddy.Api.Service.V1.Device.Mapper;
 using BackBuddy.Api.Service.V1.Device.Repositories;
 using BackBuddy.Api.Service.V1.Utilities;
+using BackBuddy.Api.Service.V1.WebSockets.Dtos;
 using BackBuddy.Api.Service.V1.WebSockets.Services;
 using System.Text.RegularExpressions;
 
@@ -26,7 +28,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
         Task<bool> IsDeviceConnected(Guid deviceId);
     }
 
-    public partial class DeviceService(IDeviceRepository repository, IDeviceStatusRepository deviceStatusRepository, IDeviceLogRepository deviceLogRepository, IReportRepository reportRepository, ISecretProvider secretProvider, IWebSocketService webSocketService) : IDeviceService
+    public partial class DeviceService(IDeviceRepository repository, IDeviceStatusRepository deviceStatusRepository, IDeviceLogRepository deviceLogRepository, IReportRepository reportRepository, ISecretProvider secretProvider, IWebSocketService webSocketService, IPublisher publisher) : IDeviceService
     {
         private const string NAME_PATTERN = @"^[a-zA-Z0-9 \-]{3,16}$";
         private readonly static TimeSpan SECRET_EXPIRATION_TIME = TimeSpan.FromSeconds(1);
@@ -37,6 +39,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
         private readonly IReportRepository _reportRepository = reportRepository;
         private readonly ISecretProvider _secretProvider = secretProvider;
         private readonly IWebSocketService _webSocketService = webSocketService;
+        private readonly IPublisher _publisher = publisher;
 
         public async Task<DeviceSecretDto> Create(string userId, DeviceCreateRequestDto request, CancellationToken cancellationToken = default)
         {
@@ -179,7 +182,9 @@ namespace BackBuddy.Api.Service.V1.Device.Services
             {
                 Secret = deviceSecret.Encode(),
             };
-            await _webSocketService.SendMessage(deviceEntity.Id, message);
+
+            WebSocketSendMessage webSocketMessage = new WebSocketSendMessageBuilder(deviceEntity.Id, message).Build();
+            await _publisher.PublishAsync(webSocketMessage);
         }
 
         public async Task AckNewSecret(Guid deviceId, string secret, CancellationToken cancellationToken = default)
@@ -197,7 +202,8 @@ namespace BackBuddy.Api.Service.V1.Device.Services
             await _secretProvider.SetSecret(deviceEntity.Id.ToString(), deviceSecret.Secret, cancellationToken);
 
             DeviceNewSecretSetAckMessage ackMessage = new() { Secret = deviceSecret.Secret };
-            await _webSocketService.SendMessage(deviceId, ackMessage);
+            WebSocketSendMessage webSocketMessage = new WebSocketSendMessageBuilder(deviceEntity.Id, ackMessage).Build();
+            await _publisher.PublishAsync(webSocketMessage);
         }
 
         public async Task HandleStatusUpdate(Guid deviceId, DeviceUpdateStatusMessage status, CancellationToken cancellationToken = default)
@@ -227,7 +233,8 @@ namespace BackBuddy.Api.Service.V1.Device.Services
                     break;
             }
 
-            await _webSocketService.SendMessage(deviceId, new DeviceUpdateStatusAckMessage());
+            WebSocketSendMessage webSocketMessage = new WebSocketSendMessageBuilder(deviceEntity.Id, new DeviceUpdateStatusAckMessage()).Build();
+            await _publisher.PublishAsync(webSocketMessage);
         }
 
         public async Task<bool> IsDeviceConnected(Guid deviceId)

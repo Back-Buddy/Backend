@@ -6,6 +6,6 @@ namespace BackBuddy.Api.Service.V1.WebSockets.DTOs
     {
         WebSocketMessageType MessageType { get; }
 
-        bool IsToSend();
+        bool IsToSend { get; }
     }
 }
