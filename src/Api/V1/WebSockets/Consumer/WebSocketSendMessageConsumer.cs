@@ -14,10 +14,8 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Consumer
         public async Task Consume(ConsumeContext<WebSocketSendMessage> context)
         {
             WebSocketSendMessage message = context.Message;
-            if (message.Target == null || message.WebSocketMessageType == null || string.IsNullOrEmpty(message.Payload))
-                throw new ArgumentException("Invalid WebSocket message data.");
-            object rawWebSocketMessage = JsonSerializer.Deserialize(message.Payload, message.WebSocketMessageType.Value.GetMessageType(), WebSocketService.JsonOptions) ?? throw new JsonException();
-            await _webSocketService.SendMessage(message.Target.Value, (IWebSocketMessageDto)rawWebSocketMessage);
+            object rawWebSocketMessage = JsonSerializer.Deserialize(message.Payload, message.WebSocketMessageType.GetMessageType(), WebSocketService.JsonOptions) ?? throw new JsonException();
+            await _webSocketService.SendMessage(message.Target, (IWebSocketMessageDto)rawWebSocketMessage);
         }
     }
 }

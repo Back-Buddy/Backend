@@ -6,19 +6,27 @@ using System.Text.Json;
 
 namespace BackBuddy.Api.Service.V1.WebSockets.Dtos
 {
-    public class WebSocketSendMessage
+    public record WebSocketSendMessage
     {
-        public Guid? Target { get; init; }
-        public string? Payload { get; init; }
-        public WebSocketMessageType? WebSocketMessageType { get; init; }
+        public required Guid Target { get; init; }
+        public required WebSocketMessageType WebSocketMessageType { get; init; }
+        public required string Payload { get; init; }
+    }
 
-        public WebSocketSendMessage() { }
+    public class WebSocketSendMessageBuilder(Guid target, IWebSocketMessageDto message)
+    {
+        private readonly Guid _target = target;
+        private readonly WebSocketMessageType _messageType = message.MessageType;
+        private readonly string _payload = JsonSerializer.Serialize(message, message.MessageType.GetMessageType(), WebSocketService.JsonOptions);
 
-        public WebSocketSendMessage(Guid target, IWebSocketMessageDto webSocketMessage)
+        public WebSocketSendMessage Build()
         {
-            Target = target;
-            WebSocketMessageType = webSocketMessage.MessageType;
-            Payload = JsonSerializer.Serialize(webSocketMessage, webSocketMessage.MessageType.GetMessageType(), options: WebSocketService.JsonOptions);
+            return new WebSocketSendMessage
+            {
+                Target = _target,
+                WebSocketMessageType = _messageType,
+                Payload = _payload
+            };
         }
     }
 }

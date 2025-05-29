@@ -183,7 +183,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
                 Secret = deviceSecret.Encode(),
             };
 
-            WebSocketSendMessage webSocketMessage = new(deviceEntity.Id, message);
+            WebSocketSendMessage webSocketMessage = new WebSocketSendMessageBuilder(deviceEntity.Id, message).Build();
             await _publishEndpoint.Publish(webSocketMessage, cancellationToken);
         }
 
@@ -202,7 +202,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
             await _secretProvider.SetSecret(deviceEntity.Id.ToString(), deviceSecret.Secret, cancellationToken);
 
             DeviceNewSecretSetAckMessage ackMessage = new() { Secret = deviceSecret.Secret };
-            WebSocketSendMessage webSocketMessage = new(deviceEntity.Id, ackMessage);
+            WebSocketSendMessage webSocketMessage = new WebSocketSendMessageBuilder(deviceEntity.Id, ackMessage).Build();
             await _publishEndpoint.Publish(webSocketMessage, cancellationToken);
         }
 
@@ -233,7 +233,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
                     break;
             }
 
-            WebSocketSendMessage webSocketMessage = new(deviceEntity.Id, new DeviceUpdateStatusAckMessage());
+            WebSocketSendMessage webSocketMessage = new WebSocketSendMessageBuilder(deviceEntity.Id, new DeviceUpdateStatusAckMessage()).Build();
             await _publishEndpoint.Publish(webSocketMessage, cancellationToken);
         }
 
