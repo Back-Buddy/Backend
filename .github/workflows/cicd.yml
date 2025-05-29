@@ -96,7 +96,7 @@ jobs:
         uses: hoverkraft-tech/compose-action@v2.0.2
         with:
           cwd: "${{ github.workspace }}/src/"
-          compose-file: "docker-compose.override.yml"
+          compose-file: "docker-compose.test.yml"
         env:
           DOCKER_REGISTRY: ${{ vars.ACR_URL }}/
 
