@@ -9,7 +9,7 @@ using System.Text.Json;
 
 namespace BackBuddy.Api.Service.V1.WebSockets.Middleware
 {
-    public class CustomWebSocketMiddleware(RequestDelegate _next, IServiceProvider _serviceProvider)
+    public class CustomWebSocketMiddleware(RequestDelegate _next, IServiceScopeFactory _serviceScopeFactory)
     {
 
         private readonly static List<WebSocketState> _states = [WebSocketState.Closed, WebSocketState.Aborted];
@@ -42,7 +42,7 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Middleware
                     await new UnauthorizedException().WriteToResponse(context.Response);
                     return;
                 }
-                using var scope = _serviceProvider.CreateScope();
+                using var scope = _serviceScopeFactory.CreateScope();
                 IWebSocketService webSocketService = scope.ServiceProvider.GetRequiredService<IWebSocketService>();
                 ILogger<CustomWebSocketMiddleware> logger = scope.ServiceProvider.GetRequiredService<ILogger<CustomWebSocketMiddleware>>();
 
@@ -63,7 +63,7 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Middleware
                 await ex.WriteToResponse(context.Response);
                 await CloseConnection(webSocket, ex);
             }
-            catch(RequestFaultException ex)
+            catch (RequestFaultException ex)
             {
                 AbstractBaseException? baseException = ex.GetAbstractBaseException();
                 if (baseException == null) throw;
@@ -85,8 +85,10 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Middleware
                     {
                         await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closed by the server", CancellationToken.None);
                     }
-                    catch // Ignore any exceptions that occur while closing the WebSocket
-                    { }
+                    catch
+                    {
+                        // Ignore any exceptions that occur while closing the WebSocket
+                    }
                 }
                 webSocket?.Dispose();
             }
@@ -105,8 +107,10 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Middleware
                 {
                     await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, JsonSerializer.Serialize(ex.GetErrors()), CancellationToken.None);
                 }
-                catch // Ignore any exceptions that occur while closing the WebSocket
-                { }
+                catch
+                {
+                    // Ignore any exceptions that occur while closing the WebSocket
+                }
             }
         }
 
