@@ -87,15 +87,6 @@ builder.Services.AddMassTransit(x =>
     x.AddConsumer<DeviceAuthorizeConsumer>();
     x.AddConsumer<DeviceUpdateStatusConsumer>();
 
-    x.AddConfigureEndpointsCallback((_, cfg) =>
-    {
-        if (cfg is IServiceBusReceiveEndpointConfigurator sb)
-        {
-            sb.ConfigureDeadLetterQueueErrorTransport();
-            sb.ConfigureDeadLetterQueueDeadLetterTransport();
-        }
-    });
-
     string connection = builder.Configuration.GetValue<string>($"MESSAGE_QUEUE_CONNECTION") ?? throw new InvalidOperationException("MESSAGE_QUEUE_CONNECTION is not set!");
     if (builder.Environment.IsDevelopment())
     {
