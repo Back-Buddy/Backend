@@ -7,9 +7,8 @@ namespace BackBuddy.Api.Service.V1.Device.DTOs.WebSocket
     public class DeviceUpdateStatusMessage : IWebSocketMessageDto
     {
         public WebSocketMessageType MessageType => WebSocketMessageType.DeviceUpdateStatus;
+        public bool IsToSend => false;
 
         public UserPositionStatusType UserPositionStatus { get; init; }
-
-        public bool IsToSend() => false;
     }
 }
