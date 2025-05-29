@@ -84,7 +84,7 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Services
         {
             IWebSocketMessageDto message = JsonSerializer.Deserialize<IWebSocketMessageDto>(payload, JsonOptions) ?? throw new InvalidWebSocketMessageException();
             if (message.IsToSend)
-                throw new UnsupportActionWebSocketMessageException();
+                throw new UnsupportedActionWebSocketMessageException();
 
             Guid deviceId = _connectionService.GetDevice(webSocket) ?? throw new UnauthorizedException();
             (Type genericType, Func<Guid, IWebSocketMessageDto, object> factory) = _messageFactoryCache.GetOrAdd(
@@ -104,7 +104,7 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Services
         public async Task<bool> SendMessage(Guid deviceId, IWebSocketMessageDto message)
         {
             if (!message.IsToSend)
-                throw new UnsupportActionWebSocketMessageException();
+                throw new UnsupportedActionWebSocketMessageException();
             WebSocket? webSocket = _connectionService.GetWebSocket(deviceId);
             if (webSocket == null)
                 return false;
