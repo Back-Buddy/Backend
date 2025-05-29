@@ -23,7 +23,7 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Services
     {
         private static readonly ConcurrentDictionary<Enums.WebSocketMessageType, (Type GenericType, Func<Guid, IWebSocketMessageDto, object> Factory)> _messageFactoryCache = [];
 
-        private readonly static JsonSerializerOptions _options = new()
+        public readonly static JsonSerializerOptions JsonOptions = new()
         {
             PropertyNameCaseInsensitive = true,
             Converters = { new WebSocketMessageConverter(), new JsonStringEnumConverter() }
@@ -82,8 +82,8 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Services
 
         public async Task OnReceive(WebSocket webSocket, string payload)
         {
-            IWebSocketMessageDto message = JsonSerializer.Deserialize<IWebSocketMessageDto>(payload, _options) ?? throw new InvalidWebSocketMessageException();
-            if (message.IsToSend())
+            IWebSocketMessageDto message = JsonSerializer.Deserialize<IWebSocketMessageDto>(payload, JsonOptions) ?? throw new InvalidWebSocketMessageException();
+            if (message.IsToSend)
                 throw new UnsupportActionWebSocketMessageException();
 
             Guid deviceId = _connectionService.GetDevice(webSocket) ?? throw new UnauthorizedException();
@@ -103,12 +103,15 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Services
 
         public async Task<bool> SendMessage(Guid deviceId, IWebSocketMessageDto message)
         {
-            if (!message.IsToSend())
+            if (!message.IsToSend)
                 throw new UnsupportActionWebSocketMessageException();
             WebSocket? webSocket = _connectionService.GetWebSocket(deviceId);
             if (webSocket == null)
                 return false;
-            string payload = JsonSerializer.Serialize(message, _options);
+
+            string payload = JsonSerializer.Serialize(message, message.MessageType.GetMessageType(), JsonOptions);
+
+
             byte[] buffer = Encoding.UTF8.GetBytes(payload);
             await webSocket.SendAsync(new ArraySegment<byte>(buffer), System.Net.WebSockets.WebSocketMessageType.Text, true, CancellationToken.None);
             return true;
