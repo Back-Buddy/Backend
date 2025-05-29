@@ -23,7 +23,7 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Services
     {
         private static readonly ConcurrentDictionary<Enums.WebSocketMessageType, (Type GenericType, Func<Guid, IWebSocketMessageDto, object> Factory)> _messageFactoryCache = [];
 
-        public readonly static JsonSerializerOptions JsonOptions = new()
+        internal readonly static JsonSerializerOptions JsonOptions = new()
         {
             PropertyNameCaseInsensitive = true,
             Converters = { new WebSocketMessageConverter(), new JsonStringEnumConverter() }
