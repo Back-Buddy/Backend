@@ -1,9 +1,6 @@
 using BackBuddy.Integration_Test.Exceptions;
 using BackBuddy.Integration_Test.V1.DTOs;
 using BackBuddy.Integration_Test.V1.Libs;
-using System;
-using System.Text.Json;
-using System.Text.Json.Nodes;
 
 namespace BackBuddy.Integration_Test.V1.Endpoints
 {
@@ -24,7 +21,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
 
             _notificationLib = new NotificationLib(baseUri.ToString());
 
-            if(_accessToken == null)
+            if (_accessToken == null)
             {
                 _firebaseLib = new("http://localhost:9099/identitytoolkit.googleapis.com/v1/", "change-me");
                 await _firebaseLib.RegisterUserAsync("test@gmail.com", "stringG.1212"); //NOT A REAL SECRET
@@ -63,7 +60,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             string token = "";
 
             // Act & Assert
-            await Assert.ThrowsExceptionAsync<RequestFailedException>(async () => 
+            await Assert.ThrowsExactlyAsync<RequestFailedException>(async () =>
                 await _notificationLib.SetFcmToken(_accessToken, token));
         }
 
@@ -77,7 +74,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             // Act
             // Setze zuerst das initiale Token
             await _notificationLib.SetFcmToken(_accessToken, initialToken);
-            
+
             // Aktualisiere dann mit einem neuen Token (sollte upsert verwenden)
             await _notificationLib.SetFcmToken(_accessToken, updatedToken);
 

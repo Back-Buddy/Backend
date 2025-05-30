@@ -54,7 +54,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             await CleanUpDevices();
         }
 
-        private async Task CleanUpDevices()
+        private static async Task CleanUpDevices()
         {
             foreach (Guid deviceId in _deviceIds)
             {
