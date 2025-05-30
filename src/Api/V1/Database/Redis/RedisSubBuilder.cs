@@ -30,7 +30,6 @@
         public void Build()
         {
             _services.AddSingleton(this);
-            _services.AddSingleton<RedisSubBackgroundService>();
             _services.AddHostedService<RedisSubBackgroundService>();
         }
     }

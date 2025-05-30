@@ -1,6 +1,6 @@
 ﻿namespace BackBuddy.Api.Service.V1.Database.Redis
 {
-    public static class TypeExtension
+    public static class RedisChannelKeyExtensions
     {
         public static string GetRedisChannelKey(this Type type)
         {

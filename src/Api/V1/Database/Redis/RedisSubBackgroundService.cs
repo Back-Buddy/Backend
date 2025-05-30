@@ -68,7 +68,7 @@ namespace BackBuddy.Api.Service.V1.Database.Redis
                 object consumer = scope.ServiceProvider.GetRequiredService(consumerType);
 
                 Type messageType = _consumerMessageTypeMapping[consumerType];
-                object deserializedMessage = JsonSerializer.Deserialize(message!, messageType, WebSocketService.JsonOptions) ?? throw new JsonException("Message cloud not be parsed!");
+                object deserializedMessage = JsonSerializer.Deserialize(message!, messageType, WebSocketService.JsonOptions) ?? throw new JsonException("Message could not be parsed!");
 
                 MethodInfo method = _consumerMethods[consumerType];
                 var task = (Task?)method.Invoke(consumer, [deserializedMessage]);
