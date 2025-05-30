@@ -1,4 +1,5 @@
-﻿using BackBuddy.Api.Service.V1.WebSockets.Dtos;
+﻿using BackBuddy.Api.Service.V1.Database.Redis;
+using BackBuddy.Api.Service.V1.WebSockets.Dtos;
 using BackBuddy.Api.Service.V1.WebSockets.DTOs;
 using BackBuddy.Api.Service.V1.WebSockets.Mapper;
 using BackBuddy.Api.Service.V1.WebSockets.Services;
@@ -6,7 +7,7 @@ using System.Text.Json;
 
 namespace BackBuddy.Api.Service.V1.WebSockets.Consumer
 {
-    public class WebSocketSendMessageConsumer(IWebSocketService webSocketService, ILogger<WebSocketSendMessageConsumer> logger) : Consumer<WebSocketSendMessage>
+    public class WebSocketSendMessageConsumer(IWebSocketService webSocketService, ILogger<WebSocketSendMessageConsumer> logger) : IConsumer<WebSocketSendMessage>
     {
         private readonly IWebSocketService _webSocketService = webSocketService;
         private readonly ILogger<WebSocketSendMessageConsumer> _logger = logger;
