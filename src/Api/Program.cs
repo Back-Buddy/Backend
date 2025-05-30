@@ -15,6 +15,7 @@ using BackBuddy.Api.Service.V1.Notification.Entities;
 using BackBuddy.Api.Service.V1.Notification.Repositories;
 using BackBuddy.Api.Service.V1.Notification.Services;
 using BackBuddy.Api.Service.V1.WebSockets.BackgroundServices;
+using BackBuddy.Api.Service.V1.WebSockets.Consumer;
 using BackBuddy.Api.Service.V1.WebSockets.Dtos;
 using BackBuddy.Api.Service.V1.WebSockets.Middleware;
 using BackBuddy.Api.Service.V1.WebSockets.Repositories;
@@ -112,11 +113,11 @@ builder.Services.AddOptions<ConnectedDeviceConfig>()
 
 builder.Services.AddTransient<IPublisher, Publisher>();
 
-builder.Services.AddSingleton<WebSocketMessageConsumer>();
-builder.Services.AddHostedService(x =>
-{
-    return x.GetRequiredService<WebSocketMessageConsumer>();
-});
+//builder.Services.AddSingleton<WebSocketMessageConsumer>();
+//builder.Services.AddHostedService(x =>
+//{
+//    return x.GetRequiredService<WebSocketMessageConsumer>();
+//});
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 
@@ -147,6 +148,10 @@ builder.Services.AddMassTransit(x =>
         });
     }
 });
+
+builder.Services.AddRedisSub()
+    .AddConsumer<WebSocketSendMessageConsumer, WebSocketSendMessage>()
+    .Build();
 
 builder.Services.ConfigureFullSwaggerConfig();
 

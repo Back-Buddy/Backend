@@ -16,7 +16,7 @@ namespace BackBuddy.Api.Service.V1.Database.Redis
         public async Task PublishAsync<T>(T payload, CommandFlags commandFlags = CommandFlags.None) where T : class
         {
             string jsonPayload = JsonSerializer.Serialize(payload, WebSocketService.JsonOptions);
-            await _subscriber.PublishAsync(new RedisChannel(typeof(T).FullName ?? typeof(T).Name, RedisChannel.PatternMode.Literal), jsonPayload, commandFlags);
+            await _subscriber.PublishAsync(new RedisChannel(typeof(T).GetRedisChannelKey(), RedisChannel.PatternMode.Literal), jsonPayload, commandFlags);
         }
     }
 }
