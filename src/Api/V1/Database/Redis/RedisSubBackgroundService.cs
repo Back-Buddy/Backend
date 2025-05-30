@@ -1,6 +1,5 @@
 ﻿
 using BackBuddy.Api.Service.V1.WebSockets.Services;
-using Microsoft.OpenApi.Writers;
 using StackExchange.Redis;
 using System.Reflection;
 using System.Text.Json;
@@ -44,11 +43,11 @@ namespace BackBuddy.Api.Service.V1.Database.Redis
             foreach ((string channelName, List<Type> consumers) in _messageConsumerMapping)
             {
                 _logger.LogInformation("Subscribing to channel {ChannelName} with {ConsumerCount} consumers", channelName, consumers.Count);
-                await subscriber.SubscribeAsync(new RedisChannel(channelName, RedisChannel.PatternMode.Literal), async (channel, message) => await Handle(_serviceScopeFactory.CreateScope(), channel.ToString() ?? string.Empty, message, consumers));
+                await subscriber.SubscribeAsync(new RedisChannel(channelName, RedisChannel.PatternMode.Literal), async (channel, message) => await Handle(channel.ToString() ?? string.Empty, message, consumers));
             }
         }
 
-        internal async Task Handle(IServiceScope scope, string channelName, RedisValue message, IEnumerable<Type> consumers)
+        internal async Task Handle(string channelName, RedisValue message, IEnumerable<Type> consumers)
         {
             if (message.IsNullOrEmpty)
             {
@@ -56,29 +55,33 @@ namespace BackBuddy.Api.Service.V1.Database.Redis
                 return;
             }
             if (!consumers.Any()) return;
+            using IServiceScope scope = _serviceScopeFactory.CreateScope();
 
-            foreach (Type consumerType in consumers)
+            IEnumerable<Task> tasks = consumers.Select(consumer => CallConsumer(scope, consumer, message, channelName));
+            await Task.WhenAll(tasks);
+        }
+
+        internal async Task CallConsumer(IServiceScope scope, Type consumerType, RedisValue message, string channelName)
+        {
+            try
             {
-                try
-                {
-                    object consumer = scope.ServiceProvider.GetService(consumerType) ?? throw new InvalidOperationException("Consumer not registered! Use the RedisSubBuilder!");
+                object consumer = scope.ServiceProvider.GetRequiredService(consumerType);
 
-                    Type messageType = _consumerMessageTypeMapping[consumerType];
-                    object deserializedMessage = JsonSerializer.Deserialize(message!, messageType, WebSocketService.JsonOptions) ?? throw new JsonException("Message cloud not be parsed!");
+                Type messageType = _consumerMessageTypeMapping[consumerType];
+                object deserializedMessage = JsonSerializer.Deserialize(message!, messageType, WebSocketService.JsonOptions) ?? throw new JsonException("Message cloud not be parsed!");
 
-                    MethodInfo method = _consumerMethods[consumerType];
-                    var task = (Task?)method.Invoke(consumer, [deserializedMessage]);
-                    if (task != null)
-                        await task;
-                }
-                catch (TargetInvocationException ex)
-                {
-                    _logger.LogError(ex.InnerException, "Error invoking Consume method for consumer {ConsumerType} on channel {ChannelName}", consumerType.Name, channelName);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error processing message for consumer {ConsumerType} on channel {ChannelName}", consumerType.Name, channelName);
-                }
+                MethodInfo method = _consumerMethods[consumerType];
+                var task = (Task?)method.Invoke(consumer, [deserializedMessage]);
+                if (task != null)
+                    await task;
+            }
+            catch (TargetInvocationException ex)
+            {
+                _logger.LogError(ex.InnerException, "Error invoking Consume method for consumer {ConsumerType} on channel {ChannelName}", consumerType.Name, channelName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing message for consumer {ConsumerType} on channel {ChannelName}", consumerType.Name, channelName);
             }
         }
 

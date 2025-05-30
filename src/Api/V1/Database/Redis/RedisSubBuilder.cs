@@ -15,7 +15,7 @@
 
         private readonly HashSet<(Type ConsumerType, Type MessageType)> _consumers = [];
 
-        public RedisSubBuilder AddConsumer<TConsumer, TMessage>() where TConsumer : IConsumer<TMessage> where TMessage : class
+        public RedisSubBuilder AddConsumer<TConsumer, TMessage>() where TConsumer : Consumer<TMessage> where TMessage : class
         {
             _services.AddScoped(typeof(TConsumer));
             _consumers.Add((typeof(TConsumer), typeof(TMessage)));
