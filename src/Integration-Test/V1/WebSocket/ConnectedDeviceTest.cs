@@ -68,6 +68,7 @@ namespace BackBuddy.Integration_Test.V1.WebSocket
             using ClientWebSocket clientWebSocket = new();
             clientWebSocket.Options.AddSubProtocol(secret);
             await clientWebSocket.ConnectAsync(new Uri(_webSocketUri), CancellationToken.None);
+            await Task.Delay(TimeSpan.FromSeconds(2));
 
             // Act
             JsonObject response = await _deviceLib.GetDevice(_accessToken, deviceId);
