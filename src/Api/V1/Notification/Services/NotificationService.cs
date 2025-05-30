@@ -15,9 +15,6 @@ namespace BackBuddy.Api.Service.V1.Notification.Services
         private readonly INotificationRepository _repository = repository;
         public async Task SetFcmToken(string userId, string token, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrWhiteSpace(token))
-                throw new FcmTokenIsNullException();
-
             NotificationEntity entity = new()
             {
                 UserId = userId,

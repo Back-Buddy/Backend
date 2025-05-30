@@ -52,7 +52,7 @@ builder.Services
     .Connect()
     .AddCollection<DeviceEntity>(nameof(DeviceEntity))
     .AddCollection<DeviceLogEntity>(nameof(DeviceLogEntity))
-    .AddCollection<ReportEntity>(nameof(ReportEntity));
+    .AddCollection<ReportEntity>(nameof(ReportEntity))
     .AddCollection<NotificationEntity>(nameof(NotificationEntity));
 #endregion
 
