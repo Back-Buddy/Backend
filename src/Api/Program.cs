@@ -11,6 +11,9 @@ using BackBuddy.Api.Service.V1.Device.Entities;
 using BackBuddy.Api.Service.V1.Device.Repositories;
 using BackBuddy.Api.Service.V1.Device.Services;
 using BackBuddy.Api.Service.V1.ExceptionHandlers;
+using BackBuddy.Api.Service.V1.Notification.Entities;
+using BackBuddy.Api.Service.V1.Notification.Repositories;
+using BackBuddy.Api.Service.V1.Notification.Services;
 using BackBuddy.Api.Service.V1.WebSockets.BackgroundServices;
 using BackBuddy.Api.Service.V1.WebSockets.Middleware;
 using BackBuddy.Api.Service.V1.WebSockets.Repositories;
@@ -53,7 +56,8 @@ builder.Services
     .Connect()
     .AddCollection<DeviceEntity>(nameof(DeviceEntity))
     .AddCollection<DeviceLogEntity>(nameof(DeviceLogEntity))
-    .AddCollection<ReportEntity>(nameof(ReportEntity));
+    .AddCollection<ReportEntity>(nameof(ReportEntity))
+    .AddCollection<NotificationEntity>(nameof(NotificationEntity));
 #endregion
 
 #region Redis
@@ -100,6 +104,8 @@ builder.Services.AddHostedService(x =>
 {
     return x.GetRequiredService<WebSocketMessageConsumer>();
 });
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 
 builder.Services.AddMassTransit(x =>
 {

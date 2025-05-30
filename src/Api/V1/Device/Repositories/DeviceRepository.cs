@@ -21,19 +21,20 @@ namespace BackBuddy.Api.Service.V1.Device.Repositories
 
     public class DeviceRepository(IMongoCollection<DeviceEntity> collection) : IDeviceRepository
     {
+        private readonly IMongoCollection<DeviceEntity> _collection = collection;
         public async Task Add(DeviceEntity entity, CancellationToken cancellationToken = default)
         {
-            await collection.InsertOneAsync(entity, cancellationToken: cancellationToken);
+            await _collection.InsertOneAsync(entity, cancellationToken: cancellationToken);
         }
 
         public async Task Delete(Guid id, CancellationToken cancellationToken = default)
         {
-            await collection.DeleteOneAsync(x => x.Id == id, cancellationToken);
+            await _collection.DeleteOneAsync(x => x.Id == id, cancellationToken);
         }
 
         public async Task<DeviceEntity?> Get(Guid id, CancellationToken cancellationToken = default)
         {
-            IAsyncCursor<DeviceEntity> cursor = await collection.FindAsync(x => x.Id == id, cancellationToken: cancellationToken);
+            IAsyncCursor<DeviceEntity> cursor = await _collection.FindAsync(x => x.Id == id, cancellationToken: cancellationToken);
             return await cursor.FirstOrDefaultAsync(cancellationToken);
         }
 
@@ -58,8 +59,8 @@ namespace BackBuddy.Api.Service.V1.Device.Repositories
                 Sort = sortDefinition
             };
 
-            IAsyncCursor<DeviceEntity> cursor = await collection.FindAsync(finalFilter, findOptions, cancellationToken: cancellationToken);
-            long total = await collection.CountDocumentsAsync(finalFilter, cancellationToken: cancellationToken);
+            IAsyncCursor<DeviceEntity> cursor = await _collection.FindAsync(finalFilter, findOptions, cancellationToken: cancellationToken);
+            long total = await _collection.CountDocumentsAsync(finalFilter, cancellationToken: cancellationToken);
 
             List<DeviceEntity> deviceEntities = await cursor.ToListAsync(cancellationToken);
             bool hasMoreEntries = total > (page.Offset() + deviceEntities.Count);
@@ -79,13 +80,13 @@ namespace BackBuddy.Api.Service.V1.Device.Repositories
                     Builders<DeviceEntity>.Filter.Eq(x => x.UserId, userId),
                     Builders<DeviceEntity>.Filter.Regex(u => u.Name, new BsonRegularExpression(Regex.Escape(name), "i"))
                 );
-            IAsyncCursor<DeviceEntity> cursor = await collection.FindAsync(filterDefinition, cancellationToken: cancellationToken);
+            IAsyncCursor<DeviceEntity> cursor = await _collection.FindAsync(filterDefinition, cancellationToken: cancellationToken);
             return !(await cursor.AnyAsync(cancellationToken));
         }
 
         public async Task Update(DeviceEntity entity, CancellationToken cancellationToken = default)
         {
-            await collection.ReplaceOneAsync(x => x.Id == entity.Id, entity, cancellationToken: cancellationToken);
+            await _collection.ReplaceOneAsync(x => x.Id == entity.Id, entity, cancellationToken: cancellationToken);
         }
 
         public async Task<bool> HasActiveDevices(string userId, CancellationToken cancellationToken = default)
@@ -95,7 +96,7 @@ namespace BackBuddy.Api.Service.V1.Device.Repositories
                     Builders<DeviceEntity>.Filter.Eq(x => x.UserId, userId),
                     Builders<DeviceEntity>.Filter.Eq(x => x.Active, true)
                 );
-            IAsyncCursor<DeviceEntity> cursor = await collection.FindAsync(filter, cancellationToken: cancellationToken);
+            IAsyncCursor<DeviceEntity> cursor = await _collection.FindAsync(filter, cancellationToken: cancellationToken);
             return await cursor.AnyAsync(cancellationToken);
         }
 
@@ -106,7 +107,7 @@ namespace BackBuddy.Api.Service.V1.Device.Repositories
             IEnumerable<Task<ReplaceOneResult>> tasks = activeDevices.Select(device => 
             {
                 device.Active = false;
-                return collection.ReplaceOneAsync(
+                return _collection.ReplaceOneAsync(
                     d => d.Id == device.Id, 
                     device, 
                     cancellationToken: cancellationToken);
@@ -124,7 +125,7 @@ namespace BackBuddy.Api.Service.V1.Device.Repositories
                     Builders<DeviceEntity>.Filter.Eq(x => x.Active, true)
                 );
             
-            return await collection.Find(filter).ToListAsync(cancellationToken);
+            return await _collection.Find(filter).ToListAsync(cancellationToken);
         }
     }
 }
