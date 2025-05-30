@@ -113,11 +113,6 @@ builder.Services.AddOptions<ConnectedDeviceConfig>()
 
 builder.Services.AddTransient<IPublisher, Publisher>();
 
-//builder.Services.AddSingleton<WebSocketMessageConsumer>();
-//builder.Services.AddHostedService(x =>
-//{
-//    return x.GetRequiredService<WebSocketMessageConsumer>();
-//});
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 
