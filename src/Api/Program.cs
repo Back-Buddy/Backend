@@ -14,10 +14,14 @@ using BackBuddy.Api.Service.V1.ExceptionHandlers;
 using BackBuddy.Api.Service.V1.Notification.Entities;
 using BackBuddy.Api.Service.V1.Notification.Repositories;
 using BackBuddy.Api.Service.V1.Notification.Services;
+using BackBuddy.Api.Service.V1.WebSockets.BackgroundServices;
 using BackBuddy.Api.Service.V1.WebSockets.Middleware;
 using BackBuddy.Api.Service.V1.WebSockets.Repositories;
 using BackBuddy.Api.Service.V1.WebSockets.Services;
 using MassTransit;
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Caching.StackExchangeRedis;
+using StackExchange.Redis;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -60,12 +64,23 @@ builder.Services
 IConfigurationSection redisSection = builder.Configuration.GetSection("Redis");
 RedisConnectionConfig redisConfig = redisSection.Get<RedisConnectionConfig>() ?? throw new InvalidDataException("Redis information must be set!");
 
-builder.Services.AddStackExchangeRedisCache(options =>
+builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 {
-    options.Configuration = redisConfig.Connection;
-    options.InstanceName = redisConfig.DatabaseName;
+    return ConnectionMultiplexer.Connect(redisConfig.Connection);
+});
+
+builder.Services.AddSingleton<IDistributedCache>(sp =>
+{
+    IConnectionMultiplexer multiplexer = sp.GetRequiredService<IConnectionMultiplexer>();
+    var options = new RedisCacheOptions
+    {
+        ConnectionMultiplexerFactory = () => Task.FromResult(multiplexer),
+        InstanceName = redisConfig.DatabaseName
+    };
+    return new RedisCache(options);
 });
 #endregion
+
 builder.Services.AddScoped<IDeviceStatusRepository, DeviceStatusRepository>();
 
 builder.Services.AddScoped<IDeviceLogService, DeviceLogService>();
@@ -82,6 +97,13 @@ builder.Services.AddScoped<IWebSocketService, WebSocketService>();
 
 builder.Services.AddScoped<IConnectedDeviceRepository, ConnectedDeviceRepository>();
 
+builder.Services.AddTransient<IPublisher, Publisher>();
+
+builder.Services.AddSingleton<WebSocketMessageConsumer>();
+builder.Services.AddHostedService(x =>
+{
+    return x.GetRequiredService<WebSocketMessageConsumer>();
+});
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 
@@ -93,15 +115,6 @@ builder.Services.AddMassTransit(x =>
     x.AddConsumer<DeviceNewSecretAckConsumer>();
     x.AddConsumer<DeviceAuthorizeConsumer>();
     x.AddConsumer<DeviceUpdateStatusConsumer>();
-
-    x.AddConfigureEndpointsCallback((_, cfg) =>
-    {
-        if (cfg is IServiceBusReceiveEndpointConfigurator sb)
-        {
-            sb.ConfigureDeadLetterQueueErrorTransport();
-            sb.ConfigureDeadLetterQueueDeadLetterTransport();
-        }
-    });
 
     string connection = builder.Configuration.GetValue<string>($"MESSAGE_QUEUE_CONNECTION") ?? throw new InvalidOperationException("MESSAGE_QUEUE_CONNECTION is not set!");
     if (builder.Environment.IsDevelopment())

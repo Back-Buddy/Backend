@@ -71,6 +71,8 @@ namespace BackBuddy.Integration_Test.V1.WebSocket
             clientWebSocket.Options.AddSubProtocol(secret);
             await clientWebSocket.ConnectAsync(new Uri(_webSocketUri), CancellationToken.None);
 
+            await Task.Delay(1000); // Wait for connection to be established
+
             // Assert
             Assert.AreEqual(WebSocketState.Open, clientWebSocket.State);
 
