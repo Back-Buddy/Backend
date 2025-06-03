@@ -20,10 +20,16 @@ using BackBuddy.Api.Service.V1.WebSockets.Dtos;
 using BackBuddy.Api.Service.V1.WebSockets.Middleware;
 using BackBuddy.Api.Service.V1.WebSockets.Repositories;
 using BackBuddy.Api.Service.V1.WebSockets.Services;
+using FirebaseAdmin;
+using FirebaseAdmin.Auth;
+using FirebaseAdmin.Messaging;
+using Google.Apis.Auth.OAuth2;
+using Google.Cloud.Firestore.Admin.V1;
 using MassTransit;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.StackExchangeRedis;
 using StackExchange.Redis;
+using System.Text;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -80,6 +86,39 @@ builder.Services.AddSingleton<IDistributedCache>(sp =>
         InstanceName = redisConfig.DatabaseName
     };
     return new RedisCache(options);
+});
+#endregion
+
+#region Firebase
+string firebase_secret = builder.Configuration.GetValue<string>("Firebase_Secret") ?? throw new InvalidDataException("FIREBASE_SECRET is not set!");
+GoogleCredential googleCredential = GoogleCredential.FromJson(Encoding.UTF8.GetString(Convert.FromBase64String(firebase_secret)));
+builder.Services.AddSingleton(FirebaseApp.Create(new AppOptions() { Credential = googleCredential }));
+
+
+var a = await new FirestoreAdminClientBuilder()
+{
+    Credential = googleCredential
+}.BuildAsync();
+
+a.GetDatabase("back-buddy-lezn34");
+
+// var z = await a.GetDatabaseAsync("-default-");
+
+var x = FirebaseAuth.DefaultInstance.ListUsersAsync(new ListUsersOptions() { PageSize = 100 });
+await foreach (var y in x.AsRawResponses())
+{
+    Console.WriteLine("UserCount: {0}", y.Users.Count());
+}
+
+
+await FirebaseMessaging.DefaultInstance.SendAsync(new Message()
+{
+    Notification = new Notification()
+    {
+        Title = "Test Notification",
+        Body = "This is a test notification from BackBuddy API."
+    },
+    Token = "dyojO2g8XkSDhEIXsW2XOb:APA91bEct4msPU44Ux5P4bqp2Wnb-QBrhGUo9LuvFkJiRLk-55EaKV6aoyrDo8eD7eDVx28fK9k9-2FuUHYT4cEVIplZYztuA8UednGWh1hVas-i-OcOFUQ",
 });
 #endregion
 

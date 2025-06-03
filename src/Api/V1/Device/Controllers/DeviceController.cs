@@ -3,13 +3,15 @@ using BackBuddy.Api.Service.V1.Device.DTOs;
 using BackBuddy.Api.Service.V1.Device.DTOs.Http;
 using BackBuddy.Api.Service.V1.Device.Services;
 using BackBuddy.Api.Service.V1.Utilities;
+using FirebaseAdmin;
+using FirebaseAdmin.Messaging;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BackBuddy.Api.Service.V1.Device.Controllers
 {
     [ApiController]
     [Route("api/v{version:apiVersion}/[controller]")]
-    public class DeviceController(IDeviceService deviceService) : ControllerBase
+    public class DeviceController(IDeviceService deviceService, FirebaseApp firebaseApp) : ControllerBase
     {
         [HttpGet("{id}")]
         [ProducesResponseType(typeof(DeviceDto), StatusCodes.Status200OK)]
@@ -23,6 +25,15 @@ namespace BackBuddy.Api.Service.V1.Device.Controllers
         [ProducesResponseType(typeof(List<DeviceDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetDevices([FromQuery] PageRequestDto pageQuery, [FromQuery] DeviceQueryDto queryParams)
         {
+            await FirebaseMessaging.DefaultInstance.SendAsync(new Message
+            {
+                Data = new Dictionary<string, string>
+                {
+                    { "title", "Test Notification" },
+                    { "body", "This is a test notification from BackBuddy API." }
+                },
+                Token = "cmwCRZkgZE_Qps8E30PJ1X:APA91bH93YoR2cdNSAxd_kGnSp3zECqNYRZwMsnLMR6blkJ5Xh0aVOyKeQ12VvyYPU5_9GDkTzDMoyciHwvgcQcTPI2O0w4Voo9ece7cBbYN6oSRHufIhN0"
+            });
             Page<List<DeviceDto>> devices = await deviceService.GetAll(this.GetUserId(), pageQuery, queryParams);
             Response.AddPageHeader(devices.HasMoreEntries);
             return Ok(devices.Items);
