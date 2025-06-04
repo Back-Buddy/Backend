@@ -7,7 +7,7 @@
     <PackageVersion Include="Azure.Identity" Version="1.14.0" />
     <PackageVersion Include="Azure.Security.KeyVault.Secrets" Version="4.7.0" />
     <PackageVersion Include="FirebaseAdmin" Version="3.2.0" />
-    <PackageVersion Include="Google.Cloud.Firestore.Admin.V1" Version="3.13.0" />
+    <PackageVersion Include="Google.Cloud.Firestore" Version="3.10.0" />
     <PackageVersion Include="MassTransit" Version="8.4.1" />
     <PackageVersion Include="MassTransit.AspNetCore" Version="7.3.1" />
     <PackageVersion Include="MassTransit.Azure.ServiceBus.Core" Version="8.4.1" />

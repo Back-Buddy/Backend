@@ -24,7 +24,7 @@ using FirebaseAdmin;
 using FirebaseAdmin.Auth;
 using FirebaseAdmin.Messaging;
 using Google.Apis.Auth.OAuth2;
-using Google.Cloud.Firestore.Admin.V1;
+using Google.Cloud.Firestore.V1;
 using MassTransit;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.StackExchangeRedis;
@@ -95,12 +95,22 @@ GoogleCredential googleCredential = GoogleCredential.FromJson(Encoding.UTF8.GetS
 builder.Services.AddSingleton(FirebaseApp.Create(new AppOptions() { Credential = googleCredential }));
 
 
-var a = await new FirestoreAdminClientBuilder()
+var a = await new FirestoreClientBuilder()
 {
     Credential = googleCredential
 }.BuildAsync();
 
-a.GetDatabase("back-buddy-lezn34");
+a.ListDocumentsAsync(
+    new ListDocumentsRequest
+    {
+        Parent = "projects/back-buddy-lezn34/databases/(default)/documents",
+        CollectionId = "users",
+        PageSize = 100
+    }
+).AsRawResponses().ForEachAsync(x =>
+{
+    Console.WriteLine("DocumentCount: {0}", x.Documents.Count);
+}).Wait();
 
 // var z = await a.GetDatabaseAsync("-default-");
 
