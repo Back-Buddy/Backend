@@ -3,6 +3,7 @@ using Azure.Security.KeyVault.Secrets;
 using BackBuddy.Api.Service;
 using BackBuddy.Api.Service.Swagger;
 using BackBuddy.Api.Service.V1.Auth.Extensions;
+using BackBuddy.Api.Service.V1.Database.Firestore;
 using BackBuddy.Api.Service.V1.Database.KeyVault;
 using BackBuddy.Api.Service.V1.Database.MongoDB;
 using BackBuddy.Api.Service.V1.Database.Redis;
@@ -21,10 +22,9 @@ using BackBuddy.Api.Service.V1.WebSockets.Middleware;
 using BackBuddy.Api.Service.V1.WebSockets.Repositories;
 using BackBuddy.Api.Service.V1.WebSockets.Services;
 using FirebaseAdmin;
-using FirebaseAdmin.Auth;
 using FirebaseAdmin.Messaging;
 using Google.Apis.Auth.OAuth2;
-using Google.Cloud.Firestore.V1;
+using Google.Cloud.Firestore;
 using MassTransit;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.StackExchangeRedis;
@@ -90,36 +90,25 @@ builder.Services.AddSingleton<IDistributedCache>(sp =>
 #endregion
 
 #region Firebase
-string firebase_secret = builder.Configuration.GetValue<string>("Firebase_Secret") ?? throw new InvalidDataException("FIREBASE_SECRET is not set!");
-GoogleCredential googleCredential = GoogleCredential.FromJson(Encoding.UTF8.GetString(Convert.FromBase64String(firebase_secret)));
-builder.Services.AddSingleton(FirebaseApp.Create(new AppOptions() { Credential = googleCredential }));
+IConfigurationSection firebaseSection = builder.Configuration.GetSection("Firebase");
+FirebaseConfig firebaseConfig = firebaseSection.Get<FirebaseConfig>() ?? throw new InvalidDataException("Firebase information must be set!");
+GoogleCredential googleCredential = GoogleCredential.FromJson(Encoding.UTF8.GetString(Convert.FromBase64String(firebaseConfig.Secret)));
 
-
-var a = await new FirestoreClientBuilder()
+FirebaseApp firebaseApp = FirebaseApp.DefaultInstance ?? FirebaseApp.Create(new AppOptions
 {
+    Credential = googleCredential,
+    ProjectId = firebaseConfig.ProjectId
+});
+
+FirestoreDb firestoreDb = await new FirestoreDbBuilder
+{
+    ProjectId = firebaseConfig.ProjectId,
     Credential = googleCredential
 }.BuildAsync();
 
-a.ListDocumentsAsync(
-    new ListDocumentsRequest
-    {
-        Parent = "projects/back-buddy-lezn34/databases/(default)/documents",
-        CollectionId = "users",
-        PageSize = 100
-    }
-).AsRawResponses().ForEachAsync(x =>
-{
-    Console.WriteLine("DocumentCount: {0}", x.Documents.Count);
-}).Wait();
-
-// var z = await a.GetDatabaseAsync("-default-");
-
-var x = FirebaseAuth.DefaultInstance.ListUsersAsync(new ListUsersOptions() { PageSize = 100 });
-await foreach (var y in x.AsRawResponses())
-{
-    Console.WriteLine("UserCount: {0}", y.Users.Count());
-}
-
+builder.Services.AddSingleton(firebaseApp);
+builder.Services.AddSingleton(FirebaseMessaging.DefaultInstance);
+builder.Services.AddSingleton(firestoreDb);
 
 await FirebaseMessaging.DefaultInstance.SendAsync(new Message()
 {
