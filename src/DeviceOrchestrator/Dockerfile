@@ -24,12 +24,14 @@ WORKDIR /src
 
 # copy csproj and restore as distinct layers
 COPY Directory.Packages.props ./Directory.Packages.props
+COPY Core/*.csproj ./Core/
 COPY DeviceOrchestrator/*.csproj ./DeviceOrchestrator/
 
 # Restore dependencies
 RUN dotnet restore DeviceOrchestrator/DeviceOrchestrator.csproj
 
 # Copy all source code
+COPY Core/ Core/
 COPY DeviceOrchestrator/ DeviceOrchestrator/
 
 # Publish the app

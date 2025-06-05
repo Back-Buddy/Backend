@@ -7,8 +7,4 @@ builder.Services.AddControllers();
 builder.Services.AddProblemDetails();
 
 WebApplication app = builder.Build();
-
-app.UseHttpsRedirection();
-app.UseAuthorization();
-app.MapControllers();
 await app.RunAsync();

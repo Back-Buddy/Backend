@@ -4,16 +4,13 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <InvariantGlobalization>true</InvariantGlobalization>
-    <AssemblyName>DeviceOrchestrator</AssemblyName>
     <RootNamespace>BackBuddy.DeviceOrchestrator.Service</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <ServerGarbageCollection>false</ServerGarbageCollection>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MassTransit" />
-    <PackageReference Include="MassTransit.Azure.ServiceBus.Core" />
-    <PackageReference Include="MassTransit.RabbitMQ" />
+    <ProjectReference Include="..\Core\Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>
