@@ -20,6 +20,23 @@ services:
     env_file:
       - Development.env
 
+  deviceorchestrator:
+    image: ${DOCKER_REGISTRY-}backbuddy/deviceorchestrator:${TAG:-latest}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    build:
+      context: .
+      dockerfile: DeviceOrchestrator/Dockerfile
+      args:
+        BUILD_ENV: dev
+    env_file:
+      - Development.env
+
   mongodb:
     hostname: "mongodb"
     image: "mongo:latest"

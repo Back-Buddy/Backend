@@ -26,6 +26,23 @@ services:
   api2:
     <<: *api-template
 
+  deviceorchestrator:
+    image: ${DOCKER_REGISTRY-}backbuddy/deviceorchestrator:${TAG:-latest}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    build:
+      context: .
+      dockerfile: DeviceOrchestrator/Dockerfile
+      args:
+        BUILD_ENV: dev
+    env_file:
+      - Development.env
+
   nginx:
     image: nginx:stable
     volumes:

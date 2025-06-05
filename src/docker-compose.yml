@@ -6,3 +6,9 @@ services:
     build:
       context: .
       dockerfile: Api/Dockerfile
+
+  deviceorchestrator:
+    image: ${DOCKER_REGISTRY-}backbuddy/deviceorchestrator:${TAG:-latest}
+    build:
+      context: .
+      dockerfile: DeviceOrchestrator/Dockerfile
