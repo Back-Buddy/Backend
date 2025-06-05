@@ -10,6 +10,8 @@ using BackBuddy.Api.Service.V1.Device.Repositories;
 using BackBuddy.Api.Service.V1.Utilities;
 using BackBuddy.Api.Service.V1.WebSockets.Dtos;
 using BackBuddy.Api.Service.V1.WebSockets.Services;
+using BackBuddy.Core.Library.Device.Dtos;
+using BackBuddy.Core.Library.Device.Entities;
 using System.Text.RegularExpressions;
 
 namespace BackBuddy.Api.Service.V1.Device.Services
@@ -25,10 +27,11 @@ namespace BackBuddy.Api.Service.V1.Device.Services
         Task TryUpdateSecret(Guid deviceId, CancellationToken cancellationToken = default);
         Task AckNewSecret(Guid deviceId, string secret, CancellationToken cancellationToken = default);
         Task HandleStatusUpdate(Guid deviceId, DeviceUpdateStatusMessage status, CancellationToken cancellationToken = default);
+        Task ValidateDeviceStatuses(IEnumerable<DeviceStatusDto> statusDtos, CancellationToken cancellationToken = default);
         Task<bool> IsDeviceConnected(Guid deviceId);
     }
 
-    public partial class DeviceService(IDeviceRepository repository, IDeviceStatusRepository deviceStatusRepository, IDeviceLogRepository deviceLogRepository, IReportRepository reportRepository, ISecretProvider secretProvider, IWebSocketService webSocketService, IPublisher publisher) : IDeviceService
+    public partial class DeviceService(IDeviceRepository repository, IDeviceStatusRepository deviceStatusRepository, IDeviceLogRepository deviceLogRepository, IReportRepository reportRepository, ISecretProvider secretProvider, IWebSocketService webSocketService, IPublisher publisher, ILogger<DeviceService> logger) : IDeviceService
     {
         private const string NAME_PATTERN = @"^[a-zA-Z0-9 \-]{3,16}$";
         private readonly static TimeSpan SECRET_EXPIRATION_TIME = TimeSpan.FromSeconds(1);
@@ -40,6 +43,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
         private readonly ISecretProvider _secretProvider = secretProvider;
         private readonly IWebSocketService _webSocketService = webSocketService;
         private readonly IPublisher _publisher = publisher;
+        private readonly ILogger<DeviceService> _log = logger;
 
         public async Task<DeviceSecretDto> Create(string userId, DeviceCreateRequestDto request, CancellationToken cancellationToken = default)
         {
@@ -240,6 +244,33 @@ namespace BackBuddy.Api.Service.V1.Device.Services
         public async Task<bool> IsDeviceConnected(Guid deviceId)
         {
             return await _webSocketService.IsDeviceConnected(deviceId);
+        }
+
+        public async Task ValidateDeviceStatuses(IEnumerable<DeviceStatusDto> statusDtos, CancellationToken cancellationToken = default)
+        {
+            IEnumerable<Task> tasks = statusDtos.Select(statusEntity => ValidateDeviceStatus(statusEntity, cancellationToken));
+            await Task.WhenAll(tasks);
+        }
+
+        private async Task ValidateDeviceStatus(DeviceStatusDto status, CancellationToken cancellationToken = default)
+        {
+            DeviceEntity? deviceEntity = await _repository.Get(status.DeviceId, cancellationToken);
+            if (deviceEntity == null)
+            {
+                _log.LogWarning("Device with ID {DeviceId} not found for status validation", status.DeviceId);
+                return;
+            }
+            if (!deviceEntity.Active)
+                return;
+
+            if (DateTime.UtcNow - status.StartTime < deviceEntity.Threshold)
+                return;
+
+            _log.LogInformation("Device with ID {DeviceId} has status older than threshold", status.DeviceId);
+
+            await _deviceStatusRepository.MarkCurrentStatusAsNotified(status.DeviceId, cancellationToken);
+
+            // TODO: Send Push Notification to User
         }
 
         private async Task LogDeviceError(Guid deviceId, DateTime startTime, DateTime endTime, CancellationToken cancellationToken)

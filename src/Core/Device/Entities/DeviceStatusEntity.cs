@@ -1,4 +1,4 @@
-﻿namespace BackBuddy.Api.Service.V1.Device.Entities
+﻿namespace BackBuddy.Core.Library.Device.Entities
 {
     public record DeviceStatusEntity
     {

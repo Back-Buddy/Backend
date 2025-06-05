@@ -152,6 +152,8 @@ builder.Services.AddMassTransit(x =>
     x.AddConsumer<DeviceNewSecretAckConsumer>();
     x.AddConsumer<DeviceAuthorizeConsumer>();
     x.AddConsumer<DeviceUpdateStatusConsumer>();
+    x.AddConsumer<GetDeviceStatusesConsumer>();
+    x.AddConsumer<ValidateDeviceStatusConsumer>();
 
     string connection = builder.Configuration.GetValue<string>($"MESSAGE_QUEUE_CONNECTION") ?? throw new InvalidOperationException("MESSAGE_QUEUE_CONNECTION is not set!");
     if (builder.Environment.IsDevelopment())

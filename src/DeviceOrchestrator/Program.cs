@@ -1,10 +1,32 @@
+using BackBuddy.DeviceOrchestrator.Service.BackgroundServices;
+using MassTransit;
+
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-builder.Configuration.AddJsonFile("appsettings.json");
-builder.Configuration.AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true);
+builder.Services.AddHostedService<DeviceBackgroundService>();
 
-builder.Services.AddControllers();
-builder.Services.AddProblemDetails();
+builder.Services.AddMassTransit(x =>
+{
+    x.SetKebabCaseEndpointNameFormatter();
+
+    string connection = builder.Configuration.GetValue<string>($"MESSAGE_QUEUE_CONNECTION") ?? throw new InvalidOperationException("MESSAGE_QUEUE_CONNECTION is not set!");
+    if (builder.Environment.IsDevelopment())
+    {
+        x.UsingRabbitMq((context, cfg) =>
+        {
+            cfg.Host(connection);
+            cfg.ConfigureEndpoints(context);
+        });
+    }
+    else
+    {
+        x.UsingAzureServiceBus((context, cfg) =>
+        {
+            cfg.Host(connection);
+            cfg.ConfigureEndpoints(context);
+        });
+    }
+});
 
 WebApplication app = builder.Build();
 await app.RunAsync();

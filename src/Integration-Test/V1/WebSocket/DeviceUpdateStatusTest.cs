@@ -64,6 +64,7 @@ namespace BackBuddy.Integration_Test.V1.WebSocket
             // Arrange
             JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
             Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            await _deviceLib.UpdateDevice(_accessToken, deviceId, threshold: TimeSpan.FromSeconds(10));
             string secret = device["secret"].GetValue<string>();
             _deviceIds.Add(deviceId);
 
