@@ -17,20 +17,28 @@ namespace BackBuddy.DeviceOrchestrator.Service.BackgroundServices
 
             while (!stoppingToken.IsCancellationRequested)
             {
-                Response<GetDeviceStatusesResponseMessage> response = await requestClient.GetResponse<GetDeviceStatusesResponseMessage>(new GetDeviceStatusesRequestMessage(), stoppingToken);
-                IEnumerable<DeviceStatusDto> statuses = response.Message.StatusEntities;
-                _logger.LogDebug("Received {Count} device statuses", statuses.Count());
-
-                IEnumerable<DeviceStatusDto[]> chunks = statuses.Chunk(100);
-
-                foreach (IEnumerable<DeviceStatusDto[]> outer_chunk in chunks.Chunk(5))
+                try
                 {
-                    IEnumerable<Task> tasks = outer_chunk
-                        .Select(chunk => validateRequestClient.GetResponse<ValidateDeviceStatusResponseMessage>(new ValidateDeviceStatusRequestMessage { StatusEntities = chunk }));
-                    await Task.WhenAll(tasks);
-                }
+                    Response<GetDeviceStatusesResponseMessage> response = await requestClient.GetResponse<GetDeviceStatusesResponseMessage>(new GetDeviceStatusesRequestMessage(), stoppingToken);
+                    IEnumerable<DeviceStatusDto> statuses = response.Message.StatusEntities;
+                    _logger.LogDebug("Received {Count} device statuses", statuses.Count());
 
-                await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
+                    IEnumerable<DeviceStatusDto[]> chunks = statuses.Chunk(100);
+
+                    foreach (IEnumerable<DeviceStatusDto[]> outer_chunk in chunks.Chunk(5))
+                    {
+                        IEnumerable<Task> tasks = outer_chunk
+                            .Select(chunk => validateRequestClient.GetResponse<ValidateDeviceStatusResponseMessage>(new ValidateDeviceStatusRequestMessage { StatusEntities = chunk }));
+                        await Task.WhenAll(tasks);
+                    }
+
+                    await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "An error occurred in the Device Background Service");
+                    await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken); // Wait before retrying
+                }
             }
         }
     }
