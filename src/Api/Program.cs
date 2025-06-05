@@ -3,7 +3,7 @@ using Azure.Security.KeyVault.Secrets;
 using BackBuddy.Api.Service;
 using BackBuddy.Api.Service.Swagger;
 using BackBuddy.Api.Service.V1.Auth.Extensions;
-using BackBuddy.Api.Service.V1.Database.Firestore;
+using BackBuddy.Api.Service.V1.Database.Firebase;
 using BackBuddy.Api.Service.V1.Database.KeyVault;
 using BackBuddy.Api.Service.V1.Database.MongoDB;
 using BackBuddy.Api.Service.V1.Database.Redis;
@@ -12,9 +12,8 @@ using BackBuddy.Api.Service.V1.Device.Entities;
 using BackBuddy.Api.Service.V1.Device.Repositories;
 using BackBuddy.Api.Service.V1.Device.Services;
 using BackBuddy.Api.Service.V1.ExceptionHandlers;
-using BackBuddy.Api.Service.V1.Notification.Entities;
-using BackBuddy.Api.Service.V1.Notification.Repositories;
-using BackBuddy.Api.Service.V1.Notification.Services;
+using BackBuddy.Api.Service.V1.Notifications.Services;
+using BackBuddy.Api.Service.V1.Users.Services;
 using BackBuddy.Api.Service.V1.WebSockets.BackgroundServices;
 using BackBuddy.Api.Service.V1.WebSockets.Consumer;
 using BackBuddy.Api.Service.V1.WebSockets.Dtos;
@@ -64,8 +63,7 @@ builder.Services
     .Connect()
     .AddCollection<DeviceEntity>(nameof(DeviceEntity))
     .AddCollection<DeviceLogEntity>(nameof(DeviceLogEntity))
-    .AddCollection<ReportEntity>(nameof(ReportEntity))
-    .AddCollection<NotificationEntity>(nameof(NotificationEntity));
+    .AddCollection<ReportEntity>(nameof(ReportEntity));
 #endregion
 
 #region Redis
@@ -110,15 +108,8 @@ builder.Services.AddSingleton(firebaseApp);
 builder.Services.AddSingleton(FirebaseMessaging.DefaultInstance);
 builder.Services.AddSingleton(firestoreDb);
 
-await FirebaseMessaging.DefaultInstance.SendAsync(new Message()
-{
-    Notification = new Notification()
-    {
-        Title = "Test Notification",
-        Body = "This is a test notification from BackBuddy API."
-    },
-    Token = "dyojO2g8XkSDhEIXsW2XOb:APA91bEct4msPU44Ux5P4bqp2Wnb-QBrhGUo9LuvFkJiRLk-55EaKV6aoyrDo8eD7eDVx28fK9k9-2FuUHYT4cEVIplZYztuA8UednGWh1hVas-i-OcOFUQ",
-});
+builder.Services.AddSingleton<INotificationService, NotificationService>();
+builder.Services.AddScoped<IUserService, UserService>();
 #endregion
 
 builder.Services.AddScoped<IDeviceStatusRepository, DeviceStatusRepository>();
@@ -151,7 +142,6 @@ builder.Services.AddOptions<ConnectedDeviceConfig>()
 
 builder.Services.AddTransient<IPublisher, Publisher>();
 
-builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 
 builder.Services.AddMassTransit(x =>

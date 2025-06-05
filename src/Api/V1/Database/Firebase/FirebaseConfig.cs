@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace BackBuddy.Api.Service.V1.Database.Firestore
+namespace BackBuddy.Api.Service.V1.Database.Firebase
 {
     public record FirebaseConfig
     {
