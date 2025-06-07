@@ -7,6 +7,9 @@ using BackBuddy.Api.Service.V1.Device.Entities;
 using BackBuddy.Api.Service.V1.Device.Exceptions;
 using BackBuddy.Api.Service.V1.Device.Mapper;
 using BackBuddy.Api.Service.V1.Device.Repositories;
+using BackBuddy.Api.Service.V1.Notifications.Dtos;
+using BackBuddy.Api.Service.V1.Notifications.Services;
+using BackBuddy.Api.Service.V1.Users.Services;
 using BackBuddy.Api.Service.V1.Utilities;
 using BackBuddy.Api.Service.V1.WebSockets.Dtos;
 using BackBuddy.Api.Service.V1.WebSockets.Services;
@@ -31,7 +34,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
         Task<bool> IsDeviceConnected(Guid deviceId);
     }
 
-    public partial class DeviceService(IDeviceRepository repository, IDeviceStatusRepository deviceStatusRepository, IDeviceLogRepository deviceLogRepository, IReportRepository reportRepository, ISecretProvider secretProvider, IWebSocketService webSocketService, IPublisher publisher, ILogger<DeviceService> logger) : IDeviceService
+    public partial class DeviceService(IDeviceRepository repository, IDeviceStatusRepository deviceStatusRepository, IDeviceLogRepository deviceLogRepository, IReportRepository reportRepository, ISecretProvider secretProvider, IWebSocketService webSocketService, IPublisher publisher, IUserService userService, INotificationService notificationService, ILogger<DeviceService> logger) : IDeviceService
     {
         private const string NAME_PATTERN = @"^[a-zA-Z0-9 \-]{3,16}$";
         private readonly static TimeSpan SECRET_EXPIRATION_TIME = TimeSpan.FromSeconds(1);
@@ -43,6 +46,8 @@ namespace BackBuddy.Api.Service.V1.Device.Services
         private readonly ISecretProvider _secretProvider = secretProvider;
         private readonly IWebSocketService _webSocketService = webSocketService;
         private readonly IPublisher _publisher = publisher;
+        private readonly IUserService _userService = userService;
+        private readonly INotificationService _notificationService = notificationService;
         private readonly ILogger<DeviceService> _log = logger;
 
         public async Task<DeviceSecretDto> Create(string userId, DeviceCreateRequestDto request, CancellationToken cancellationToken = default)
@@ -270,7 +275,13 @@ namespace BackBuddy.Api.Service.V1.Device.Services
 
             await _deviceStatusRepository.MarkCurrentStatusAsNotified(status.DeviceId, cancellationToken);
 
-            // TODO: Send Push Notification to User
+            IEnumerable<string> fcmTokens = await _userService.GetUserFCMTokensAsync(deviceEntity.UserId);
+
+            (string title, string body) = GetRandomNotificationMessage(deviceEntity);
+
+            await _notificationService.SendNotification(fcmTokens, new NotificationBuilder()
+                .SetTitle(title)
+                .SetBody(body).Build());
         }
 
         private async Task LogDeviceError(Guid deviceId, DateTime startTime, DateTime endTime, CancellationToken cancellationToken)
@@ -303,5 +314,26 @@ namespace BackBuddy.Api.Service.V1.Device.Services
 
         [GeneratedRegex(NAME_PATTERN)]
         private static partial Regex NameRegex();
+
+
+        private static (string Title, string Body) GetRandomNotificationMessage(DeviceEntity deviceEntity)
+        {
+            Random random = new();
+
+            List<(string Title, string Body)> messages =
+            [
+                ("🧘 Kleine Pause gefällig?", $"Du sitzt schon eine Weile auf {deviceEntity.Name}. Zeit für einen kurzen Stretch!"),
+                ("🚶 Bewegung tut gut!", $"{deviceEntity.Name} meldet: Ein paar Schritte würden dir jetzt gut tun."),
+                ("🌟 Power-Up Zeit!", $"Du hast lange gesessen. Steh auf, beweg dich kurz – dein Körper wird’s dir danken!"),
+                ("⏰ Aufstehen, bitte!", $"{deviceEntity.Name} erinnert dich freundlich: Ein bisschen Bewegung wäre jetzt ideal."),
+                ("😄 Rückenfreundlicher Hinweis", $"Langes Sitzen auf {deviceEntity.Name} erkannt. Wie wär’s mit Dehnen oder Aufstehen?"),
+                ("💡 Gesundheitstipp:", $"Schon länger auf {deviceEntity.Name}? Kurz aufstehen, tief durchatmen, weiter geht's!"),
+                ("🤸 Zeit für eine Mini-Bewegungspause", $"{deviceEntity.Name} schlägt vor: Beine strecken, Schultern kreisen, durchstarten!"),
+                ("📣 Dein Körper ruft!", $"Schon über {deviceEntity.Threshold.TotalMinutes:N0} Minuten auf {deviceEntity.Name}? Zeit für Bewegung."),
+                ("💺 Dein Stuhl vermisst dich nicht", $"Vertrau uns – {deviceEntity.Name} kommt auch mal kurz ohne dich klar. Beweg dich!"),
+                ("🎯 Mikro-Pause, große Wirkung", $"Kleine Unterbrechung, große Wirkung für deine Gesundheit. Jetzt aufstehen!")
+            ];
+            return messages[random.Next(messages.Count)];
+        }
     }
 }
