@@ -43,6 +43,24 @@ services:
     env_file:
       - Development.env
 
+  notificationemulator:
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    build:
+      context: .
+      dockerfile: NotificationEmulator/Dockerfile
+      args:
+        BUILD_ENV: dev
+    env_file:
+      - Development.env
+    ports:
+      - "8083:8080"
+
   nginx:
     image: nginx:stable
     volumes:

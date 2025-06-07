@@ -1,12 +1,14 @@
 ﻿using BackBuddy.Api.Service.V1.Notifications.Dtos;
+using BackBuddy.Core.Library.Notifications;
 using FirebaseAdmin.Messaging;
+using Microsoft.Extensions.Options;
 
 namespace BackBuddy.Api.Service.V1.Notifications.Services
 {
-    public class DevNotificationService(IHttpClientFactory httpClientFactory, DevNotificationConfig config) : INotificationService
+    public class DevNotificationService(IHttpClientFactory httpClientFactory, IOptions<DevNotificationConfig> config) : INotificationService
     {
         private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
-        private readonly DevNotificationConfig _config = config;
+        private readonly DevNotificationConfig _config = config.Value;
 
         public async Task SendNotification(IEnumerable<string> tokens, Notification notification)
         {

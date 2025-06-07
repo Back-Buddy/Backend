@@ -37,6 +37,24 @@ services:
     env_file:
       - Development.env
 
+  notificationemulator:
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    build:
+      context: .
+      dockerfile: NotificationEmulator/Dockerfile
+      args:
+        BUILD_ENV: dev
+    env_file:
+      - Development.env
+    ports:
+      - "8083:8080"
+
   mongodb:
     hostname: "mongodb"
     image: "mongo:latest"
@@ -105,5 +123,5 @@ services:
       - "127.0.0.1:15672:15672"
     healthcheck:
       test: rabbitmq-diagnostics -q check_running && rabbitmq-diagnostics -q check_local_alarms
-      interval: 5s
-      timeout: 2s
+      interval: 20s
+      timeout: 5s

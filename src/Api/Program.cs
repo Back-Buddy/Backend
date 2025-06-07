@@ -12,6 +12,7 @@ using BackBuddy.Api.Service.V1.Device.Entities;
 using BackBuddy.Api.Service.V1.Device.Repositories;
 using BackBuddy.Api.Service.V1.Device.Services;
 using BackBuddy.Api.Service.V1.ExceptionHandlers;
+using BackBuddy.Api.Service.V1.Notifications.Dtos;
 using BackBuddy.Api.Service.V1.Notifications.Services;
 using BackBuddy.Api.Service.V1.Users.Services;
 using BackBuddy.Api.Service.V1.WebSockets.BackgroundServices;
@@ -22,6 +23,7 @@ using BackBuddy.Api.Service.V1.WebSockets.Repositories;
 using BackBuddy.Api.Service.V1.WebSockets.Services;
 using FirebaseAdmin;
 using FirebaseAdmin.Messaging;
+using Google.Api.Gax;
 using Google.Apis.Auth.OAuth2;
 using Google.Cloud.Firestore;
 using MassTransit;
@@ -89,26 +91,65 @@ builder.Services.AddSingleton<IDistributedCache>(sp =>
 
 #region Firebase
 IConfigurationSection firebaseSection = builder.Configuration.GetSection("Firebase");
-FirebaseConfig firebaseConfig = firebaseSection.Get<FirebaseConfig>() ?? throw new InvalidDataException("Firebase information must be set!");
-GoogleCredential googleCredential = GoogleCredential.FromJson(Encoding.UTF8.GetString(Convert.FromBase64String(firebaseConfig.Secret)));
 
-FirebaseApp firebaseApp = FirebaseApp.DefaultInstance ?? FirebaseApp.Create(new AppOptions
+if (!builder.Environment.IsDevelopment())
 {
-    Credential = googleCredential,
-    ProjectId = firebaseConfig.ProjectId
-});
+    FirebaseConfig firebaseConfig = firebaseSection.Get<FirebaseConfig>() ?? throw new InvalidDataException("Firebase information must be set!");
+    GoogleCredential googleCredential = GoogleCredential.FromJson(Encoding.UTF8.GetString(Convert.FromBase64String(firebaseConfig.Secret)));
 
-FirestoreDb firestoreDb = await new FirestoreDbBuilder
+    if (FirebaseApp.DefaultInstance == null)
+    {
+        FirebaseApp.Create(new AppOptions
+        {
+            Credential = googleCredential,
+            ProjectId = firebaseConfig.ProjectId
+        });
+    }
+
+    FirestoreDb firestoreDb = await new FirestoreDbBuilder
+    {
+        Credential = googleCredential,
+        ProjectId = firebaseConfig.ProjectId,
+    }.BuildAsync();
+
+    builder.Services.AddSingleton(FirebaseMessaging.DefaultInstance);
+    builder.Services.AddSingleton(firestoreDb);
+    builder.Services.AddSingleton<INotificationService, NotificationService>();
+}
+else
 {
-    ProjectId = firebaseConfig.ProjectId,
-    Credential = googleCredential
-}.BuildAsync();
+    FirebaseDevConfig firebaseDevConfig = firebaseSection.Get<FirebaseDevConfig>() ?? throw new InvalidDataException("Firebase development information must be set!");
+    Environment.SetEnvironmentVariable("FIRESTORE_EMULATOR_HOST", firebaseDevConfig.FireStoreEmulatorHost);
+    Environment.SetEnvironmentVariable("FIREBASE_AUTH_EMULATOR_HOST", firebaseDevConfig.FireAuthEmulatorHost);
 
-builder.Services.AddSingleton(firebaseApp);
-builder.Services.AddSingleton(FirebaseMessaging.DefaultInstance);
-builder.Services.AddSingleton(firestoreDb);
+    if (FirebaseApp.DefaultInstance == null)
+    {
+        FirebaseApp.Create(new AppOptions
+        {
+            ProjectId = firebaseDevConfig.ProjectId,
+            Credential = GoogleCredential.FromAccessToken("test")
+        });
+    }
 
-builder.Services.AddSingleton<INotificationService, NotificationService>();
+    FirestoreDb firestoreDb = await new FirestoreDbBuilder
+    {
+        ProjectId = firebaseDevConfig.ProjectId,
+        EmulatorDetection = EmulatorDetection.EmulatorOnly,
+    }.BuildAsync();
+
+    builder.Services.AddSingleton(FirebaseMessaging.DefaultInstance);
+    builder.Services.AddSingleton(firestoreDb);
+
+    builder.Services.AddOptions<DevNotificationConfig>()
+        .Bind(builder.Configuration.GetSection("Firebase"))
+        .ValidateDataAnnotations()
+        .ValidateOnStart();
+
+    builder.Services.AddHttpClient();
+    builder.Services.AddSingleton<INotificationService, DevNotificationService>();
+}
+
+
 builder.Services.AddScoped<IUserService, UserService>();
 #endregion
 

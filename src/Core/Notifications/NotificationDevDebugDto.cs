@@ -1,6 +1,6 @@
 ﻿using FirebaseAdmin.Messaging;
 
-namespace BackBuddy.Api.Service.V1.Notifications.Dtos
+namespace BackBuddy.Core.Library.Notifications
 {
     public record NotificationDevDebugDto
     {
