@@ -48,7 +48,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
         private readonly IPublisher _publisher = publisher;
         private readonly IUserService _userService = userService;
         private readonly INotificationService _notificationService = notificationService;
-        private readonly ILogger<DeviceService> _log = logger;
+        private readonly ILogger<DeviceService> _logger = logger;
 
         public async Task<DeviceSecretDto> Create(string userId, DeviceCreateRequestDto request, CancellationToken cancellationToken = default)
         {
@@ -262,7 +262,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
             DeviceEntity? deviceEntity = await _repository.Get(status.DeviceId, cancellationToken);
             if (deviceEntity == null)
             {
-                _log.LogWarning("Device with ID {DeviceId} not found for status validation", status.DeviceId);
+                _logger.LogWarning("Device with ID {DeviceId} not found for status validation", status.DeviceId);
                 return;
             }
             if (!deviceEntity.Active)
@@ -275,7 +275,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
             if (lastNotification.HasValue && DateTime.UtcNow - lastNotification.Value < deviceEntity.Threshold)
                 return;
 
-            _log.LogInformation("Device with ID {DeviceId} has status older than threshold", status.DeviceId);
+            _logger.LogInformation("Device with ID {DeviceId} has status older than threshold", status.DeviceId);
 
             IEnumerable<string> fcmTokens = await _userService.GetUserFCMTokensAsync(deviceEntity.UserId);
 
