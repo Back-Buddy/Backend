@@ -10,13 +10,13 @@ namespace BackBuddy.Api.Service.V1.Notifications.Services
         private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
         private readonly DevNotificationConfig _config = config.Value;
 
-        public async Task SendNotification(IEnumerable<string> tokens, Notification notification)
+        public async Task SendNotification(IEnumerable<string> tokens, Notification notification, CancellationToken cancellationToken = default)
         {
             using HttpClient httpClient = _httpClientFactory.CreateClient();
 
             NotificationDevDebugDto debugDto = new() { Notification = notification, Tokens = tokens };
 
-            HttpResponseMessage response = await httpClient.PostAsJsonAsync(_config.Uri, debugDto);
+            HttpResponseMessage response = await httpClient.PostAsJsonAsync(_config.Uri, debugDto, cancellationToken);
 
             response.EnsureSuccessStatusCode();
         }

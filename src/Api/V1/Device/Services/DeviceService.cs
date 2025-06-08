@@ -262,30 +262,37 @@ namespace BackBuddy.Api.Service.V1.Device.Services
             DeviceEntity? deviceEntity = await _repository.Get(status.DeviceId, cancellationToken);
             if (deviceEntity == null)
             {
-                _logger.LogWarning("Device with ID {DeviceId} not found for status validation", status.DeviceId);
+                _logger.LogWarning("Device with ID {DeviceId} not found for status validation! Deleting DeviceStatus", status.DeviceId);
+                await _deviceStatusRepository.DeleteCurrentStatus(status.DeviceId, cancellationToken);
                 return;
             }
-            if (!deviceEntity.Active)
-                return;
-
-            if (DateTime.UtcNow - status.StartTime < deviceEntity.Threshold)
-                return;
 
             DateTime? lastNotification = await _deviceStatusRepository.GetLastNotificationTime(status.DeviceId, cancellationToken);
-            if (lastNotification.HasValue && DateTime.UtcNow - lastNotification.Value < deviceEntity.Threshold)
+            bool sendNotification = SendNotification(deviceEntity, status, lastNotification);
+            if (!sendNotification)
                 return;
 
             _logger.LogInformation("Device with ID {DeviceId} has status older than threshold", status.DeviceId);
 
             IEnumerable<string> fcmTokens = await _userService.GetUserFCMTokensAsync(deviceEntity.UserId);
-
             (string title, string body) = GetRandomNotificationMessage(deviceEntity);
 
             await _notificationService.SendNotification(fcmTokens, new NotificationBuilder()
                 .SetTitle(title)
-                .SetBody(body).Build());
+                .SetBody(body).Build(), cancellationToken);
 
             await _deviceStatusRepository.SetLastNotificationTime(status.DeviceId, DateTime.UtcNow, cancellationToken);
+        }
+
+        internal static bool SendNotification(DeviceEntity deviceEntity, DeviceStatusDto statusDto, DateTime? lastNotification)
+        {
+            if (!deviceEntity.Active)
+                return false;
+            if (DateTime.UtcNow - statusDto.StartTime < deviceEntity.Threshold)
+                return false;
+            if (lastNotification.HasValue && DateTime.UtcNow - lastNotification.Value < deviceEntity.Threshold)
+                return false;
+            return true;
         }
 
         private async Task LogDeviceError(Guid deviceId, DateTime startTime, DateTime endTime, CancellationToken cancellationToken)
@@ -313,13 +320,6 @@ namespace BackBuddy.Api.Service.V1.Device.Services
             };
             await _deviceLogRepository.AddLog(deviceLogEntity, cancellationToken);
         }
-
-        private static string GetPreviewSecretName(Guid deviceId) => $"{deviceId}-preview";
-
-        [GeneratedRegex(NAME_PATTERN)]
-        private static partial Regex NameRegex();
-
-
         private static (string Title, string Body) GetRandomNotificationMessage(DeviceEntity deviceEntity)
         {
             Random random = new();
@@ -339,5 +339,12 @@ namespace BackBuddy.Api.Service.V1.Device.Services
             ];
             return messages[random.Next(messages.Count)];
         }
+
+        private static string GetPreviewSecretName(Guid deviceId) => $"{deviceId}-preview";
+
+        [GeneratedRegex(NAME_PATTERN)]
+        private static partial Regex NameRegex();
+
+
     }
 }

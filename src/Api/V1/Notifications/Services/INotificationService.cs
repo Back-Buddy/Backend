@@ -4,6 +4,6 @@ namespace BackBuddy.Api.Service.V1.Notifications.Services
 {
     public interface INotificationService
     {
-        Task SendNotification(IEnumerable<string> tokens, Notification notification);
+        Task SendNotification(IEnumerable<string> tokens, Notification notification, CancellationToken cancellationToken = default);
     }
 }

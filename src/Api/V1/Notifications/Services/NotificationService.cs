@@ -6,7 +6,7 @@ namespace BackBuddy.Api.Service.V1.Notifications.Services
     {
         private readonly FirebaseMessaging _messaging = messaging;
 
-        public async Task SendNotification(IEnumerable<string> tokens, Notification notification)
+        public async Task SendNotification(IEnumerable<string> tokens, Notification notification, CancellationToken cancellationToken = default)
         {
             if (!tokens.Any())
                 return;
@@ -16,7 +16,7 @@ namespace BackBuddy.Api.Service.V1.Notifications.Services
                 {
                     Token = token,
                     Notification = notification
-                })
+                }), cancellationToken: cancellationToken
             );
         }
     }

@@ -4,7 +4,6 @@ using BackBuddy.Core.Library.Device.Entities;
 using BackBuddy.Core.Library.Device.Mapper;
 using Microsoft.Extensions.Caching.Distributed;
 using StackExchange.Redis;
-using System.Globalization;
 using System.Text.Json;
 
 namespace BackBuddy.Api.Service.V1.Device.Repositories
@@ -23,7 +22,6 @@ namespace BackBuddy.Api.Service.V1.Device.Repositories
     {
         private const string CacheKeyPrefix = "DeviceStatus:";
         private const string MemberPrefix = "device_status_keys";
-        private static CultureInfo _cultureInfo = new("en-US");
 
         private readonly static JsonSerializerOptions _jsonOptions = new()
         {
