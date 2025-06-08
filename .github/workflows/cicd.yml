@@ -53,15 +53,20 @@ jobs:
 
       - name: Tag Docker Images
         run: |
-          IMAGE=${{ vars.ACR_URL }}/backbuddy/api
+          API_IMAGE=${{ vars.ACR_URL }}/backbuddy/api
+          DEVICE_ORCHESTRATOR_IMAGE=${{ vars.ACR_URL }}/backbuddy/deviceorchestrator
           VERSION=${{ vars.MAJOR_VERSION }}.${{ vars.MINOR_VERSION }}.${{ github.run_number }}
 
-          docker tag $IMAGE:latest $IMAGE:$VERSION
+          docker tag $API_IMAGE:latest $API_IMAGE:$VERSION
+          docker tag $DEVICE_ORCHESTRATOR_IMAGE:latest $DEVICE_ORCHESTRATOR_IMAGE:$VERSION
 
       - name: Save Docker Images
         run: |
-          IMAGE=${{ vars.ACR_URL }}/backbuddy/api
-          docker save -o backbuddy_api.tar $IMAGE
+          API_IMAGE=${{ vars.ACR_URL }}/backbuddy/api
+          DEVICE_ORCHESTRATOR_IMAGE=${{ vars.ACR_URL }}/backbuddy/deviceorchestrator
+
+          docker save -o backbuddy_api.tar $API_IMAGE
+          docker save -o backbuddy_deviceorchestrator.tar $DEVICE_ORCHESTRATOR_IMAGE
 
       - name: Upload Api Docker Image
         if: github.event_name != 'pull_request'
@@ -69,6 +74,14 @@ jobs:
         with:
           name: backbuddy_api
           path: backbuddy_api.tar
+          retention-days: 1
+
+      - name: Upload Device Orchestrator Docker Image
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: backbuddy_deviceorchestrator
+          path: backbuddy_deviceorchestrator.tar
           retention-days: 1
 
   integration:
@@ -87,10 +100,17 @@ jobs:
         with:
           name: backbuddy_api
 
+      - name: Download Device Orchestrator Docker Image
+        if: github.event_name != 'pull_request'
+        uses: actions/download-artifact@v4
+        with:
+          name: backbuddy_deviceorchestrator
+
       - name: Load Docker Image
         if: github.event_name != 'pull_request'
         run: |
           docker load -i backbuddy_api.tar
+          docker load -i backbuddy_deviceorchestrator.tar
 
       - name: Run Services
         uses: hoverkraft-tech/compose-action@v2.0.2
@@ -137,9 +157,15 @@ jobs:
         with:
           name: backbuddy_api
 
+      - name: Download Device Orchestrator Docker Image
+        uses: actions/download-artifact@v4
+        with:
+          name: backbuddy_deviceorchestrator
+
       - name: Load Docker Image
         run: |
           docker load -i backbuddy_api.tar
+          docker load -i backbuddy_deviceorchestrator.tar
 
       - name: Push latest Docker Images
         working-directory: "${{ github.workspace }}/src/"
