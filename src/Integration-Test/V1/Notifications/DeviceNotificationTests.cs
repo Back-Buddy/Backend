@@ -285,5 +285,59 @@ namespace BackBuddy.Integration_Test.V1.Notifications
             JsonArray notifications = await _notificationLib.GetNotifications();
             Assert.AreEqual(0, notifications.Count, "No notification should be send!");
         }
+
+        [TestMethod]
+        public async Task Test_Notification_Simulate_Two_Sessions()
+        {
+            // Arrange
+            string fcm_token = "fcmToken1_threshold";
+
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            // For Notification the device must be active
+            await _deviceLib.UpdateDevice(_accessToken, deviceId, active: true, threshold: TimeSpan.FromSeconds(5));
+            string secret = device["secret"].GetValue<string>();
+            _deviceIds.Add(deviceId);
+
+            await _firestoreLib.CreateUserObject(_userId, "Test User", [fcm_token]);
+
+            using ClientWebSocket clientWebSocket = new();
+            clientWebSocket.Options.AddSubProtocol(secret);
+            await clientWebSocket.ConnectAsync(new Uri(_webSocketUri), CancellationToken.None);
+
+            // Act
+            JsonObject sittingStatus = DeviceLib.CreateUpdateStatus("Sitting");
+            JsonObject standing = DeviceLib.CreateUpdateStatus("Standing");
+
+            // First Session (Should not send notification)
+            await clientWebSocket.SendAsync(sittingStatus, int.MaxValue, CancellationToken.None);
+            await clientWebSocket.PollMessage("DeviceUpdateStatusAck", 2, CancellationToken.None);
+
+            await Task.Delay(TimeSpan.FromSeconds(1)); // Below Threshold
+
+            await clientWebSocket.SendAsync(standing, int.MaxValue, CancellationToken.None);
+            await clientWebSocket.PollMessage("DeviceUpdateStatusAck", 2, CancellationToken.None);
+
+            // Second Session (Should not send notification)
+            await clientWebSocket.SendAsync(sittingStatus, int.MaxValue, CancellationToken.None);
+            await clientWebSocket.PollMessage("DeviceUpdateStatusAck", 2, CancellationToken.None);
+
+            await Task.Delay(TimeSpan.FromSeconds(10)); // Above Threshold
+
+            await clientWebSocket.SendAsync(standing, int.MaxValue, CancellationToken.None);
+            await clientWebSocket.PollMessage("DeviceUpdateStatusAck", 2, CancellationToken.None);
+
+            // Assert
+            JsonArray notifications = await _notificationLib.GetNotifications();
+            Assert.AreEqual(1, notifications.Count, "Notification should be sended because device is active");
+
+            JsonObject notification = notifications[0].AsObject();
+            JsonArray tokens = notification["tokens"].AsArray();
+            Assert.AreEqual(1, tokens.Count);
+            Assert.AreEqual(fcm_token, tokens[0].GetValue<string>());
+
+            // Cleanup
+            await clientWebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Test completed", CancellationToken.None);
+        }
     }
 }
