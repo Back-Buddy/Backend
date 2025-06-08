@@ -322,8 +322,6 @@ namespace BackBuddy.Api.Service.V1.Device.Services
         }
         private static (string Title, string Body) GetRandomNotificationMessage(DeviceEntity deviceEntity)
         {
-            Random random = new();
-
             List<(string Title, string Body)> messages =
             [
                 ("🧘 Kleine Pause gefällig?", $"Du sitzt schon eine Weile auf {deviceEntity.Name}. Zeit für einen kurzen Stretch!"),
@@ -337,7 +335,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
                 ("💺 Dein Stuhl vermisst dich nicht", $"Vertrau uns – {deviceEntity.Name} kommt auch mal kurz ohne dich klar. Beweg dich!"),
                 ("🎯 Mikro-Pause, große Wirkung", $"Kleine Unterbrechung, große Wirkung für deine Gesundheit. Jetzt aufstehen!")
             ];
-            return messages[random.Next(messages.Count)];
+            return messages[ThreadSafeRandom.Global.Next(messages.Count)];
         }
 
         private static string GetPreviewSecretName(Guid deviceId) => $"{deviceId}-preview";
