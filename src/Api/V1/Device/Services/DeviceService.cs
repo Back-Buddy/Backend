@@ -272,7 +272,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
                 return;
 
             DateTime? lastNotification = await _deviceStatusRepository.GetLastNotificationTime(status.DeviceId, cancellationToken);
-            if (DateTime.UtcNow - lastNotification < deviceEntity.Threshold)
+            if (lastNotification.HasValue && DateTime.UtcNow - lastNotification.Value < deviceEntity.Threshold)
                 return;
 
             _log.LogInformation("Device with ID {DeviceId} has status older than threshold", status.DeviceId);
