@@ -45,6 +45,7 @@ namespace BackBuddy.Api.Service.V1.Device.Repositories
         public async Task DeleteCurrentStatus(Guid deviceId, CancellationToken cancellationToken = default)
         {
             await _cache.RemoveAsync(GetCacheKey(deviceId), cancellationToken);
+            await _cache.RemoveAsync(GetLastNotificationKey(deviceId), cancellationToken);
             await _database.SetRemoveAsync(MemberPrefix, deviceId.ToString());
         }
 
