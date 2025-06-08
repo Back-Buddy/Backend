@@ -4,6 +4,7 @@ using BackBuddy.Core.Library.Device.Entities;
 using BackBuddy.Core.Library.Device.Mapper;
 using Microsoft.Extensions.Caching.Distributed;
 using StackExchange.Redis;
+using System.Globalization;
 using System.Text.Json;
 
 namespace BackBuddy.Api.Service.V1.Device.Repositories
@@ -14,13 +15,15 @@ namespace BackBuddy.Api.Service.V1.Device.Repositories
         Task SetCurrentStatus(Guid deviceId, DeviceStatusEntity deviceStatus, CancellationToken cancellationToken = default);
         Task DeleteCurrentStatus(Guid deviceId, CancellationToken cancellationToken = default);
         Task<IEnumerable<DeviceStatusDto>> GetAllStatuses(CancellationToken cancellationToken = default);
-        Task MarkCurrentStatusAsNotified(Guid deviceId, CancellationToken cancellationToken = default);
+        Task<DateTime?> GetLastNotificationTime(Guid deviceId, CancellationToken cancellationToken = default);
+        Task SetLastNotificationTime(Guid deviceId, DateTime lastNotificationTime, CancellationToken cancellationToken = default);
     }
 
     public class DeviceStatusRepository(IDistributedCache cache, IConnectionMultiplexer connectionMultiplexer) : IDeviceStatusRepository
     {
         private const string CacheKeyPrefix = "DeviceStatus:";
         private const string MemberPrefix = "device_status_keys";
+        private static CultureInfo _cultureInfo = new("en-US");
 
         private readonly static JsonSerializerOptions _jsonOptions = new()
         {
@@ -73,11 +76,23 @@ namespace BackBuddy.Api.Service.V1.Device.Repositories
             return null;
         }
 
-        public async Task MarkCurrentStatusAsNotified(Guid deviceId, CancellationToken cancellationToken = default)
+        public async Task<DateTime?> GetLastNotificationTime(Guid deviceId, CancellationToken cancellationToken = default)
         {
-            await _database.SetRemoveAsync(MemberPrefix, deviceId.ToString());
+            string? lastNotificationTime = await _cache.GetStringAsync(GetLastNotificationKey(deviceId), cancellationToken);
+            if (lastNotificationTime == null)
+                return null;
+            if (!long.TryParse(lastNotificationTime, out long unixTimeSeconds))
+                return null;
+            return DateTimeOffset.FromUnixTimeSeconds(unixTimeSeconds).UtcDateTime;
+        }
+
+        public async Task SetLastNotificationTime(Guid deviceId, DateTime lastNotificationTime, CancellationToken cancellationToken = default)
+        {
+            DateTimeOffset dateTimeOffset = (DateTimeOffset)lastNotificationTime.ToUniversalTime();
+            await _cache.SetStringAsync(GetLastNotificationKey(deviceId), dateTimeOffset.ToUnixTimeSeconds().ToString(), token: cancellationToken);
         }
 
         private static string GetCacheKey(Guid deviceId) => $"{CacheKeyPrefix}{deviceId}";
+        private static string GetLastNotificationKey(Guid deviceId) => $"{CacheKeyPrefix}{deviceId}:LastNotification";
     }
 }

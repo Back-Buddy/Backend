@@ -271,9 +271,11 @@ namespace BackBuddy.Api.Service.V1.Device.Services
             if (DateTime.UtcNow - status.StartTime < deviceEntity.Threshold)
                 return;
 
-            _log.LogInformation("Device with ID {DeviceId} has status older than threshold", status.DeviceId);
+            DateTime? lastNotification = await _deviceStatusRepository.GetLastNotificationTime(status.DeviceId, cancellationToken);
+            if (DateTime.UtcNow - lastNotification < deviceEntity.Threshold)
+                return;
 
-            await _deviceStatusRepository.MarkCurrentStatusAsNotified(status.DeviceId, cancellationToken);
+            _log.LogInformation("Device with ID {DeviceId} has status older than threshold", status.DeviceId);
 
             IEnumerable<string> fcmTokens = await _userService.GetUserFCMTokensAsync(deviceEntity.UserId);
 
@@ -282,6 +284,8 @@ namespace BackBuddy.Api.Service.V1.Device.Services
             await _notificationService.SendNotification(fcmTokens, new NotificationBuilder()
                 .SetTitle(title)
                 .SetBody(body).Build());
+
+            await _deviceStatusRepository.SetLastNotificationTime(status.DeviceId, DateTime.UtcNow, cancellationToken);
         }
 
         private async Task LogDeviceError(Guid deviceId, DateTime startTime, DateTime endTime, CancellationToken cancellationToken)

@@ -57,6 +57,7 @@ namespace BackBuddy.Integration_Test.V1.Notifications
         public async Task TestInitialize()
         {
             await _notificationLib.ClearNotifications();
+            await _firestoreLib.CleanUpUsers();
         }
 
         [TestCleanup]
@@ -67,8 +68,6 @@ namespace BackBuddy.Integration_Test.V1.Notifications
                 await _deviceLib.DeleteDevice(_accessToken, deviceId);
             }
             _deviceIds.Clear();
-
-            await _firestoreLib.CleanUp("users");
         }
 
         [TestMethod]
@@ -92,12 +91,15 @@ namespace BackBuddy.Integration_Test.V1.Notifications
 
             // Act
             JsonObject sittingStatus = DeviceLib.CreateUpdateStatus("Sitting");
-            await clientWebSocket.SendAsync(sittingStatus, int.MaxValue, CancellationToken.None);
+            JsonObject standingStatus = DeviceLib.CreateUpdateStatus("Standing");
 
-            // Max Attempts = 2 because of the secret change offer
+            await clientWebSocket.SendAsync(sittingStatus, int.MaxValue, CancellationToken.None);
             await clientWebSocket.PollMessage("DeviceUpdateStatusAck", 2, CancellationToken.None);
 
-            await Task.Delay(TimeSpan.FromSeconds(10));
+            await Task.Delay(TimeSpan.FromSeconds(7));
+
+            await clientWebSocket.SendAsync(standingStatus, int.MaxValue, CancellationToken.None);
+            await clientWebSocket.PollMessage("DeviceUpdateStatusAck", 2, CancellationToken.None);
 
             // Assert
             JsonArray notifications = await _notificationLib.GetNotifications();
@@ -179,7 +181,7 @@ namespace BackBuddy.Integration_Test.V1.Notifications
         }
 
         [TestMethod]
-        public async Task Test_Notification_Threshold_Active_Time_Extreme_Above_Threshold()
+        public async Task Test_Notification_Threshold_Active_Time_Extreme_Above_Threshold_Every_Notification()
         {
             // Arrange
             string fcm_token = "fcmToken1_threshold";
@@ -199,16 +201,19 @@ namespace BackBuddy.Integration_Test.V1.Notifications
 
             // Act
             JsonObject sittingStatus = DeviceLib.CreateUpdateStatus("Sitting");
-            await clientWebSocket.SendAsync(sittingStatus, int.MaxValue, CancellationToken.None);
+            JsonObject standingStatus = DeviceLib.CreateUpdateStatus("Standing");
 
-            // Max Attempts = 2 because of the secret change offer
+            await clientWebSocket.SendAsync(sittingStatus, int.MaxValue, CancellationToken.None);
             await clientWebSocket.PollMessage("DeviceUpdateStatusAck", 2, CancellationToken.None);
 
-            await Task.Delay(TimeSpan.FromSeconds(30));
+            await Task.Delay(TimeSpan.FromSeconds(33));
+
+            await clientWebSocket.SendAsync(standingStatus, int.MaxValue, CancellationToken.None);
+            await clientWebSocket.PollMessage("DeviceUpdateStatusAck", 2, CancellationToken.None);
 
             // Assert
             JsonArray notifications = await _notificationLib.GetNotifications();
-            Assert.AreEqual(1, notifications.Count, "Notification should be sended because device is active");
+            Assert.AreEqual(6, notifications.Count, "Notification should be sended because device is active");
 
             JsonObject notification = notifications[0].AsObject();
             JsonArray tokens = notification["tokens"].AsArray();
@@ -230,7 +235,7 @@ namespace BackBuddy.Integration_Test.V1.Notifications
             JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
             Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
             // For Notification the device must be active
-            await _deviceLib.UpdateDevice(_accessToken, deviceId, active: true, threshold: TimeSpan.FromSeconds(5));
+            await _deviceLib.UpdateDevice(_accessToken, deviceId, active: true, threshold: TimeSpan.FromSeconds(10));
 
             string secret = device["secret"].GetValue<string>();
             _deviceIds.Add(deviceId);
@@ -243,12 +248,15 @@ namespace BackBuddy.Integration_Test.V1.Notifications
 
             // Act
             JsonObject sittingStatus = DeviceLib.CreateUpdateStatus("Sitting");
-            await clientWebSocket.SendAsync(sittingStatus, int.MaxValue, CancellationToken.None);
+            JsonObject standingStatus = DeviceLib.CreateUpdateStatus("Standing");
 
-            // Max Attempts = 2 because of the secret change offer
+            await clientWebSocket.SendAsync(sittingStatus, int.MaxValue, CancellationToken.None);
             await clientWebSocket.PollMessage("DeviceUpdateStatusAck", 2, CancellationToken.None);
 
-            await Task.Delay(TimeSpan.FromSeconds(10));
+            await Task.Delay(TimeSpan.FromSeconds(12));
+
+            await clientWebSocket.SendAsync(standingStatus, int.MaxValue, CancellationToken.None);
+            await clientWebSocket.PollMessage("DeviceUpdateStatusAck", 2, CancellationToken.None);
 
             // Assert
             JsonArray notifications = await _notificationLib.GetNotifications();
@@ -322,14 +330,14 @@ namespace BackBuddy.Integration_Test.V1.Notifications
             await clientWebSocket.SendAsync(sittingStatus, int.MaxValue, CancellationToken.None);
             await clientWebSocket.PollMessage("DeviceUpdateStatusAck", 2, CancellationToken.None);
 
-            await Task.Delay(TimeSpan.FromSeconds(10)); // Above Threshold
+            await Task.Delay(TimeSpan.FromSeconds(18)); // Above Threshold
 
             await clientWebSocket.SendAsync(standing, int.MaxValue, CancellationToken.None);
             await clientWebSocket.PollMessage("DeviceUpdateStatusAck", 2, CancellationToken.None);
 
             // Assert
             JsonArray notifications = await _notificationLib.GetNotifications();
-            Assert.AreEqual(1, notifications.Count, "Notification should be sended because device is active");
+            Assert.AreEqual(3, notifications.Count, "Notification should be sended because device is active");
 
             JsonObject notification = notifications[0].AsObject();
             JsonArray tokens = notification["tokens"].AsArray();

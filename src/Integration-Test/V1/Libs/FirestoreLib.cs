@@ -18,6 +18,22 @@ namespace BackBuddy.Integration_Test.V1.Libs
             }.Build();
         }
 
+        public async Task CleanUpUsers()
+        {
+            CollectionReference collection = _firestoreDb.Collection("users");
+            QuerySnapshot snapshot = await collection.GetSnapshotAsync();
+            foreach (DocumentSnapshot document in snapshot.Documents)
+            {
+                CollectionReference tokens = document.Reference.Collection("fcm_tokens");
+                foreach (DocumentSnapshot token in await tokens.GetSnapshotAsync())
+                {
+                    await token.Reference.DeleteAsync();
+                }
+
+                await document.Reference.DeleteAsync();
+            }
+        }
+
         public async Task CleanUp(string collectionName)
         {
             CollectionReference collection = _firestoreDb.Collection(collectionName);
