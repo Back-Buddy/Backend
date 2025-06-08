@@ -10,10 +10,10 @@ namespace BackBuddy.Integration_Test.V1.Notifications
     public class DeviceNotificationTests
     {
 
-        private static DeviceLib _deviceLib;
         private static string _accessToken;
         private static string _userId;
         private static string _webSocketUri;
+        private static DeviceLib _deviceLib;
         private static FirebaseLib _firebaseLib;
         private static FirestoreLib _firestoreLib;
         private static NotificationLib _notificationLib;
@@ -231,6 +231,7 @@ namespace BackBuddy.Integration_Test.V1.Notifications
             Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
             // For Notification the device must be active
             await _deviceLib.UpdateDevice(_accessToken, deviceId, active: true, threshold: TimeSpan.FromSeconds(5));
+
             string secret = device["secret"].GetValue<string>();
             _deviceIds.Add(deviceId);
 
@@ -261,6 +262,28 @@ namespace BackBuddy.Integration_Test.V1.Notifications
 
             // Cleanup
             await clientWebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Test completed", CancellationToken.None);
+        }
+
+        [TestMethod]
+        public async Task Test_Notification_No_Notification_Threshold_Not_Reached()
+        {
+            // Arrange
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+
+            // For Notification the device must be active
+            await _deviceLib.UpdateDevice(_accessToken, deviceId, active: true, threshold: TimeSpan.FromSeconds(5));
+            string secret = device["secret"].GetValue<string>();
+            _deviceIds.Add(deviceId);
+
+            await DeviceLogLib.CreateSampleLogs(_webSocketUri, secret, 1, delay: TimeSpan.FromMilliseconds(500));
+
+            // Act
+            await Task.Delay(TimeSpan.FromSeconds(10));
+
+            // Assert
+            JsonArray notifications = await _notificationLib.GetNotifications();
+            Assert.AreEqual(0, notifications.Count, "No notification should be send!");
         }
     }
 }
