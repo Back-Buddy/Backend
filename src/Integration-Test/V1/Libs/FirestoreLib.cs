@@ -47,8 +47,7 @@ namespace BackBuddy.Integration_Test.V1.Libs
             Dictionary<string, object> userData = new()
             {
                 { "uid", userId },
-                { "displayName", displayName },
-                { "fcmTokens", fcmTokens }
+                { "displayName", displayName }
             };
 
             DocumentReference userRef = _firestoreDb.Collection("users").Document(userId);

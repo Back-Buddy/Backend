@@ -149,7 +149,6 @@ else
     builder.Services.AddSingleton<INotificationService, DevNotificationService>();
 }
 
-
 builder.Services.AddScoped<IUserService, UserService>();
 #endregion
 
@@ -182,8 +181,6 @@ builder.Services.AddOptions<ConnectedDeviceConfig>()
     .ValidateOnStart();
 
 builder.Services.AddTransient<IPublisher, Publisher>();
-
-builder.Services.AddScoped<INotificationService, NotificationService>();
 
 builder.Services.AddMassTransit(x =>
 {

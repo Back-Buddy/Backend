@@ -4,10 +4,10 @@ using BackBuddy.Integration_Test.V1.Libs;
 using System.Net.WebSockets;
 using System.Text.Json.Nodes;
 
-namespace BackBuddy.Integration_Test.V1.WebSocket
+namespace BackBuddy.Integration_Test.V1.Notifications
 {
     [TestClass]
-    public class NotificationTests
+    public class DeviceNotificationTests
     {
 
         private static DeviceLib _deviceLib;
@@ -53,6 +53,12 @@ namespace BackBuddy.Integration_Test.V1.WebSocket
             }
         }
 
+        [TestInitialize]
+        public async Task TestInitialize()
+        {
+            await _notificationLib.ClearNotifications();
+        }
+
         [TestCleanup]
         public async Task TestCleanup()
         {
@@ -66,14 +72,15 @@ namespace BackBuddy.Integration_Test.V1.WebSocket
         }
 
         [TestMethod]
-        public async Task Test_Notification_Threshold()
+        public async Task Test_Notification_Threshold_Active_Success()
         {
             // Arrange
             string fcm_token = "fcmToken1_threshold";
 
             JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
             Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
-            await _deviceLib.UpdateDevice(_accessToken, deviceId, active: true, threshold: TimeSpan.FromSeconds(10));
+            // For Notification the device must be active
+            await _deviceLib.UpdateDevice(_accessToken, deviceId, active: true, threshold: TimeSpan.FromSeconds(5));
             string secret = device["secret"].GetValue<string>();
             _deviceIds.Add(deviceId);
 
@@ -90,11 +97,11 @@ namespace BackBuddy.Integration_Test.V1.WebSocket
             // Max Attempts = 2 because of the secret change offer
             await clientWebSocket.PollMessage("DeviceUpdateStatusAck", 2, CancellationToken.None);
 
-            await Task.Delay(TimeSpan.FromSeconds(15));
+            await Task.Delay(TimeSpan.FromSeconds(10));
 
             // Assert
             JsonArray notifications = await _notificationLib.GetNotifications();
-            Assert.AreEqual(1, notifications.Count);
+            Assert.AreEqual(1, notifications.Count, "Notification should be sended because device is active");
 
             JsonObject notification = notifications[0].AsObject();
             JsonArray tokens = notification["tokens"].AsArray();
@@ -102,6 +109,72 @@ namespace BackBuddy.Integration_Test.V1.WebSocket
             Assert.AreEqual(fcm_token, tokens[0].GetValue<string>());
 
             // Cleanup
+            await clientWebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Test completed", CancellationToken.None);
+        }
+
+        [TestMethod]
+        public async Task Test_Notification_Threshold_Not_Active_Success()
+        {
+            // Arrange
+            string fcm_token = "fcmToken1_threshold";
+
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            await _deviceLib.UpdateDevice(_accessToken, deviceId, active: false, threshold: TimeSpan.FromSeconds(5));
+            string secret = device["secret"].GetValue<string>();
+            _deviceIds.Add(deviceId);
+
+            await _firestoreLib.CreateUserObject(_userId, "Test User", [fcm_token]);
+
+            using ClientWebSocket clientWebSocket = new();
+            clientWebSocket.Options.AddSubProtocol(secret);
+            await clientWebSocket.ConnectAsync(new Uri(_webSocketUri), CancellationToken.None);
+
+            // Act
+            JsonObject sittingStatus = DeviceLib.CreateUpdateStatus("Sitting");
+            await clientWebSocket.SendAsync(sittingStatus, int.MaxValue, CancellationToken.None);
+
+            // Max Attempts = 2 because of the secret change offer
+            await clientWebSocket.PollMessage("DeviceUpdateStatusAck", 2, CancellationToken.None);
+
+            await Task.Delay(TimeSpan.FromSeconds(10));
+
+            // Assert
+            JsonArray notifications = await _notificationLib.GetNotifications();
+            Assert.AreEqual(0, notifications.Count, "0 Notifications should be send because the device is not active!");
+
+            // Cleanup
+            await clientWebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Test completed", CancellationToken.None);
+        }
+
+        [TestMethod]
+        public async Task Test_Notification_Threshold_Extended_No_Notification()
+        {
+            // Arrange
+            string fcm_token = "fcmToken_threshold_long";
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            await _deviceLib.UpdateDevice(_accessToken, deviceId, active: true, threshold: TimeSpan.FromSeconds(30));
+            string secret = device["secret"].GetValue<string>();
+            _deviceIds.Add(deviceId);
+
+            await _firestoreLib.CreateUserObject(_userId, "Test User", [fcm_token]);
+
+            using ClientWebSocket clientWebSocket = new();
+            clientWebSocket.Options.AddSubProtocol(secret);
+            await clientWebSocket.ConnectAsync(new Uri(_webSocketUri), CancellationToken.None);
+
+            // Act
+            JsonObject sittingStatus = DeviceLib.CreateUpdateStatus("Sitting");
+            await clientWebSocket.SendAsync(sittingStatus, int.MaxValue, CancellationToken.None);
+            await clientWebSocket.PollMessage("DeviceUpdateStatusAck", 2, CancellationToken.None);
+
+            await Task.Delay(TimeSpan.FromSeconds(10)); // Below the threshold of 30 seconds
+
+            // Assert
+            JsonArray notifications = await _notificationLib.GetNotifications();
+            Assert.AreEqual(0, notifications.Count, "No notification should be sent due to long threshold");
+
             await clientWebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Test completed", CancellationToken.None);
         }
 
