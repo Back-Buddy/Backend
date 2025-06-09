@@ -12,7 +12,6 @@ using BackBuddy.Api.Service.V1.Device.Entities;
 using BackBuddy.Api.Service.V1.Device.Repositories;
 using BackBuddy.Api.Service.V1.Device.Services;
 using BackBuddy.Api.Service.V1.ExceptionHandlers;
-using BackBuddy.Api.Service.V1.Notifications.Dtos;
 using BackBuddy.Api.Service.V1.Notifications.Services;
 using BackBuddy.Api.Service.V1.Users.Services;
 using BackBuddy.Api.Service.V1.WebSockets.BackgroundServices;
@@ -119,6 +118,8 @@ if (!builder.Environment.IsDevelopment())
 else
 {
     FirebaseDevConfig firebaseDevConfig = firebaseSection.Get<FirebaseDevConfig>() ?? throw new InvalidDataException("Firebase development information must be set!");
+    builder.Services.AddSingleton(firebaseDevConfig);
+
     Environment.SetEnvironmentVariable("FIRESTORE_EMULATOR_HOST", firebaseDevConfig.FireStoreEmulatorHost);
     Environment.SetEnvironmentVariable("FIREBASE_AUTH_EMULATOR_HOST", firebaseDevConfig.FireAuthEmulatorHost);
 
@@ -139,11 +140,6 @@ else
 
     builder.Services.AddSingleton(FirebaseMessaging.DefaultInstance);
     builder.Services.AddSingleton(firestoreDb);
-
-    builder.Services.AddOptions<DevNotificationConfig>()
-        .Bind(builder.Configuration.GetSection("Firebase"))
-        .ValidateDataAnnotations()
-        .ValidateOnStart();
 
     builder.Services.AddHttpClient();
     builder.Services.AddSingleton<INotificationService, DevNotificationService>();

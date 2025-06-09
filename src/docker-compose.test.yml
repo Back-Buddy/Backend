@@ -139,5 +139,5 @@ services:
       - "127.0.0.1:15672:15672"
     healthcheck:
       test: rabbitmq-diagnostics -q check_running && rabbitmq-diagnostics -q check_local_alarms
-      interval: 5s
-      timeout: 2s
+      interval: 30s
+      timeout: 30s

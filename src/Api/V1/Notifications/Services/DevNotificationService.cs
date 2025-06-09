@@ -1,15 +1,14 @@
-﻿using BackBuddy.Api.Service.V1.Notifications.Dtos;
+﻿using BackBuddy.Api.Service.V1.Database.Firebase;
 using BackBuddy.Core.Library.Notifications;
 using FirebaseAdmin.Messaging;
-using Microsoft.Extensions.Options;
 using System.Text.Json;
 
 namespace BackBuddy.Api.Service.V1.Notifications.Services
 {
-    public class DevNotificationService(IHttpClientFactory httpClientFactory, IOptions<DevNotificationConfig> config, ILogger<DevNotificationService> logger) : INotificationService
+    public class DevNotificationService(IHttpClientFactory httpClientFactory, FirebaseDevConfig config, ILogger<DevNotificationService> logger) : INotificationService
     {
         private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
-        private readonly DevNotificationConfig _config = config.Value;
+        private readonly FirebaseDevConfig _config = config;
         private readonly ILogger<DevNotificationService> _logger = logger;
 
         public async Task SendNotification(IEnumerable<string> tokens, Notification notification, CancellationToken cancellationToken = default)
@@ -20,7 +19,7 @@ namespace BackBuddy.Api.Service.V1.Notifications.Services
 
                 NotificationDevDebugDto debugDto = new() { Notification = notification, Tokens = tokens };
 
-                HttpResponseMessage response = await httpClient.PostAsJsonAsync(_config.Uri, debugDto, cancellationToken);
+                HttpResponseMessage response = await httpClient.PostAsJsonAsync(_config.NotificationEmulatorHost, debugDto, cancellationToken);
 
                 response.EnsureSuccessStatusCode();
             }

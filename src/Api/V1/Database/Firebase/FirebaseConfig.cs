@@ -18,5 +18,7 @@ namespace BackBuddy.Api.Service.V1.Database.Firebase
         public required string FireAuthEmulatorHost { get; init; }
         [Required]
         public required string ProjectId { get; init; }
+        [Required]
+        public required string NotificationEmulatorHost { get; init; }
     }
 }
