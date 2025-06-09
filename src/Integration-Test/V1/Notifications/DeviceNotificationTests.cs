@@ -363,7 +363,7 @@ namespace BackBuddy.Integration_Test.V1.Notifications
             _deviceIds.Add(deviceId);
 
             // Act
-            await DeviceLogLib.CreateSampleLogs(_webSocketUri, secret, 1, delay: TimeSpan.FromSeconds(8));
+            await DeviceLogLib.CreateSampleLogs(_webSocketUri, secret, 2, delay: TimeSpan.FromSeconds(8));
             await Task.Delay(TimeSpan.FromSeconds(1));
 
             // Assert
