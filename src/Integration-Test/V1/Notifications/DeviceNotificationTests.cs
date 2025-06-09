@@ -347,5 +347,28 @@ namespace BackBuddy.Integration_Test.V1.Notifications
             // Cleanup
             await clientWebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Test completed", CancellationToken.None);
         }
+
+        [TestMethod]
+        public async Task Test_Notification_Two_Notifications()
+        {
+            // Arrange
+            string fcm_token = "fcmToken1_threshold";
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+
+            // For Notification the device must be active
+            await _deviceLib.UpdateDevice(_accessToken, deviceId, active: true, threshold: TimeSpan.FromSeconds(5));
+            await _firestoreLib.CreateUserObject(_userId, "Test User", [fcm_token]);
+            string secret = device["secret"].GetValue<string>();
+            _deviceIds.Add(deviceId);
+
+            // Act
+            await DeviceLogLib.CreateSampleLogs(_webSocketUri, secret, 1, delay: TimeSpan.FromSeconds(8));
+            await Task.Delay(TimeSpan.FromSeconds(1));
+
+            // Assert
+            JsonArray notifications = await _notificationLib.GetNotifications();
+            Assert.AreEqual(2, notifications.Count, "Notifications should be send");
+        }
     }
 }
