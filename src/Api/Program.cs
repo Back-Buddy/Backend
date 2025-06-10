@@ -12,7 +12,9 @@ using BackBuddy.Api.Service.V1.Device.Entities;
 using BackBuddy.Api.Service.V1.Device.Repositories;
 using BackBuddy.Api.Service.V1.Device.Services;
 using BackBuddy.Api.Service.V1.ExceptionHandlers;
+using BackBuddy.Api.Service.V1.Notifications.Consumers;
 using BackBuddy.Api.Service.V1.Notifications.Services;
+using BackBuddy.Api.Service.V1.Users.Consumers;
 using BackBuddy.Api.Service.V1.Users.Services;
 using BackBuddy.Api.Service.V1.WebSockets.BackgroundServices;
 using BackBuddy.Api.Service.V1.WebSockets.Consumer;
@@ -188,6 +190,8 @@ builder.Services.AddMassTransit(x =>
     x.AddConsumer<DeviceUpdateStatusConsumer>();
     x.AddConsumer<GetDeviceStatusesConsumer>();
     x.AddConsumer<ValidateDeviceStatusConsumer>();
+    x.AddConsumer<SendNotificationConsumer>();
+    x.AddConsumer<GetFcmTokensConsumer>();
 
     string connection = builder.Configuration.GetValue<string>($"MESSAGE_QUEUE_CONNECTION") ?? throw new InvalidOperationException("MESSAGE_QUEUE_CONNECTION is not set!");
     if (builder.Environment.IsDevelopment())

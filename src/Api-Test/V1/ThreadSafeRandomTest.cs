@@ -91,7 +91,7 @@ namespace BackBuddy.Api.Test.V1
             ThreadSafeRandom random = ThreadSafeRandom.Global;
             int threadCount = 10;
             int iterations = 1000;
-            ConcurrentBag<int> results = new();
+            ConcurrentBag<int> results = [];
             ManualResetEventSlim startEvent = new(false);
             Task[] tasks = new Task[threadCount];
 

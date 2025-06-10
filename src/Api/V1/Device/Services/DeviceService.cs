@@ -9,12 +9,14 @@ using BackBuddy.Api.Service.V1.Device.Mapper;
 using BackBuddy.Api.Service.V1.Device.Repositories;
 using BackBuddy.Api.Service.V1.Notifications.Dtos;
 using BackBuddy.Api.Service.V1.Notifications.Services;
+using BackBuddy.Api.Service.V1.Users.Dtos;
 using BackBuddy.Api.Service.V1.Users.Services;
 using BackBuddy.Api.Service.V1.Utilities;
 using BackBuddy.Api.Service.V1.WebSockets.Dtos;
 using BackBuddy.Api.Service.V1.WebSockets.Services;
 using BackBuddy.Core.Library.Device.Dtos;
 using BackBuddy.Core.Library.Device.Entities;
+using MassTransit;
 using System.Text.RegularExpressions;
 
 namespace BackBuddy.Api.Service.V1.Device.Services
@@ -34,7 +36,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
         Task<bool> IsDeviceConnected(Guid deviceId);
     }
 
-    public partial class DeviceService(IDeviceRepository repository, IDeviceStatusRepository deviceStatusRepository, IDeviceLogRepository deviceLogRepository, IReportRepository reportRepository, ISecretProvider secretProvider, IWebSocketService webSocketService, IPublisher publisher, IUserService userService, INotificationService notificationService, ILogger<DeviceService> logger) : IDeviceService
+    public partial class DeviceService(IDeviceRepository repository, IDeviceStatusRepository deviceStatusRepository, IDeviceLogRepository deviceLogRepository, IReportRepository reportRepository, ISecretProvider secretProvider, IWebSocketService webSocketService, IPublisher publisher, IPublishEndpoint publishEndpoint, IRequestClient<GetFcmTokensRequestMessage> fcmTokenRequestClient, ILogger<DeviceService> logger) : IDeviceService
     {
         private const string NAME_PATTERN = @"^[a-zA-Z0-9 \-]{3,16}$";
         private readonly static TimeSpan SECRET_EXPIRATION_TIME = TimeSpan.FromSeconds(1);
@@ -46,8 +48,8 @@ namespace BackBuddy.Api.Service.V1.Device.Services
         private readonly ISecretProvider _secretProvider = secretProvider;
         private readonly IWebSocketService _webSocketService = webSocketService;
         private readonly IPublisher _publisher = publisher;
-        private readonly IUserService _userService = userService;
-        private readonly INotificationService _notificationService = notificationService;
+        private readonly IPublishEndpoint _publishEndpoint = publishEndpoint;
+        private readonly IRequestClient<GetFcmTokensRequestMessage> _fcmTokenRequestClient = fcmTokenRequestClient;
         private readonly ILogger<DeviceService> _logger = logger;
 
         public async Task<DeviceSecretDto> Create(string userId, DeviceCreateRequestDto request, CancellationToken cancellationToken = default)
@@ -274,12 +276,22 @@ namespace BackBuddy.Api.Service.V1.Device.Services
 
             _logger.LogInformation("Device with ID {DeviceId} has status older than threshold", status.DeviceId);
 
-            IEnumerable<string> fcmTokens = await _userService.GetUserFCMTokensAsync(deviceEntity.UserId);
+            Response<GetFcmTokensResponseMessage> fcmTokenResponse = await _fcmTokenRequestClient.GetResponse<GetFcmTokensResponseMessage>(new GetFcmTokensRequestMessage
+            {
+                UserId = deviceEntity.UserId
+            }, cancellationToken);
+
             (string title, string body) = GetRandomNotificationMessage(deviceEntity);
 
-            await _notificationService.SendNotification(fcmTokens, new NotificationBuilder()
-                .SetTitle(title)
-                .SetBody(body).Build(), cancellationToken);
+            SendNotificationRequestMessage notificationRequest = new()
+            {
+                Tokens = fcmTokenResponse.Message.Tokens,
+                Notification = new NotificationBuilder()
+                    .SetTitle(title)
+                    .SetBody(body)
+                    .Build()
+            };
+            await _publishEndpoint.Publish(notificationRequest, cancellationToken);
 
             await _deviceStatusRepository.SetLastNotificationTime(status.DeviceId, DateTime.UtcNow, cancellationToken);
         }
