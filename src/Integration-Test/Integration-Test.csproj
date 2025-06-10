@@ -17,6 +17,7 @@
 		<PackageReference Include="MSTest.TestAdapter" />
 		<PackageReference Include="MSTest.TestFramework" />
 		<PackageReference Include="NSubstitute" />
+		<PackageReference Include="Google.Cloud.Firestore" />
 	</ItemGroup>
 
 	<ItemGroup>

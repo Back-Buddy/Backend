@@ -1,0 +1,24 @@
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace BackBuddy.Api.Service.V1.Database.Firebase
+{
+    public record FirebaseConfig
+    {
+        [Required]
+        public required string Secret { get; init; }
+        [Required]
+        public required string ProjectId { get; init; }
+    }
+
+    public record FirebaseDevConfig
+    {
+        [Required]
+        public required string FireStoreEmulatorHost { get; init; }
+        [Required]
+        public required string FireAuthEmulatorHost { get; init; }
+        [Required]
+        public required string ProjectId { get; init; }
+        [Required]
+        public required string NotificationEmulatorHost { get; init; }
+    }
+}

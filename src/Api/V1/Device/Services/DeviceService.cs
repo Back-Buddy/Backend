@@ -7,9 +7,16 @@ using BackBuddy.Api.Service.V1.Device.Entities;
 using BackBuddy.Api.Service.V1.Device.Exceptions;
 using BackBuddy.Api.Service.V1.Device.Mapper;
 using BackBuddy.Api.Service.V1.Device.Repositories;
+using BackBuddy.Api.Service.V1.Notifications.Dtos;
+using BackBuddy.Api.Service.V1.Notifications.Services;
+using BackBuddy.Api.Service.V1.Users.Dtos;
+using BackBuddy.Api.Service.V1.Users.Services;
 using BackBuddy.Api.Service.V1.Utilities;
 using BackBuddy.Api.Service.V1.WebSockets.Dtos;
 using BackBuddy.Api.Service.V1.WebSockets.Services;
+using BackBuddy.Core.Library.Device.Dtos;
+using BackBuddy.Core.Library.Device.Entities;
+using MassTransit;
 using System.Text.RegularExpressions;
 
 namespace BackBuddy.Api.Service.V1.Device.Services
@@ -25,10 +32,11 @@ namespace BackBuddy.Api.Service.V1.Device.Services
         Task TryUpdateSecret(Guid deviceId, CancellationToken cancellationToken = default);
         Task AckNewSecret(Guid deviceId, string secret, CancellationToken cancellationToken = default);
         Task HandleStatusUpdate(Guid deviceId, DeviceUpdateStatusMessage status, CancellationToken cancellationToken = default);
+        Task ValidateDeviceStatuses(IEnumerable<DeviceStatusDto> statusDtos, CancellationToken cancellationToken = default);
         Task<bool> IsDeviceConnected(Guid deviceId);
     }
 
-    public partial class DeviceService(IDeviceRepository repository, IDeviceStatusRepository deviceStatusRepository, IDeviceLogRepository deviceLogRepository, IReportRepository reportRepository, ISecretProvider secretProvider, IWebSocketService webSocketService, IPublisher publisher) : IDeviceService
+    public partial class DeviceService(IDeviceRepository repository, IDeviceStatusRepository deviceStatusRepository, IDeviceLogRepository deviceLogRepository, IReportRepository reportRepository, ISecretProvider secretProvider, IWebSocketService webSocketService, IPublisher publisher, IPublishEndpoint publishEndpoint, IRequestClient<GetFcmTokensRequestMessage> fcmTokenRequestClient, ILogger<DeviceService> logger) : IDeviceService
     {
         private const string NAME_PATTERN = @"^[a-zA-Z0-9 \-]{3,16}$";
         private readonly static TimeSpan SECRET_EXPIRATION_TIME = TimeSpan.FromSeconds(1);
@@ -40,6 +48,9 @@ namespace BackBuddy.Api.Service.V1.Device.Services
         private readonly ISecretProvider _secretProvider = secretProvider;
         private readonly IWebSocketService _webSocketService = webSocketService;
         private readonly IPublisher _publisher = publisher;
+        private readonly IPublishEndpoint _publishEndpoint = publishEndpoint;
+        private readonly IRequestClient<GetFcmTokensRequestMessage> _fcmTokenRequestClient = fcmTokenRequestClient;
+        private readonly ILogger<DeviceService> _logger = logger;
 
         public async Task<DeviceSecretDto> Create(string userId, DeviceCreateRequestDto request, CancellationToken cancellationToken = default)
         {
@@ -242,6 +253,60 @@ namespace BackBuddy.Api.Service.V1.Device.Services
             return await _webSocketService.IsDeviceConnected(deviceId);
         }
 
+        public async Task ValidateDeviceStatuses(IEnumerable<DeviceStatusDto> statusDtos, CancellationToken cancellationToken = default)
+        {
+            IEnumerable<Task> tasks = statusDtos.Select(statusEntity => ValidateDeviceStatus(statusEntity, cancellationToken));
+            await Task.WhenAll(tasks);
+        }
+
+        private async Task ValidateDeviceStatus(DeviceStatusDto status, CancellationToken cancellationToken = default)
+        {
+            DeviceEntity? deviceEntity = await _repository.Get(status.DeviceId, cancellationToken);
+            if (deviceEntity == null)
+            {
+                _logger.LogWarning("Device with ID {DeviceId} not found for status validation! Deleting DeviceStatus", status.DeviceId);
+                await _deviceStatusRepository.DeleteCurrentStatus(status.DeviceId, cancellationToken);
+                return;
+            }
+
+            DateTime? lastNotification = await _deviceStatusRepository.GetLastNotificationTime(status.DeviceId, cancellationToken);
+            bool sendNotification = SendNotification(deviceEntity, status, lastNotification);
+            if (!sendNotification)
+                return;
+
+            _logger.LogInformation("Device with ID {DeviceId} has status older than threshold", status.DeviceId);
+
+            Response<GetFcmTokensResponseMessage> fcmTokenResponse = await _fcmTokenRequestClient.GetResponse<GetFcmTokensResponseMessage>(new GetFcmTokensRequestMessage
+            {
+                UserId = deviceEntity.UserId
+            }, cancellationToken);
+
+            (string title, string body) = GetRandomNotificationMessage(deviceEntity);
+
+            SendNotificationRequestMessage notificationRequest = new()
+            {
+                Tokens = fcmTokenResponse.Message.Tokens,
+                Notification = new NotificationBuilder()
+                    .SetTitle(title)
+                    .SetBody(body)
+                    .Build()
+            };
+            await _publishEndpoint.Publish(notificationRequest, cancellationToken);
+
+            await _deviceStatusRepository.SetLastNotificationTime(status.DeviceId, DateTime.UtcNow, cancellationToken);
+        }
+
+        internal static bool SendNotification(DeviceEntity deviceEntity, DeviceStatusDto statusDto, DateTime? lastNotification)
+        {
+            if (!deviceEntity.Active)
+                return false;
+            if (DateTime.UtcNow - statusDto.StartTime < deviceEntity.Threshold)
+                return false;
+            if (lastNotification.HasValue && DateTime.UtcNow - lastNotification.Value < deviceEntity.Threshold)
+                return false;
+            return true;
+        }
+
         private async Task LogDeviceError(Guid deviceId, DateTime startTime, DateTime endTime, CancellationToken cancellationToken)
         {
             DeviceLogEntity deviceLogEntity = new()
@@ -267,10 +332,29 @@ namespace BackBuddy.Api.Service.V1.Device.Services
             };
             await _deviceLogRepository.AddLog(deviceLogEntity, cancellationToken);
         }
+        private static (string Title, string Body) GetRandomNotificationMessage(DeviceEntity deviceEntity)
+        {
+            List<(string Title, string Body)> messages =
+            [
+                ("🧘 Kleine Pause gefällig?", $"Du sitzt schon eine Weile auf {deviceEntity.Name}. Zeit für einen kurzen Stretch!"),
+                ("🚶 Bewegung tut gut!", $"{deviceEntity.Name} meldet: Ein paar Schritte würden dir jetzt gut tun."),
+                ("🌟 Power-Up Zeit!", $"Du hast lange gesessen. Steh auf, beweg dich kurz – dein Körper wird’s dir danken!"),
+                ("⏰ Aufstehen, bitte!", $"{deviceEntity.Name} erinnert dich freundlich: Ein bisschen Bewegung wäre jetzt ideal."),
+                ("😄 Rückenfreundlicher Hinweis", $"Langes Sitzen auf {deviceEntity.Name} erkannt. Wie wär’s mit Dehnen oder Aufstehen?"),
+                ("💡 Gesundheitstipp:", $"Schon länger auf {deviceEntity.Name}? Kurz aufstehen, tief durchatmen, weiter geht's!"),
+                ("🤸 Zeit für eine Mini-Bewegungspause", $"{deviceEntity.Name} schlägt vor: Beine strecken, Schultern kreisen, durchstarten!"),
+                ("📣 Dein Körper ruft!", $"Schon über {deviceEntity.Threshold.TotalMinutes:N0} Minuten auf {deviceEntity.Name}? Zeit für Bewegung."),
+                ("💺 Dein Stuhl vermisst dich nicht", $"Vertrau uns – {deviceEntity.Name} kommt auch mal kurz ohne dich klar. Beweg dich!"),
+                ("🎯 Mikro-Pause, große Wirkung", $"Kleine Unterbrechung, große Wirkung für deine Gesundheit. Jetzt aufstehen!")
+            ];
+            return messages[ThreadSafeRandom.Global.Next(messages.Count)];
+        }
 
         private static string GetPreviewSecretName(Guid deviceId) => $"{deviceId}-preview";
 
         [GeneratedRegex(NAME_PATTERN)]
         private static partial Regex NameRegex();
+
+
     }
 }

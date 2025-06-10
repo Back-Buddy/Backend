@@ -3,6 +3,7 @@ using Azure.Security.KeyVault.Secrets;
 using BackBuddy.Api.Service;
 using BackBuddy.Api.Service.Swagger;
 using BackBuddy.Api.Service.V1.Auth.Extensions;
+using BackBuddy.Api.Service.V1.Database.Firebase;
 using BackBuddy.Api.Service.V1.Database.KeyVault;
 using BackBuddy.Api.Service.V1.Database.MongoDB;
 using BackBuddy.Api.Service.V1.Database.Redis;
@@ -11,19 +12,26 @@ using BackBuddy.Api.Service.V1.Device.Entities;
 using BackBuddy.Api.Service.V1.Device.Repositories;
 using BackBuddy.Api.Service.V1.Device.Services;
 using BackBuddy.Api.Service.V1.ExceptionHandlers;
-using BackBuddy.Api.Service.V1.Notification.Entities;
-using BackBuddy.Api.Service.V1.Notification.Repositories;
-using BackBuddy.Api.Service.V1.Notification.Services;
+using BackBuddy.Api.Service.V1.Notifications.Consumers;
+using BackBuddy.Api.Service.V1.Notifications.Services;
+using BackBuddy.Api.Service.V1.Users.Consumers;
+using BackBuddy.Api.Service.V1.Users.Services;
 using BackBuddy.Api.Service.V1.WebSockets.BackgroundServices;
 using BackBuddy.Api.Service.V1.WebSockets.Consumer;
 using BackBuddy.Api.Service.V1.WebSockets.Dtos;
 using BackBuddy.Api.Service.V1.WebSockets.Middleware;
 using BackBuddy.Api.Service.V1.WebSockets.Repositories;
 using BackBuddy.Api.Service.V1.WebSockets.Services;
+using FirebaseAdmin;
+using FirebaseAdmin.Messaging;
+using Google.Api.Gax;
+using Google.Apis.Auth.OAuth2;
+using Google.Cloud.Firestore;
 using MassTransit;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.StackExchangeRedis;
 using StackExchange.Redis;
+using System.Text;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -58,8 +66,7 @@ builder.Services
     .Connect()
     .AddCollection<DeviceEntity>(nameof(DeviceEntity))
     .AddCollection<DeviceLogEntity>(nameof(DeviceLogEntity))
-    .AddCollection<ReportEntity>(nameof(ReportEntity))
-    .AddCollection<NotificationEntity>(nameof(NotificationEntity));
+    .AddCollection<ReportEntity>(nameof(ReportEntity));
 #endregion
 
 #region Redis
@@ -81,6 +88,66 @@ builder.Services.AddSingleton<IDistributedCache>(sp =>
     };
     return new RedisCache(options);
 });
+#endregion
+
+#region Firebase
+IConfigurationSection firebaseSection = builder.Configuration.GetSection("Firebase");
+
+if (!builder.Environment.IsDevelopment())
+{
+    FirebaseConfig firebaseConfig = firebaseSection.Get<FirebaseConfig>() ?? throw new InvalidDataException("Firebase information must be set!");
+    GoogleCredential googleCredential = GoogleCredential.FromJson(Encoding.UTF8.GetString(Convert.FromBase64String(firebaseConfig.Secret)));
+
+    if (FirebaseApp.DefaultInstance == null)
+    {
+        FirebaseApp.Create(new AppOptions
+        {
+            Credential = googleCredential,
+            ProjectId = firebaseConfig.ProjectId
+        });
+    }
+
+    FirestoreDb firestoreDb = await new FirestoreDbBuilder
+    {
+        Credential = googleCredential,
+        ProjectId = firebaseConfig.ProjectId,
+    }.BuildAsync();
+
+    builder.Services.AddSingleton(FirebaseMessaging.DefaultInstance);
+    builder.Services.AddSingleton(firestoreDb);
+    builder.Services.AddSingleton<INotificationService, NotificationService>();
+}
+else
+{
+    FirebaseDevConfig firebaseDevConfig = firebaseSection.Get<FirebaseDevConfig>() ?? throw new InvalidDataException("Firebase development information must be set!");
+    builder.Services.AddSingleton(firebaseDevConfig);
+
+    Environment.SetEnvironmentVariable("FIRESTORE_EMULATOR_HOST", firebaseDevConfig.FireStoreEmulatorHost);
+    Environment.SetEnvironmentVariable("FIREBASE_AUTH_EMULATOR_HOST", firebaseDevConfig.FireAuthEmulatorHost);
+
+    if (FirebaseApp.DefaultInstance == null)
+    {
+        FirebaseApp.Create(new AppOptions
+        {
+            ProjectId = firebaseDevConfig.ProjectId,
+            Credential = GoogleCredential.FromAccessToken("test")
+        });
+    }
+
+    FirestoreDb firestoreDb = await new FirestoreDbBuilder
+    {
+        ProjectId = firebaseDevConfig.ProjectId,
+        EmulatorDetection = EmulatorDetection.EmulatorOnly,
+    }.BuildAsync();
+
+    builder.Services.AddSingleton(FirebaseMessaging.DefaultInstance);
+    builder.Services.AddSingleton(firestoreDb);
+
+    builder.Services.AddHttpClient();
+    builder.Services.AddSingleton<INotificationService, DevNotificationService>();
+}
+
+builder.Services.AddScoped<IUserService, UserService>();
 #endregion
 
 builder.Services.AddScoped<IDeviceStatusRepository, DeviceStatusRepository>();
@@ -113,9 +180,6 @@ builder.Services.AddOptions<ConnectedDeviceConfig>()
 
 builder.Services.AddTransient<IPublisher, Publisher>();
 
-builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
-builder.Services.AddScoped<INotificationService, NotificationService>();
-
 builder.Services.AddMassTransit(x =>
 {
     x.SetKebabCaseEndpointNameFormatter();
@@ -124,6 +188,10 @@ builder.Services.AddMassTransit(x =>
     x.AddConsumer<DeviceNewSecretAckConsumer>();
     x.AddConsumer<DeviceAuthorizeConsumer>();
     x.AddConsumer<DeviceUpdateStatusConsumer>();
+    x.AddConsumer<GetDeviceStatusesConsumer>();
+    x.AddConsumer<ValidateDeviceStatusConsumer>();
+    x.AddConsumer<SendNotificationConsumer>();
+    x.AddConsumer<GetFcmTokensConsumer>();
 
     string connection = builder.Configuration.GetValue<string>($"MESSAGE_QUEUE_CONNECTION") ?? throw new InvalidOperationException("MESSAGE_QUEUE_CONNECTION is not set!");
     if (builder.Environment.IsDevelopment())

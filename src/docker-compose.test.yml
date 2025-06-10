@@ -26,6 +26,41 @@ services:
   api2:
     <<: *api-template
 
+  deviceorchestrator:
+    image: ${DOCKER_REGISTRY-}backbuddy/deviceorchestrator:${TAG:-latest}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    build:
+      context: .
+      dockerfile: DeviceOrchestrator/Dockerfile
+      args:
+        BUILD_ENV: dev
+    env_file:
+      - Development.env
+
+  notificationemulator:
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    build:
+      context: .
+      dockerfile: NotificationEmulator/Dockerfile
+      args:
+        BUILD_ENV: dev
+    env_file:
+      - Development.env
+    ports:
+      - "8083:8080"
+
   nginx:
     image: nginx:stable
     volumes:
@@ -104,5 +139,5 @@ services:
       - "127.0.0.1:15672:15672"
     healthcheck:
       test: rabbitmq-diagnostics -q check_running && rabbitmq-diagnostics -q check_local_alarms
-      interval: 5s
-      timeout: 2s
+      interval: 30s
+      timeout: 30s

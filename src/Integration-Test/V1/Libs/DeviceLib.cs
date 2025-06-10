@@ -1,9 +1,6 @@
 ﻿using BackBuddy.Integration_Test.Exceptions;
-using BackBuddy.Integration_Test.Extensions;
 using System.Net.Http.Headers;
 using System.Net.Mime;
-using System.Net.Sockets;
-using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -89,13 +86,13 @@ namespace BackBuddy.Integration_Test.V1.Libs
         public async Task<(JsonArray, bool)> GetDevices(string accessToken, int page = 1, int size = 10, bool? active = null, bool? descending = null)
         {
             string query = $"/api/v1/device?page={page}&size={size}";
-            
+
             if (active.HasValue)
                 query += $"&active={active.Value}";
 
             if (descending.HasValue)
                 query += $"&descending={descending.Value}";
-            
+
             HttpRequestMessage requestMessage = new(HttpMethod.Get, query);
             requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
