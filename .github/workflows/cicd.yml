@@ -201,3 +201,10 @@ jobs:
           imageToDeploy: ${{ vars.ACR_URL }}/backbuddy/api:${{ vars.MAJOR_VERSION }}.${{ vars.MINOR_VERSION }}.${{ github.run_number }}
           resourceGroup: ${{ vars.RESOURCE_GROUP }}
           containerAppName: ${{ vars.CONTAINER_APP_NAME }}
+
+      - name: Deploy Device Orchestrator image to Container App
+        uses: azure/container-apps-deploy-action@v1
+        with:
+          imageToDeploy: ${{ vars.ACR_URL }}/backbuddy/deviceorchestrator:${{ vars.MAJOR_VERSION }}.${{ vars.MINOR_VERSION }}.${{ github.run_number }}
+          resourceGroup: ${{ vars.RESOURCE_GROUP }}
+          containerAppName: ${{ vars.CONTAINER_DEVICE_ORCHESTRATOR_APP_NAME }}
