@@ -12,11 +12,15 @@ namespace BackBuddy.Api.Service.V1.Users.Services
     {
         Task<IEnumerable<string>> GetUserFCMTokensAsync(string userId);
         Task<IEnumerable<UserDto>> SearchUser(SearchUserQueryDto query);
+        Task<bool> IsUserIdValid(string userId);
+        Task<UserDto> GetUserByIdAsync(string userId);
+        Task<List<UserDto>> GetUsers(List<string> users);
     }
 
-    public partial class UserService(FirestoreDb firestore) : IUserService
+    public partial class UserService(FirestoreDb firestore, ILogger<UserService> logger) : IUserService
     {
         private readonly CollectionReference _collection = firestore.Collection("users");
+        private readonly ILogger<UserService> _logger = logger;
 
         public async Task<IEnumerable<string>> GetUserFCMTokensAsync(string userId)
         {
@@ -44,7 +48,42 @@ namespace BackBuddy.Api.Service.V1.Users.Services
             return querySnapshot.ToDtos();
         }
 
+        public async Task<bool> IsUserIdValid(string userId)
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+                return false;
+            DocumentSnapshot documentSnapshot = await _collection.Document(userId).GetSnapshotAsync();
+            return documentSnapshot.Exists;
+        }
+
+        public async Task<UserDto> GetUserByIdAsync(string userId)
+        {
+            DocumentSnapshot documentSnapshot = await _collection.Document(userId).GetSnapshotAsync();
+            if (!documentSnapshot.Exists)
+                throw new UserNotFoundException();
+            return documentSnapshot.ToDto() ?? throw new UserNotFoundException();
+        }
+
+        public async Task<List<UserDto>> GetUsers(List<string> users)
+        {
+            IEnumerable<Task<UserDto?>> tasks = users.Select(async userId =>
+            {
+                try
+                {
+                    return await GetUserByIdAsync(userId);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error while getting user {UserId}", userId);
+                    return null;
+                }
+            });
+            UserDto?[] result = await Task.WhenAll(tasks);
+            return [.. result.Where(x => x != null)!];
+        }
+
         [GeneratedRegex("^[a-zA-Z0-9 ]+$")]
         private static partial Regex InvalidSearchPatternRegex();
+
     }
 }
