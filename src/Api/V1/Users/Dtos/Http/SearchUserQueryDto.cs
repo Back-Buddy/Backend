@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
-namespace BackBuddy.Api.Service.V1.Users.Dtos
+namespace BackBuddy.Api.Service.V1.Users.Dtos.Http
 {
     public record SearchUserQueryDto
     {

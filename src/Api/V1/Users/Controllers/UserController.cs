@@ -1,4 +1,5 @@
 ﻿using BackBuddy.Api.Service.V1.Users.Dtos;
+using BackBuddy.Api.Service.V1.Users.Dtos.Http;
 using BackBuddy.Api.Service.V1.Users.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,10 +12,10 @@ namespace BackBuddy.Api.Service.V1.Users.Controllers
         private readonly IUserService _userService = userService;
 
         [HttpGet("search")]
-        [ProducesResponseType(typeof(List<string>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(IEnumerable<UserDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> SearchUser([FromQuery] SearchUserQueryDto query)
         {
-            List<string> user = await _userService.SearchUser(query);
+            IEnumerable<UserDto> user = await _userService.SearchUser(query);
             return Ok(user);
         }
     }

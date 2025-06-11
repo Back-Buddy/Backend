@@ -65,7 +65,9 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             // Assert
             Assert.IsNotNull(result);
             Assert.AreEqual(1, result.Count);
-            Assert.AreEqual(_userId, result[0].AsValue().GetValue<string>());
+
+            JsonObject userObj = result[0].AsObject();
+            ValidateUserObj(userObj, _userId, "test");
         }
 
         [TestMethod]
@@ -85,7 +87,9 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
                 JsonArray result = await _userLib.SearchUser(_accessToken, partialSearchTerm, limit);
                 Assert.IsNotNull(result);
                 Assert.AreEqual(1, result.Count);
-                Assert.AreEqual(_userId, result[0].AsValue().GetValue<string>());
+
+                JsonObject userObj = result[0].AsObject();
+                ValidateUserObj(userObj, _userId, "test");
             }
         }
 
@@ -160,7 +164,9 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             // Assert
             Assert.IsNotNull(result);
             Assert.AreEqual(1, result.Count);
-            Assert.AreEqual(_userId, result[0].AsValue().GetValue<string>());
+
+            JsonObject userObj = result[0].AsObject();
+            ValidateUserObj(userObj, _userId, "test");
         }
 
         [TestMethod]
@@ -214,7 +220,16 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             // Assert
             Assert.IsNotNull(result);
             Assert.AreEqual(1, result.Count);
-            Assert.AreEqual(_userId, result[0].AsValue().GetValue<string>());
+
+            JsonObject userObj = result[0].AsObject();
+            ValidateUserObj(userObj, _userId, "test");
+        }
+
+        private static void ValidateUserObj(JsonObject userObj, string userId, string username = "test")
+        {
+            Assert.AreEqual(_userId, userObj["userId"].GetValue<string>());
+            Assert.AreEqual("test", userObj["username"].GetValue<string>());
+            Assert.IsNull(userObj["avatar"]);
         }
     }
 }
