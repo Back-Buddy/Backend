@@ -16,6 +16,7 @@ using BackBuddy.Api.Service.V1.Notifications.Consumers;
 using BackBuddy.Api.Service.V1.Notifications.Services;
 using BackBuddy.Api.Service.V1.Users.Consumers;
 using BackBuddy.Api.Service.V1.Users.Entities;
+using BackBuddy.Api.Service.V1.Users.Repositories;
 using BackBuddy.Api.Service.V1.Users.Services;
 using BackBuddy.Api.Service.V1.WebSockets.BackgroundServices;
 using BackBuddy.Api.Service.V1.WebSockets.Consumer;
@@ -155,9 +156,11 @@ else
     builder.Services.AddHttpClient();
     builder.Services.AddSingleton<INotificationService, DevNotificationService>();
 }
-
-builder.Services.AddScoped<IUserService, UserService>();
 #endregion
+
+builder.Services.AddScoped<IUserReleationRepository, UserReleationRepository>();
+builder.Services.AddScoped<IUserRelationService, UserReleationService>();
+builder.Services.AddScoped<IUserService, UserService>();
 
 builder.Services.AddScoped<IDeviceStatusRepository, DeviceStatusRepository>();
 

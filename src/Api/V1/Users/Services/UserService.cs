@@ -1,6 +1,7 @@
 ﻿using BackBuddy.Api.Service.V1.Database.Firebase;
 using BackBuddy.Api.Service.V1.Users.Dtos;
 using BackBuddy.Api.Service.V1.Users.Dtos.Http;
+using BackBuddy.Api.Service.V1.Users.Enums;
 using BackBuddy.Api.Service.V1.Users.Exceptions;
 using BackBuddy.Api.Service.V1.Users.Mapper;
 using Google.Cloud.Firestore;
@@ -11,14 +12,15 @@ namespace BackBuddy.Api.Service.V1.Users.Services
     public interface IUserService
     {
         Task<IEnumerable<string>> GetUserFCMTokensAsync(string userId);
-        Task<IEnumerable<UserDto>> SearchUser(SearchUserQueryDto query);
+        Task<IEnumerable<UserDto>> SearchUser(SearchUserQueryDto query, UserExpandType userExpandType = UserExpandType.None);
         Task<bool> IsUserIdValid(string userId);
-        Task<UserDto> GetUserByIdAsync(string userId);
-        Task<List<UserDto>> GetUsers(List<string> users);
+        Task<UserDto> GetUserByIdAsync(string userId, UserExpandType userExpandType = UserExpandType.None);
+        Task<List<UserDto>> GetUsers(List<string> users, UserExpandType expandType = UserExpandType.None);
     }
 
-    public partial class UserService(FirestoreDb firestore, ILogger<UserService> logger) : IUserService
+    public partial class UserService(IUserRelationService userRelationService, FirestoreDb firestore, ILogger<UserService> logger) : IUserService
     {
+        private readonly IUserRelationService _userRelationService = userRelationService;
         private readonly CollectionReference _collection = firestore.Collection("users");
         private readonly ILogger<UserService> _logger = logger;
 
@@ -32,7 +34,7 @@ namespace BackBuddy.Api.Service.V1.Users.Services
             return tokens!;
         }
 
-        public async Task<IEnumerable<UserDto>> SearchUser(SearchUserQueryDto query)
+        public async Task<IEnumerable<UserDto>> SearchUser(SearchUserQueryDto query, UserExpandType userExpandType = UserExpandType.None)
         {
             if (query.SearchTerm.Trim().Length <= 0)
                 throw new InvalidUserSearchPatternException();
@@ -45,7 +47,23 @@ namespace BackBuddy.Api.Service.V1.Users.Services
                 .Limit(query.Limit)
                 .GetSnapshotAsync();
 
-            return querySnapshot.ToDtos();
+            IEnumerable<UserDto> users = querySnapshot.ToDtos();
+            if (!users.Any())
+                return users;
+
+            if (userExpandType == UserExpandType.Relations)
+            {
+                IEnumerable<Task<UserDto>> tasks = users.Select(async user =>
+                {
+                    (long incomingRelations, long outgoingRelations) = await _userRelationService.CountReleations(user.UserId);
+                    user.Followers = incomingRelations;
+                    user.Following = outgoingRelations;
+                    return user;
+                });
+                UserDto[] userDtos = await Task.WhenAll(tasks);
+                users = userDtos;
+            }
+            return users;
         }
 
         public async Task<bool> IsUserIdValid(string userId)
@@ -56,21 +74,29 @@ namespace BackBuddy.Api.Service.V1.Users.Services
             return documentSnapshot.Exists;
         }
 
-        public async Task<UserDto> GetUserByIdAsync(string userId)
+        public async Task<UserDto> GetUserByIdAsync(string userId, UserExpandType userExpandType = UserExpandType.None)
         {
             DocumentSnapshot documentSnapshot = await _collection.Document(userId).GetSnapshotAsync();
             if (!documentSnapshot.Exists)
                 throw new UserNotFoundException();
-            return documentSnapshot.ToDto() ?? throw new UserNotFoundException();
+            UserDto userDto = documentSnapshot.ToDto() ?? throw new UserNotFoundException();
+
+            if (userExpandType == UserExpandType.Relations)
+            {
+                (long incomingRelations, long outgoingRelations) = await _userRelationService.CountReleations(userId);
+                userDto.Followers = incomingRelations;
+                userDto.Following = outgoingRelations;
+            }
+            return userDto;
         }
 
-        public async Task<List<UserDto>> GetUsers(List<string> users)
+        public async Task<List<UserDto>> GetUsers(List<string> users, UserExpandType userExpandType = UserExpandType.None)
         {
             IEnumerable<Task<UserDto?>> tasks = users.Select(async userId =>
             {
                 try
                 {
-                    return await GetUserByIdAsync(userId);
+                    return await GetUserByIdAsync(userId, userExpandType);
                 }
                 catch (Exception ex)
                 {
