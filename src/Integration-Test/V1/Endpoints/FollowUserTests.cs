@@ -150,7 +150,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
         }
 
         [TestMethod]
-        public async Task Test_FollowUser_Pagination()
+        public async Task Test_FollowUser_Following_Pagination()
         {
             // Arrange
             for (int i = 0; i < 12; i++)
@@ -170,6 +170,37 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             Assert.AreEqual(5, followingPage2.Count);
 
             (JsonArray followingPage3, bool hasMoreEntriesPage3) = await _userLib.GetFollowing(_accessToken, _userId, page: 3, size: 5);
+            Assert.IsFalse(hasMoreEntriesPage3);
+            Assert.AreEqual(2, followingPage3.Count);
+        }
+
+        [TestMethod]
+        public async Task Test_FollowUser_Followers_Pagination()
+        {
+            // Arrange
+            for (int i = 0; i < 12; i++)
+            {
+                await _firebaseLib.RegisterUserAsync($"test{i}@gmail.com", "stringG.1212"); //NOT A REAL SECRET
+                FirebaseDto.FirebaseLoginResponseDto loginResponse = await _firebaseLib.SignInUserAsync($"test{i}@gmail.com", "stringG.1212"); //NOT A REAL SECRET
+                string userId = loginResponse.LocalId;
+                string accessToken = loginResponse.IdToken;
+
+                await _firestoreLib.CreateUserObject(userId, $"TestUser{i + 3}", []);
+                await _userLib.FollowUser(accessToken, _userId);
+
+                await _firebaseLib.DeleteUserAsync(userId);
+            }
+
+            // Act
+            (JsonArray following, bool hasMoreEntries) = await _userLib.GetFollowers(_accessToken, _userId, page: 1, size: 5);
+            Assert.IsTrue(hasMoreEntries);
+            Assert.AreEqual(5, following.Count);
+
+            (JsonArray followingPage2, bool hasMoreEntriesPage2) = await _userLib.GetFollowers(_accessToken, _userId, page: 2, size: 5);
+            Assert.IsTrue(hasMoreEntriesPage2);
+            Assert.AreEqual(5, followingPage2.Count);
+
+            (JsonArray followingPage3, bool hasMoreEntriesPage3) = await _userLib.GetFollowers(_accessToken, _userId, page: 3, size: 5);
             Assert.IsFalse(hasMoreEntriesPage3);
             Assert.AreEqual(2, followingPage3.Count);
         }
