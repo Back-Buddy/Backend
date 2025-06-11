@@ -59,7 +59,7 @@ namespace BackBuddy.Api.Service.V1.Users.Controllers
             if (!await _userService.IsUserIdValid(userId))
                 throw new UserNotFoundException();
 
-            Page<List<string>> followers = await _userRelationService.GetIncomingReleations(userId, pageQuery);
+            Page<List<string>> followers = await _userRelationService.GetIncomingRelations(userId, pageQuery);
             List<UserDto> followersAsUser = await _userService.GetUsers(followers.Items, expandType);
 
             Response.AddPageHeader(followers.HasMoreEntries);
@@ -74,7 +74,7 @@ namespace BackBuddy.Api.Service.V1.Users.Controllers
             if (!await _userService.IsUserIdValid(userId))
                 throw new UserNotFoundException();
 
-            Page<List<string>> following = await _userRelationService.GetOutgoingReleations(userId, pageQuery);
+            Page<List<string>> following = await _userRelationService.GetOutgoingRelations(userId, pageQuery);
             List<UserDto> followingAsUser = await _userService.GetUsers(following.Items, expandType);
 
             Response.AddPageHeader(following.HasMoreEntries);

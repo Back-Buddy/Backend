@@ -5,24 +5,24 @@ using MongoDB.Driver;
 namespace BackBuddy.Api.Service.V1.Users.Repositories
 {
 
-    public interface IUserReleationRepository
+    public interface IUserRelationRepository
     {
         Task Add(UserFollowEntity userFollowEntity, CancellationToken cancellationToken = default);
         Task Delete(string userId, string targetId, CancellationToken cancellationToken = default);
 
-        Task<bool> HasReleation(string userId, string targetId, CancellationToken cancellationToken = default);
-        Task<bool> HasStrongReleation(string userId, string targetId, CancellationToken cancellationToken = default);
+        Task<bool> HasRelation(string userId, string targetId, CancellationToken cancellationToken = default);
+        Task<bool> HasStrongRelation(string userId, string targetId, CancellationToken cancellationToken = default);
 
-        Task<long> CountIncomingReleations(string userId, CancellationToken cancellationToken = default);
-        Task<long> CountOutgoingReleations(string userId, CancellationToken cancellationToken = default);
+        Task<long> CountIncomingRelations(string userId, CancellationToken cancellationToken = default);
+        Task<long> CountOutgoingRelations(string userId, CancellationToken cancellationToken = default);
 
-        Task<Page<List<UserFollowEntity>>> GetIncomingReleations(string userId, PageRequestDto page, CancellationToken cancellationToken = default);
-        Task<Page<List<UserFollowEntity>>> GetOutgoingReleations(string userId, PageRequestDto page, CancellationToken cancellationToken = default);
+        Task<Page<List<UserFollowEntity>>> GetIncomingRelations(string userId, PageRequestDto page, CancellationToken cancellationToken = default);
+        Task<Page<List<UserFollowEntity>>> GetOutgoingRelations(string userId, PageRequestDto page, CancellationToken cancellationToken = default);
 
         Task DeleteUser(string userId, CancellationToken cancellationToken = default);
     }
 
-    public class UserReleationRepository(IMongoCollection<UserFollowEntity> collection) : IUserReleationRepository
+    public class UserRelationRepository(IMongoCollection<UserFollowEntity> collection) : IUserRelationRepository
     {
         private readonly IMongoCollection<UserFollowEntity> _collection = collection;
 
@@ -36,13 +36,13 @@ namespace BackBuddy.Api.Service.V1.Users.Repositories
             await _collection.DeleteOneAsync(x => x.UserId == userId && x.TargetId == targetId, cancellationToken: cancellationToken);
         }
 
-        public async Task<bool> HasReleation(string userId, string targetId, CancellationToken cancellationToken = default)
+        public async Task<bool> HasRelation(string userId, string targetId, CancellationToken cancellationToken = default)
         {
             long documentCount = await _collection.CountDocumentsAsync(x => x.UserId == userId && x.TargetId == targetId, cancellationToken: cancellationToken);
             return documentCount == 1;
         }
 
-        public async Task<bool> HasStrongReleation(string userId, string targetId, CancellationToken cancellationToken = default)
+        public async Task<bool> HasStrongRelation(string userId, string targetId, CancellationToken cancellationToken = default)
         {
             FilterDefinition<UserFollowEntity> oneSideFilter = Builders<UserFollowEntity>.Filter.And(Builders<UserFollowEntity>.Filter.Eq(x => x.UserId, userId), Builders<UserFollowEntity>.Filter.Eq(x => x.TargetId, targetId));
             FilterDefinition<UserFollowEntity> otherSideFilter = Builders<UserFollowEntity>.Filter.And(Builders<UserFollowEntity>.Filter.Eq(x => x.UserId, targetId), Builders<UserFollowEntity>.Filter.Eq(x => x.TargetId, userId));
@@ -53,19 +53,19 @@ namespace BackBuddy.Api.Service.V1.Users.Repositories
             return documentCount == 2;
         }
 
-        public async Task<long> CountIncomingReleations(string userId, CancellationToken cancellationToken = default)
+        public async Task<long> CountIncomingRelations(string userId, CancellationToken cancellationToken = default)
         {
             long documentCount = await _collection.CountDocumentsAsync(x => x.TargetId == userId, cancellationToken: cancellationToken);
             return documentCount;
         }
 
-        public async Task<long> CountOutgoingReleations(string userId, CancellationToken cancellationToken = default)
+        public async Task<long> CountOutgoingRelations(string userId, CancellationToken cancellationToken = default)
         {
             long documentCount = await _collection.CountDocumentsAsync(x => x.UserId == userId, cancellationToken: cancellationToken);
             return documentCount;
         }
 
-        public async Task<Page<List<UserFollowEntity>>> GetIncomingReleations(string userId, PageRequestDto page, CancellationToken cancellationToken = default)
+        public async Task<Page<List<UserFollowEntity>>> GetIncomingRelations(string userId, PageRequestDto page, CancellationToken cancellationToken = default)
         {
             FindOptions<UserFollowEntity> options = new()
             {
@@ -85,7 +85,7 @@ namespace BackBuddy.Api.Service.V1.Users.Repositories
             return new Page<List<UserFollowEntity>> { Items = results, HasMoreEntries = hasMoreResults };
         }
 
-        public async Task<Page<List<UserFollowEntity>>> GetOutgoingReleations(string userId, PageRequestDto page, CancellationToken cancellationToken = default)
+        public async Task<Page<List<UserFollowEntity>>> GetOutgoingRelations(string userId, PageRequestDto page, CancellationToken cancellationToken = default)
         {
             FindOptions<UserFollowEntity> options = new()
             {

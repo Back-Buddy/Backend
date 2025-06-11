@@ -11,32 +11,32 @@ namespace BackBuddy.Api.Service.V1.Users.Services
         Task AddRelation(string userId, string targetUserId, CancellationToken cancellationToken = default);
         Task RemoveRelation(string userId, string targetUserId, CancellationToken cancellationToken = default);
 
-        Task<bool> HasReleation(string userId, string targetUserId, CancellationToken cancellationToken = default);
-        Task<bool> HasStrongReleation(string userId, string targetUserId, CancellationToken cancellationToken = default);
+        Task<bool> HasRelation(string userId, string targetUserId, CancellationToken cancellationToken = default);
+        Task<bool> HasStrongRelation(string userId, string targetUserId, CancellationToken cancellationToken = default);
 
-        Task<long> CountIncomingReleations(string userId, CancellationToken cancellationToken = default);
-        Task<long> CountOutgoingReleations(string userId, CancellationToken cancellationToken = default);
-        Task<(long IncomingRelations, long OutgoingRelations)> CountReleations(string userId, CancellationToken cancellationToken = default);
+        Task<long> CountIncomingRelations(string userId, CancellationToken cancellationToken = default);
+        Task<long> CountOutgoingRelations(string userId, CancellationToken cancellationToken = default);
+        Task<(long IncomingRelations, long OutgoingRelations)> CountRelations(string userId, CancellationToken cancellationToken = default);
 
-        Task<Page<List<string>>> GetIncomingReleations(string userId, PageRequestDto page, CancellationToken cancellationToken = default);
-        Task<Page<List<string>>> GetOutgoingReleations(string userId, PageRequestDto page, CancellationToken cancellationToken = default);
-        Task<(Page<List<string>> IncomingRelations, Page<List<string>> OutgoingRelations)> GetReleations(string userId, PageRequestDto page, CancellationToken cancellationToken = default);
+        Task<Page<List<string>>> GetIncomingRelations(string userId, PageRequestDto page, CancellationToken cancellationToken = default);
+        Task<Page<List<string>>> GetOutgoingRelations(string userId, PageRequestDto page, CancellationToken cancellationToken = default);
+        Task<(Page<List<string>> IncomingRelations, Page<List<string>> OutgoingRelations)> GetRelations(string userId, PageRequestDto page, CancellationToken cancellationToken = default);
 
         Task DeleteUser(string userId, CancellationToken cancellationToken = default);
 
         Task<UserRelationDto> GetUserRelation(string userId, string targetUserId, CancellationToken cancellationToken = default);
     }
 
-    public class UserReleationService(IUserReleationRepository repository) : IUserRelationService
+    public class UserRelationService(IUserRelationRepository repository) : IUserRelationService
     {
-        private readonly IUserReleationRepository _repository = repository;
+        private readonly IUserRelationRepository _repository = repository;
 
         public async Task AddRelation(string userId, string targetUserId, CancellationToken cancellationToken = default)
         {
             if (userId == targetUserId)
                 throw new UserCannotFollowThemselfException();
 
-            bool hasAlreadyRelation = await HasReleation(userId, targetUserId, cancellationToken);
+            bool hasAlreadyRelation = await HasRelation(userId, targetUserId, cancellationToken);
             if (hasAlreadyRelation)
                 throw new UserAlreadyFollowingException();
 
@@ -53,65 +53,65 @@ namespace BackBuddy.Api.Service.V1.Users.Services
 
         public async Task RemoveRelation(string userId, string targetUserId, CancellationToken cancellationToken = default)
         {
-            bool hasRelation = await HasReleation(userId, targetUserId, cancellationToken);
+            bool hasRelation = await HasRelation(userId, targetUserId, cancellationToken);
             if (!hasRelation)
                 throw new UserNotFollowingException();
 
             await _repository.Delete(userId, targetUserId, cancellationToken);
         }
 
-        public async Task<long> CountIncomingReleations(string userId, CancellationToken cancellationToken = default)
+        public async Task<long> CountIncomingRelations(string userId, CancellationToken cancellationToken = default)
         {
-            return await _repository.CountIncomingReleations(userId, cancellationToken);
+            return await _repository.CountIncomingRelations(userId, cancellationToken);
         }
 
-        public async Task<long> CountOutgoingReleations(string userId, CancellationToken cancellationToken = default)
+        public async Task<long> CountOutgoingRelations(string userId, CancellationToken cancellationToken = default)
         {
-            return await _repository.CountOutgoingReleations(userId, cancellationToken);
+            return await _repository.CountOutgoingRelations(userId, cancellationToken);
         }
 
-        public async Task<(long IncomingRelations, long OutgoingRelations)> CountReleations(string userId, CancellationToken cancellationToken = default)
+        public async Task<(long IncomingRelations, long OutgoingRelations)> CountRelations(string userId, CancellationToken cancellationToken = default)
         {
             List<Task<long>> tasks =
             [
-                CountIncomingReleations(userId, cancellationToken),
-                CountOutgoingReleations(userId, cancellationToken)
+                CountIncomingRelations(userId, cancellationToken),
+                CountOutgoingRelations(userId, cancellationToken)
             ];
-            long[] releations = await Task.WhenAll(tasks);
-            return (releations[0], releations[1]);
+            long[] Relations = await Task.WhenAll(tasks);
+            return (Relations[0], Relations[1]);
         }
 
-        public async Task<bool> HasReleation(string userId, string targetUserId, CancellationToken cancellationToken = default)
+        public async Task<bool> HasRelation(string userId, string targetUserId, CancellationToken cancellationToken = default)
         {
-            return await _repository.HasReleation(userId, targetUserId, cancellationToken);
+            return await _repository.HasRelation(userId, targetUserId, cancellationToken);
         }
 
-        public async Task<bool> HasStrongReleation(string userId, string targetUserId, CancellationToken cancellationToken = default)
+        public async Task<bool> HasStrongRelation(string userId, string targetUserId, CancellationToken cancellationToken = default)
         {
-            return await _repository.HasStrongReleation(userId, targetUserId, cancellationToken);
+            return await _repository.HasStrongRelation(userId, targetUserId, cancellationToken);
         }
 
-        public async Task<Page<List<string>>> GetIncomingReleations(string userId, PageRequestDto page, CancellationToken cancellationToken = default)
+        public async Task<Page<List<string>>> GetIncomingRelations(string userId, PageRequestDto page, CancellationToken cancellationToken = default)
         {
-            Page<List<UserFollowEntity>> releations = await _repository.GetIncomingReleations(userId, page, cancellationToken);
-            return new Page<List<string>> { Items = [.. releations.Items.Select(x => x.UserId)], HasMoreEntries = releations.HasMoreEntries };
+            Page<List<UserFollowEntity>> Relations = await _repository.GetIncomingRelations(userId, page, cancellationToken);
+            return new Page<List<string>> { Items = [.. Relations.Items.Select(x => x.UserId)], HasMoreEntries = Relations.HasMoreEntries };
         }
 
-        public async Task<Page<List<string>>> GetOutgoingReleations(string userId, PageRequestDto page, CancellationToken cancellationToken = default)
+        public async Task<Page<List<string>>> GetOutgoingRelations(string userId, PageRequestDto page, CancellationToken cancellationToken = default)
         {
-            Page<List<UserFollowEntity>> releations = await _repository.GetOutgoingReleations(userId, page, cancellationToken);
-            return new Page<List<string>> { Items = [.. releations.Items.Select(x => x.TargetId)], HasMoreEntries = releations.HasMoreEntries };
+            Page<List<UserFollowEntity>> Relations = await _repository.GetOutgoingRelations(userId, page, cancellationToken);
+            return new Page<List<string>> { Items = [.. Relations.Items.Select(x => x.TargetId)], HasMoreEntries = Relations.HasMoreEntries };
         }
 
-        public async Task<(Page<List<string>> IncomingRelations, Page<List<string>> OutgoingRelations)> GetReleations(string userId, PageRequestDto page, CancellationToken cancellationToken = default)
+        public async Task<(Page<List<string>> IncomingRelations, Page<List<string>> OutgoingRelations)> GetRelations(string userId, PageRequestDto page, CancellationToken cancellationToken = default)
         {
             List<Task<Page<List<string>>>> tasks =
             [
-                GetIncomingReleations(userId, page, cancellationToken),
-                GetOutgoingReleations(userId, page, cancellationToken)
+                GetIncomingRelations(userId, page, cancellationToken),
+                GetOutgoingRelations(userId, page, cancellationToken)
             ];
-            Page<List<string>>[] releations = await Task.WhenAll(tasks);
-            return (releations[0], releations[1]);
+            Page<List<string>>[] Relations = await Task.WhenAll(tasks);
+            return (Relations[0], Relations[1]);
         }
 
         public async Task DeleteUser(string userId, CancellationToken cancellationToken = default)
@@ -122,15 +122,15 @@ namespace BackBuddy.Api.Service.V1.Users.Services
         public async Task<UserRelationDto> GetUserRelation(string userId, string targetUserId, CancellationToken cancellationToken = default)
         {
             List<Task<bool>> tasks = [
-                HasReleation(userId, targetUserId, cancellationToken),
-                HasReleation(targetUserId, userId, cancellationToken)
+                HasRelation(userId, targetUserId, cancellationToken),
+                HasRelation(targetUserId, userId, cancellationToken)
             ];
 
-            bool[] hasReleations = await Task.WhenAll(tasks);
+            bool[] hasRelations = await Task.WhenAll(tasks);
             return new UserRelationDto
             {
-                IsFollowing = hasReleations[0],
-                IsFollowedBy = hasReleations[1],
+                IsFollowing = hasRelations[0],
+                IsFollowedBy = hasRelations[1],
             };
         }
     }

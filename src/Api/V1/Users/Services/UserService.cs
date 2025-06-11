@@ -56,7 +56,7 @@ namespace BackBuddy.Api.Service.V1.Users.Services
             {
                 IEnumerable<Task<UserDto>> tasks = users.Select(async user =>
                 {
-                    (long incomingRelations, long outgoingRelations) = await _userRelationService.CountReleations(user.UserId);
+                    (long incomingRelations, long outgoingRelations) = await _userRelationService.CountRelations(user.UserId);
                     user.Followers = incomingRelations;
                     user.Following = outgoingRelations;
                     return user;
@@ -84,7 +84,7 @@ namespace BackBuddy.Api.Service.V1.Users.Services
 
             if (userExpandType == UserExpandType.Relations)
             {
-                (long incomingRelations, long outgoingRelations) = await _userRelationService.CountReleations(userId);
+                (long incomingRelations, long outgoingRelations) = await _userRelationService.CountRelations(userId);
                 userDto.Followers = incomingRelations;
                 userDto.Following = outgoingRelations;
             }

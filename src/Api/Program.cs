@@ -158,8 +158,8 @@ else
 }
 #endregion
 
-builder.Services.AddScoped<IUserReleationRepository, UserReleationRepository>();
-builder.Services.AddScoped<IUserRelationService, UserReleationService>();
+builder.Services.AddScoped<IUserRelationRepository, UserRelationRepository>();
+builder.Services.AddScoped<IUserRelationService, UserRelationService>();
 builder.Services.AddScoped<IUserService, UserService>();
 
 builder.Services.AddScoped<IDeviceStatusRepository, DeviceStatusRepository>();

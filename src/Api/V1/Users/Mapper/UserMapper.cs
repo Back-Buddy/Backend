@@ -25,8 +25,7 @@ namespace BackBuddy.Api.Service.V1.Users.Mapper
         public static IEnumerable<UserDto> ToDtos(this QuerySnapshot querySnapshot)
         {
             return querySnapshot.Documents
-                .Select(doc => doc.ToDto())
-                .Where(dto => dto != null)!;
+                .Select(doc => doc.ToDto()).OfType<UserDto>();
         }
     }
 }
