@@ -5,7 +5,7 @@ namespace BackBuddy.Api.Service.V1.Users.Exceptions
     public class UserNotFollowingException : AbstractBaseException
     {
         public UserNotFollowingException()
-            : base("User.NotFollowing", "User is not following user!", StatusCodes.Status409Conflict)
+            : base("User.NotFollowing", "Current user is not following the specified target user.", StatusCodes.Status409Conflict)
         {
         }
     }

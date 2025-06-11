@@ -2,7 +2,7 @@
 
 namespace BackBuddy.Api.Service.V1.Database.Firebase
 {
-    public static class StartswithExtension
+    public static class StartsWithExtension
     {
         /// <summary>
         /// Adds a "starts with" condition to the query for the specified field and value.
