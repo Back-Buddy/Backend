@@ -68,6 +68,9 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
 
             JsonObject userObj = result[0].AsObject();
             ValidateUserObj(userObj, _userId, "test");
+
+            Assert.IsNull(userObj["followers"]);
+            Assert.IsNull(userObj["following"]);
         }
 
         [TestMethod]
@@ -223,6 +226,29 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
 
             JsonObject userObj = result[0].AsObject();
             ValidateUserObj(userObj, _userId, "test");
+        }
+
+        [TestMethod]
+        public async Task Test_SearchUser_Expand_Type()
+        {
+            // Arrange
+            string searchTerm = "test";
+            int limit = 10;
+
+            await _firestoreLib.CreateUserObject(_userId, searchTerm, []);
+
+            // Act
+            JsonArray result = await _userLib.SearchUser(_accessToken, searchTerm, limit, "Relations");
+
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.AreEqual(1, result.Count);
+
+            JsonObject userObj = result[0].AsObject();
+            ValidateUserObj(userObj, _userId, "test");
+
+            Assert.AreEqual(0, userObj["followers"].GetValue<long>());
+            Assert.AreEqual(0, userObj["following"].GetValue<long>());
         }
 
         private static void ValidateUserObj(JsonObject userObj, string userId, string username = "test")

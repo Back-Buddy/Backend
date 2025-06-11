@@ -28,9 +28,9 @@ namespace BackBuddy.Integration_Test.V1.Libs
             }
         }
 
-        public async Task<JsonArray> SearchUser(string accessToken, string searchTerm, int limit = 10)
+        public async Task<JsonArray> SearchUser(string accessToken, string searchTerm, int limit = 10, string expandType = "None")
         {
-            string url = $"api/v1/user/search?searchTerm={Uri.EscapeDataString(searchTerm)}&limit={limit}";
+            string url = $"api/v1/user/search?searchTerm={Uri.EscapeDataString(searchTerm)}&limit={limit}&expandType={expandType}";
             HttpRequestMessage httpRequestMessage = new(HttpMethod.Get, url);
             httpRequestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
             HttpResponseMessage response = await _httpClient.SendAsync(httpRequestMessage);
