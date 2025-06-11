@@ -58,14 +58,17 @@ namespace BackBuddy.Integration_Test.V1.Libs
             return collection;
         }
 
-        public async Task CreateUserObject(string userId, string displayName, IEnumerable<string> fcmTokens)
+        public async Task CreateUserObject(string userId, string displayName, IEnumerable<string> fcmTokens, string avatarUrl = null)
         {
             Dictionary<string, object> userData = new()
             {
                 { "uid", userId },
                 { "display_name", displayName },
-                { "display_name_upper", displayName.ToUpper() },
+                { "display_name_upper", displayName.ToUpper() }
             };
+
+            if (!string.IsNullOrEmpty(avatarUrl))
+                userData.Add("photo_url", avatarUrl);
 
             DocumentReference userRef = _firestoreDb.Collection("users").Document(userId);
             await userRef.SetAsync(userData);
