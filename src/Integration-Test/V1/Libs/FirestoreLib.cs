@@ -63,7 +63,8 @@ namespace BackBuddy.Integration_Test.V1.Libs
             Dictionary<string, object> userData = new()
             {
                 { "uid", userId },
-                { "displayName", displayName }
+                { "display_name", displayName },
+                { "display_name_upper", displayName.ToUpper() },
             };
 
             DocumentReference userRef = _firestoreDb.Collection("users").Document(userId);

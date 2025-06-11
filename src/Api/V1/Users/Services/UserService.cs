@@ -1,13 +1,18 @@
-﻿using Google.Cloud.Firestore;
+﻿using BackBuddy.Api.Service.V1.Database.Firebase;
+using BackBuddy.Api.Service.V1.Users.Dtos;
+using BackBuddy.Api.Service.V1.Users.Exceptions;
+using Google.Cloud.Firestore;
+using System.Text.RegularExpressions;
 
 namespace BackBuddy.Api.Service.V1.Users.Services
 {
     public interface IUserService
     {
         Task<IEnumerable<string>> GetUserFCMTokensAsync(string userId);
+        Task<List<string>> SearchUser(SearchUserQueryDto query);
     }
 
-    public class UserService(FirestoreDb firestore) : IUserService
+    public partial class UserService(FirestoreDb firestore) : IUserService
     {
         private readonly CollectionReference _collection = firestore.Collection("users");
 
@@ -20,5 +25,27 @@ namespace BackBuddy.Api.Service.V1.Users.Services
                                             .Where(token => !string.IsNullOrEmpty(token));
             return tokens!;
         }
+
+        public async Task<List<string>> SearchUser(SearchUserQueryDto query)
+        {
+            if (query.SearchTerm.Trim().Length <= 0)
+                throw new InvalidUserSearchPatternException();
+
+            if (!InvalidSearchPatternRegex().IsMatch(query.SearchTerm))
+                throw new InvalidUserSearchPatternException();
+
+            QuerySnapshot snapShot = await _collection
+                .StartsWith("display_name_upper", query.SearchTerm.Trim().ToUpper())
+                .Limit(query.Limit)
+                .GetSnapshotAsync();
+
+            IEnumerable<string> ids = snapShot
+                                        .Select(x => x.TryGetValue("uid", out string? uid) ? uid : null)
+                                        .Where(uid => !string.IsNullOrEmpty(uid))!;
+            return [.. ids];
+        }
+
+        [GeneratedRegex("^[a-zA-Z0-9]+$")]
+        private static partial Regex InvalidSearchPatternRegex();
     }
 }
