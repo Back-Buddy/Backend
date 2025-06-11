@@ -6,7 +6,7 @@ using System.Text.Json.Nodes;
 namespace BackBuddy.Integration_Test.V1.Endpoints
 {
     [TestClass]
-    public class UserTests
+    public class SearchUserTests
     {
         private static string _accessToken;
         private static string _userId;
@@ -227,8 +227,8 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
 
         private static void ValidateUserObj(JsonObject userObj, string userId, string username = "test")
         {
-            Assert.AreEqual(_userId, userObj["userId"].GetValue<string>());
-            Assert.AreEqual("test", userObj["username"].GetValue<string>());
+            Assert.AreEqual(userId, userObj["userId"].GetValue<string>());
+            Assert.AreEqual(username, userObj["username"].GetValue<string>());
             Assert.IsNull(userObj["avatar"]);
         }
     }
