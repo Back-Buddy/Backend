@@ -28,6 +28,9 @@ namespace BackBuddy.Api.Service.V1.Users.Services
 
         public async Task AddRelation(string userId, string targetUserId, CancellationToken cancellationToken = default)
         {
+            if (userId == targetUserId)
+                throw new UserCannotFollowThemselfException();
+
             bool hasAlreadyRelation = await HasReleation(userId, targetUserId, cancellationToken);
             if (hasAlreadyRelation)
                 throw new UserAlreadyFollowingException();
