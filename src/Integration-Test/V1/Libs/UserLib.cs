@@ -57,6 +57,20 @@ namespace BackBuddy.Integration_Test.V1.Libs
             return JsonSerializer.Deserialize<JsonObject>(content);
         }
 
+        public async Task<JsonObject> GetRelation(string accessToken, string targetUserId)
+        {
+            string url = $"api/v1/user/{targetUserId}/relation";
+            HttpRequestMessage httpRequestMessage = new(HttpMethod.Get, url);
+            httpRequestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            HttpResponseMessage response = await _httpClient.SendAsync(httpRequestMessage);
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new RequestFailedException(response);
+            }
+            string content = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<JsonObject>(content);
+        }
+
         public async Task FollowUser(string accessToken, string userId)
         {
             string url = $"api/v1/user/{userId}/follow";

@@ -41,6 +41,17 @@ namespace BackBuddy.Api.Service.V1.Users.Controllers
             return Ok(user);
         }
 
+        [HttpGet("{userId}/relation")]
+        [ProducesResponseType(typeof(UserRelationDto), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetUserRelation([FromRoute] string userId)
+        {
+            if (!await _userService.IsUserIdValid(userId))
+                throw new UserNotFoundException();
+
+            UserRelationDto relation = await _userRelationService.GetUserRelation(this.GetUserId(), userId);
+            return Ok(relation);
+        }
+
         [HttpGet("{userId}/followers")]
         [ProducesResponseType(typeof(List<UserDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetFollowers([FromRoute] string userId, [FromQuery] PageRequestDto pageQuery, [FromQuery][DefaultValue(UserExpandType.None)] UserExpandType expandType = UserExpandType.None)

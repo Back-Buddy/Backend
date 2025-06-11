@@ -1,4 +1,5 @@
-﻿using BackBuddy.Api.Service.V1.Users.Entities;
+﻿using BackBuddy.Api.Service.V1.Users.Dtos;
+using BackBuddy.Api.Service.V1.Users.Entities;
 using BackBuddy.Api.Service.V1.Users.Exceptions;
 using BackBuddy.Api.Service.V1.Users.Repositories;
 using BackBuddy.Api.Service.V1.Utilities;
@@ -22,6 +23,8 @@ namespace BackBuddy.Api.Service.V1.Users.Services
         Task<(Page<List<string>> IncomingRelations, Page<List<string>> OutgoingRelations)> GetReleations(string userId, PageRequestDto page, CancellationToken cancellationToken = default);
 
         Task DeleteUser(string userId, CancellationToken cancellationToken = default);
+
+        Task<UserRelationDto> GetUserRelation(string userId, string targetUserId, CancellationToken cancellationToken = default);
     }
 
     public class UserReleationService(IUserReleationRepository repository) : IUserRelationService
@@ -114,6 +117,21 @@ namespace BackBuddy.Api.Service.V1.Users.Services
         public async Task DeleteUser(string userId, CancellationToken cancellationToken = default)
         {
             await _repository.DeleteUser(userId, cancellationToken);
+        }
+
+        public async Task<UserRelationDto> GetUserRelation(string userId, string targetUserId, CancellationToken cancellationToken = default)
+        {
+            List<Task<bool>> tasks = [
+                HasReleation(userId, targetUserId, cancellationToken),
+                HasReleation(targetUserId, userId, cancellationToken)
+            ];
+
+            bool[] hasReleations = await Task.WhenAll(tasks);
+            return new UserRelationDto
+            {
+                IsFollowing = hasReleations[0],
+                IsFollowedBy = hasReleations[1],
+            };
         }
     }
 }

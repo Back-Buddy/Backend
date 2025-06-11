@@ -7,7 +7,7 @@ using System.Text.Json.Nodes;
 namespace BackBuddy.Integration_Test.V1.Endpoints
 {
     [TestClass]
-    public class FollowUserTest
+    public class FollowUserTests
     {
         private static string _accessToken;
         private static string _userId;
