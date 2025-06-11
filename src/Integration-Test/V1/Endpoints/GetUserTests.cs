@@ -1,4 +1,5 @@
-﻿using BackBuddy.Integration_Test.V1.DTOs;
+﻿using BackBuddy.Integration_Test.Exceptions;
+using BackBuddy.Integration_Test.V1.DTOs;
 using BackBuddy.Integration_Test.V1.Libs;
 using System.Text.Json.Nodes;
 
@@ -108,6 +109,19 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
 
             Assert.AreEqual(0, userObj["followers"].GetValue<long>());
             Assert.AreEqual(0, userObj["following"].GetValue<long>());
+        }
+
+        [TestMethod]
+        public async Task Test_GetUser_Invalid_UserId()
+        {
+            // Arrange
+            string invalidUserId = "invalid-user-id";
+
+            // Act
+            RequestFailedException requestFailedException = await Assert.ThrowsExactlyAsync<RequestFailedException>(async () => await _userLib.GetUser(_accessToken, invalidUserId));
+
+            // Assert
+            Assert.AreEqual(System.Net.HttpStatusCode.NotFound, requestFailedException.ResponseMessage.StatusCode);
         }
     }
 }
