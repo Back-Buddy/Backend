@@ -29,8 +29,8 @@ namespace BackBuddy.Api.Service.V1.Users.Controllers
         [ProducesResponseType(typeof(IEnumerable<UserDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> SearchUser([FromQuery] SearchUserQueryDto query, [FromQuery][DefaultValue(UserExpandType.None)] UserExpandType expandType)
         {
-            IEnumerable<UserDto> user = await _userService.SearchUser(query, expandType);
-            return Ok(user);
+            IEnumerable<UserDto> users = await _userService.SearchUser(query, expandType);
+            return Ok(users);
         }
 
         [HttpGet("{userId}")]
