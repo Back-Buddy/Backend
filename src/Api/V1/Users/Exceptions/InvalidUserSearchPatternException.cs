@@ -4,7 +4,7 @@ namespace BackBuddy.Api.Service.V1.Users.Exceptions
 {
     public class InvalidUserSearchPatternException : AbstractBaseException
     {
-        public InvalidUserSearchPatternException() : base("User.SearchPattern", "Invalid Search Pattern! Regex: ^[a-zA-Z0-9]+$", StatusCodes.Status400BadRequest)
+        public InvalidUserSearchPatternException() : base("User.SearchPattern", "Invalid Search Pattern! Regex: ^[a-zA-Z0-9 ]+$", StatusCodes.Status400BadRequest)
         {
         }
     }

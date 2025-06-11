@@ -198,5 +198,23 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             // Assert
             Assert.AreEqual(System.Net.HttpStatusCode.BadRequest, requestFailedException.ResponseMessage.StatusCode);
         }
+
+        [TestMethod]
+        [DataRow("test ")]
+        [DataRow(" test")]
+        public async Task Test_SearchUser_With_Space(string searchTerm)
+        {
+            // Arrange
+            int limit = 10;
+            await _firestoreLib.CreateUserObject(_userId, "test", []);
+
+            // Act
+            JsonArray result = await _userLib.SearchUser(_accessToken, searchTerm, limit);
+
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.AreEqual(1, result.Count);
+            Assert.AreEqual(_userId, result[0].AsValue().GetValue<string>());
+        }
     }
 }

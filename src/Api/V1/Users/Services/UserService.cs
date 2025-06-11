@@ -45,7 +45,7 @@ namespace BackBuddy.Api.Service.V1.Users.Services
             return [.. ids];
         }
 
-        [GeneratedRegex("^[a-zA-Z0-9]+$")]
+        [GeneratedRegex("^[a-zA-Z0-9 ]+$")]
         private static partial Regex InvalidSearchPatternRegex();
     }
 }
