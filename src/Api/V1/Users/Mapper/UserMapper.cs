@@ -11,9 +11,8 @@ namespace BackBuddy.Api.Service.V1.Users.Mapper
                 return null;
             if (!documentSnapshot.TryGetValue("display_name", out string displayName))
                 return null;
-            if (!documentSnapshot.TryGetValue("photo_url", out string? avatar))
-                avatar = null;
 
+            documentSnapshot.TryGetValue("photo_url", out string? avatar);
             return new UserDto()
             {
                 UserId = uid,

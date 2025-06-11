@@ -76,6 +76,16 @@ builder.Services
                                                         .Ascending(x => x.UserId).Ascending(x => x.TargetId);
         CreateIndexModel<UserFollowEntity> indexModel = new(indexKeys, new CreateIndexOptions { Unique = true });
         await collection.Indexes.CreateOneAsync(indexModel);
+
+        IndexKeysDefinition<UserFollowEntity> targetIndexKeys = new IndexKeysDefinitionBuilder<UserFollowEntity>()
+                                                        .Ascending(x => x.TargetId);
+        CreateIndexModel<UserFollowEntity> targetIndexModel = new(targetIndexKeys, new CreateIndexOptions { Unique = false });
+        await collection.Indexes.CreateOneAsync(targetIndexModel);
+
+        IndexKeysDefinition<UserFollowEntity> userIndexKeys = new IndexKeysDefinitionBuilder<UserFollowEntity>()
+                                                        .Ascending(x => x.UserId);
+        CreateIndexModel<UserFollowEntity> userIndexModel = new(userIndexKeys, new CreateIndexOptions { Unique = false });
+        await collection.Indexes.CreateOneAsync(userIndexModel);
     });
 #endregion
 
