@@ -50,8 +50,6 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
         [TestInitialize]
         public async Task TestInitialize()
         {
-            await _firestoreLib.CleanUpUsers();
-
             await _firestoreLib.CreateUserObject(_userId, "TestUser", []);
 
             _userId2 = Guid.CreateVersion7().ToString("N");
