@@ -1,4 +1,4 @@
-﻿using BackBuddy.Api.Service.V1.Users.Dtos;
+﻿using BackBuddy.Api.Service.V1.Users.Dtos.Messages;
 using BackBuddy.Api.Service.V1.Users.Services;
 using MassTransit;
 

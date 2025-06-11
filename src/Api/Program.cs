@@ -15,6 +15,8 @@ using BackBuddy.Api.Service.V1.ExceptionHandlers;
 using BackBuddy.Api.Service.V1.Notifications.Consumers;
 using BackBuddy.Api.Service.V1.Notifications.Services;
 using BackBuddy.Api.Service.V1.Users.Consumers;
+using BackBuddy.Api.Service.V1.Users.Entities;
+using BackBuddy.Api.Service.V1.Users.Repositories;
 using BackBuddy.Api.Service.V1.Users.Services;
 using BackBuddy.Api.Service.V1.WebSockets.BackgroundServices;
 using BackBuddy.Api.Service.V1.WebSockets.Consumer;
@@ -30,6 +32,7 @@ using Google.Cloud.Firestore;
 using MassTransit;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.StackExchangeRedis;
+using MongoDB.Driver;
 using StackExchange.Redis;
 using System.Text;
 using System.Text.Json.Serialization;
@@ -66,7 +69,24 @@ builder.Services
     .Connect()
     .AddCollection<DeviceEntity>(nameof(DeviceEntity))
     .AddCollection<DeviceLogEntity>(nameof(DeviceLogEntity))
-    .AddCollection<ReportEntity>(nameof(ReportEntity));
+    .AddCollection<ReportEntity>(nameof(ReportEntity))
+    .AddCollection<UserFollowEntity>(nameof(UserFollowEntity), async collection =>
+    {
+        IndexKeysDefinition<UserFollowEntity> indexKeys = new IndexKeysDefinitionBuilder<UserFollowEntity>()
+                                                        .Ascending(x => x.UserId).Ascending(x => x.TargetId);
+        CreateIndexModel<UserFollowEntity> indexModel = new(indexKeys, new CreateIndexOptions { Unique = true });
+        await collection.Indexes.CreateOneAsync(indexModel);
+
+        IndexKeysDefinition<UserFollowEntity> targetIndexKeys = new IndexKeysDefinitionBuilder<UserFollowEntity>()
+                                                        .Ascending(x => x.TargetId);
+        CreateIndexModel<UserFollowEntity> targetIndexModel = new(targetIndexKeys, new CreateIndexOptions { Unique = false });
+        await collection.Indexes.CreateOneAsync(targetIndexModel);
+
+        IndexKeysDefinition<UserFollowEntity> userIndexKeys = new IndexKeysDefinitionBuilder<UserFollowEntity>()
+                                                        .Ascending(x => x.UserId);
+        CreateIndexModel<UserFollowEntity> userIndexModel = new(userIndexKeys, new CreateIndexOptions { Unique = false });
+        await collection.Indexes.CreateOneAsync(userIndexModel);
+    });
 #endregion
 
 #region Redis
@@ -146,9 +166,11 @@ else
     builder.Services.AddHttpClient();
     builder.Services.AddSingleton<INotificationService, DevNotificationService>();
 }
-
-builder.Services.AddScoped<IUserService, UserService>();
 #endregion
+
+builder.Services.AddScoped<IUserRelationRepository, UserRelationRepository>();
+builder.Services.AddScoped<IUserRelationService, UserRelationService>();
+builder.Services.AddScoped<IUserService, UserService>();
 
 builder.Services.AddScoped<IDeviceStatusRepository, DeviceStatusRepository>();
 
