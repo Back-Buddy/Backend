@@ -20,6 +20,8 @@ namespace BackBuddy.Api.Service.V1.Users.Services
         Task<Page<List<string>>> GetIncomingReleations(string userId, PageRequestDto page, CancellationToken cancellationToken = default);
         Task<Page<List<string>>> GetOutgoingReleations(string userId, PageRequestDto page, CancellationToken cancellationToken = default);
         Task<(Page<List<string>> IncomingRelations, Page<List<string>> OutgoingRelations)> GetReleations(string userId, PageRequestDto page, CancellationToken cancellationToken = default);
+
+        Task DeleteUser(string userId, CancellationToken cancellationToken = default);
     }
 
     public class UserReleationService(IUserReleationRepository repository) : IUserRelationService
@@ -107,6 +109,11 @@ namespace BackBuddy.Api.Service.V1.Users.Services
             ];
             Page<List<string>>[] releations = await Task.WhenAll(tasks);
             return (releations[0], releations[1]);
+        }
+
+        public async Task DeleteUser(string userId, CancellationToken cancellationToken = default)
+        {
+            await _repository.DeleteUser(userId, cancellationToken);
         }
     }
 }

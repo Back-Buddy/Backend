@@ -17,6 +17,14 @@ namespace BackBuddy.Api.Service.V1.Users.Controllers
         private readonly IUserService _userService = userService;
         private readonly IUserRelationService _userRelationService = userRelationService;
 
+        [HttpDelete]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> DeleteUser()
+        {
+            await _userService.DeleteUser(this.GetUserId());
+            return NoContent();
+        }
+
         [HttpGet("search")]
         [ProducesResponseType(typeof(IEnumerable<UserDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> SearchUser([FromQuery] SearchUserQueryDto query, [FromQuery][DefaultValue(UserExpandType.None)] UserExpandType expandType)

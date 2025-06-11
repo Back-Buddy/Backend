@@ -18,6 +18,8 @@ namespace BackBuddy.Api.Service.V1.Users.Repositories
 
         Task<Page<List<UserFollowEntity>>> GetIncomingReleations(string userId, PageRequestDto page, CancellationToken cancellationToken = default);
         Task<Page<List<UserFollowEntity>>> GetOutgoingReleations(string userId, PageRequestDto page, CancellationToken cancellationToken = default);
+
+        Task DeleteUser(string userId, CancellationToken cancellationToken = default);
     }
 
     public class UserReleationRepository(IMongoCollection<UserFollowEntity> collection) : IUserReleationRepository
@@ -75,7 +77,7 @@ namespace BackBuddy.Api.Service.V1.Users.Repositories
 
             long documentCount = await _collection.CountDocumentsAsync(filter, cancellationToken: cancellationToken);
 
-            IAsyncCursor<UserFollowEntity> cursor = await _collection.FindAsync(filter, cancellationToken: cancellationToken);
+            IAsyncCursor<UserFollowEntity> cursor = await _collection.FindAsync(filter, options, cancellationToken: cancellationToken);
             List<UserFollowEntity> results = await cursor.ToListAsync(cancellationToken);
 
             bool hasMoreResults = documentCount > page.Offset() + results.Count;
@@ -95,12 +97,17 @@ namespace BackBuddy.Api.Service.V1.Users.Repositories
 
             long documentCount = await _collection.CountDocumentsAsync(filter, cancellationToken: cancellationToken);
 
-            IAsyncCursor<UserFollowEntity> cursor = await _collection.FindAsync(x => x.UserId == userId, cancellationToken: cancellationToken);
+            IAsyncCursor<UserFollowEntity> cursor = await _collection.FindAsync(filter, options, cancellationToken: cancellationToken);
             List<UserFollowEntity> results = await cursor.ToListAsync(cancellationToken);
 
             bool hasMoreResults = documentCount > page.Offset() + results.Count;
 
             return new Page<List<UserFollowEntity>> { Items = results, HasMoreEntries = hasMoreResults };
+        }
+
+        public async Task DeleteUser(string userId, CancellationToken cancellationToken = default)
+        {
+            await _collection.DeleteManyAsync(x => x.UserId == userId || x.TargetId == userId, cancellationToken: cancellationToken);
         }
     }
 }

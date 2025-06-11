@@ -16,6 +16,7 @@ namespace BackBuddy.Api.Service.V1.Users.Services
         Task<bool> IsUserIdValid(string userId);
         Task<UserDto> GetUserByIdAsync(string userId, UserExpandType userExpandType = UserExpandType.None);
         Task<List<UserDto>> GetUsers(List<string> users, UserExpandType expandType = UserExpandType.None);
+        Task DeleteUser(string userId);
     }
 
     public partial class UserService(IUserRelationService userRelationService, FirestoreDb firestore, ILogger<UserService> logger) : IUserService
@@ -106,6 +107,11 @@ namespace BackBuddy.Api.Service.V1.Users.Services
             });
             UserDto?[] result = await Task.WhenAll(tasks);
             return [.. result.Where(x => x != null)!];
+        }
+
+        public async Task DeleteUser(string userId)
+        {
+            await _userRelationService.DeleteUser(userId);
         }
 
         [GeneratedRegex("^[a-zA-Z0-9 ]+$")]
