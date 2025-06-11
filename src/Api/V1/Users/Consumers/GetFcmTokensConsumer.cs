@@ -4,11 +4,11 @@ using MassTransit;
 
 namespace BackBuddy.Api.Service.V1.Users.Consumers
 {
-    public class GetFcmTokensConsumer(IUserService userService) : IConsumer<GetFcmTokensMessage>
+    public class GetFcmTokensConsumer(IUserService userService) : IConsumer<GetFcmTokensRequestMessage>
     {
         private readonly IUserService _userService = userService;
 
-        public async Task Consume(ConsumeContext<GetFcmTokensMessage> context)
+        public async Task Consume(ConsumeContext<GetFcmTokensRequestMessage> context)
         {
             IEnumerable<string> tokens = await _userService.GetUserFCMTokensAsync(context.Message.UserId);
 

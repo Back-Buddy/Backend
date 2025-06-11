@@ -34,7 +34,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
         Task<bool> IsDeviceConnected(Guid deviceId);
     }
 
-    public partial class DeviceService(IDeviceRepository repository, IDeviceStatusRepository deviceStatusRepository, IDeviceLogRepository deviceLogRepository, IReportRepository reportRepository, ISecretProvider secretProvider, IWebSocketService webSocketService, IPublisher publisher, IPublishEndpoint publishEndpoint, IRequestClient<GetFcmTokensMessage> fcmTokenRequestClient, ILogger<DeviceService> logger) : IDeviceService
+    public partial class DeviceService(IDeviceRepository repository, IDeviceStatusRepository deviceStatusRepository, IDeviceLogRepository deviceLogRepository, IReportRepository reportRepository, ISecretProvider secretProvider, IWebSocketService webSocketService, IPublisher publisher, IPublishEndpoint publishEndpoint, IRequestClient<GetFcmTokensRequestMessage> fcmTokenRequestClient, ILogger<DeviceService> logger) : IDeviceService
     {
         private const string NAME_PATTERN = @"^[a-zA-Z0-9 \-]{3,16}$";
         private readonly static TimeSpan SECRET_EXPIRATION_TIME = TimeSpan.FromSeconds(1);
@@ -47,7 +47,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
         private readonly IWebSocketService _webSocketService = webSocketService;
         private readonly IPublisher _publisher = publisher;
         private readonly IPublishEndpoint _publishEndpoint = publishEndpoint;
-        private readonly IRequestClient<GetFcmTokensMessage> _fcmTokenRequestClient = fcmTokenRequestClient;
+        private readonly IRequestClient<GetFcmTokensRequestMessage> _fcmTokenRequestClient = fcmTokenRequestClient;
         private readonly ILogger<DeviceService> _logger = logger;
 
         public async Task<DeviceSecretDto> Create(string userId, DeviceCreateRequestDto request, CancellationToken cancellationToken = default)
@@ -274,7 +274,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
 
             _logger.LogInformation("Device with ID {DeviceId} has status older than threshold", status.DeviceId);
 
-            Response<GetFcmTokensResponseMessage> fcmTokenResponse = await _fcmTokenRequestClient.GetResponse<GetFcmTokensResponseMessage>(new GetFcmTokensMessage
+            Response<GetFcmTokensResponseMessage> fcmTokenResponse = await _fcmTokenRequestClient.GetResponse<GetFcmTokensResponseMessage>(new GetFcmTokensRequestMessage
             {
                 UserId = deviceEntity.UserId
             }, cancellationToken);

@@ -1,6 +1,6 @@
 ﻿namespace BackBuddy.Api.Service.V1.Users.Dtos.Messages
 {
-    public record GetFcmTokensMessage
+    public record GetFcmTokensRequestMessage
     {
         public required string UserId { get; init; }
     }
