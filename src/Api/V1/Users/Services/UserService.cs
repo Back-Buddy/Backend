@@ -1,10 +1,12 @@
 ﻿using BackBuddy.Api.Service.V1.Database.Firebase;
 using BackBuddy.Api.Service.V1.Users.Dtos;
 using BackBuddy.Api.Service.V1.Users.Dtos.Http;
+using BackBuddy.Api.Service.V1.Users.Dtos.Messages;
 using BackBuddy.Api.Service.V1.Users.Enums;
 using BackBuddy.Api.Service.V1.Users.Exceptions;
 using BackBuddy.Api.Service.V1.Users.Mapper;
 using Google.Cloud.Firestore;
+using MassTransit;
 using System.Text.RegularExpressions;
 
 namespace BackBuddy.Api.Service.V1.Users.Services
@@ -19,10 +21,11 @@ namespace BackBuddy.Api.Service.V1.Users.Services
         Task DeleteUser(string userId);
     }
 
-    public partial class UserService(IUserRelationService userRelationService, FirestoreDb firestore, ILogger<UserService> logger) : IUserService
+    public partial class UserService(IUserRelationService userRelationService, FirestoreDb firestore, IPublishEndpoint publishEndpoint, ILogger<UserService> logger) : IUserService
     {
         private readonly IUserRelationService _userRelationService = userRelationService;
         private readonly CollectionReference _collection = firestore.Collection("users");
+        private readonly IPublishEndpoint _publishEndpoint = publishEndpoint;
         private readonly ILogger<UserService> _logger = logger;
 
         public async Task<IEnumerable<string>> GetUserFCMTokensAsync(string userId)
@@ -112,6 +115,9 @@ namespace BackBuddy.Api.Service.V1.Users.Services
         public async Task DeleteUser(string userId)
         {
             await _userRelationService.DeleteUser(userId);
+
+            UserDeletedMessage deletedMessage = new() { UserId = userId };
+            await _publishEndpoint.Publish(deletedMessage);
         }
 
         [GeneratedRegex("^[a-zA-Z0-9 ]+$")]
