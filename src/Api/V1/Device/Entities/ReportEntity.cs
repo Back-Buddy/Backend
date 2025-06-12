@@ -1,8 +1,12 @@
-﻿namespace BackBuddy.Api.Service.V1.Device.Entities
+﻿using BackBuddy.Api.Service.V1.Device.Enums;
+
+namespace BackBuddy.Api.Service.V1.Device.Entities
 {
     public record ReportEntity
     {
         public required Guid Id { get; set; }
+        public required string Name { get; set; }
+        public required ReportVisibilityType VisibilityType { get; set; }
         public required string UserId { get; set; }
         public required Guid DeviceId { get; set; }
         public required DateTime StartTime { get; set; }

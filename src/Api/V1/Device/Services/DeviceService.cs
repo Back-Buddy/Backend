@@ -106,13 +106,13 @@ namespace BackBuddy.Api.Service.V1.Device.Services
             {
                 PageRequestDto pageRequestDto = new()
                 {
-                    Page = page,
+                    Page = page++,
                     Size = 10000
                 };
                 devicesPage = await _repository.GetAll(userId, pageRequestDto, query, cancellationToken);
 
                 entities.AddRange(devicesPage.Items);
-            } while (devicesPage.HasMoreEntries && page++ < 1000);
+            } while (devicesPage.HasMoreEntries && !cancellationToken.IsCancellationRequested);
 
 
             IEnumerable<Task> tasks = entities.Select(x => Delete(userId, x.Id, cancellationToken));

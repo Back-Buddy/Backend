@@ -1,22 +1,24 @@
 ﻿using BackBuddy.Api.Service.V1.Device.DTOs;
 using BackBuddy.Api.Service.V1.Device.DTOs.Http;
 using BackBuddy.Api.Service.V1.Device.Entities;
+using BackBuddy.Api.Service.V1.Device.Enums;
 using BackBuddy.Api.Service.V1.Device.Exceptions;
 using BackBuddy.Api.Service.V1.Device.Mapper;
 using BackBuddy.Api.Service.V1.Device.Repositories;
 using BackBuddy.Api.Service.V1.Utilities;
+using System.Text.RegularExpressions;
 
 namespace BackBuddy.Api.Service.V1.Device.Services
 {
     public interface IReportService
     {
         Task<ReportDto> CreateReport(string userId, ReportCreateDto request, CancellationToken cancellationToken = default);
-        Task<ReportDto> GetReport(string userId, Guid reportId, CancellationToken cancellationToken = default);
-        Task<Page<List<ReportDto>>> GetReports(string userId, ReportQueryDto query, PageRequestDto page, CancellationToken cancellationToken = default);
+        Task<ReportDto> GetReport(string userId, Guid reportId, ReportExpandType expandType, CancellationToken cancellationToken = default);
+        Task<Page<List<ReportDto>>> GetReports(string userId, ReportQueryDto query, PageRequestDto page, ReportExpandType expandType, CancellationToken cancellationToken = default);
         Task DeleteReport(string userId, Guid reportId, CancellationToken cancellationToken = default);
     }
 
-    public class ReportService(IDeviceLogRepository deviceLogRepository, IDeviceRepository deviceRepository, IReportRepository reportRepository) : IReportService
+    public partial class ReportService(IDeviceLogRepository deviceLogRepository, IDeviceRepository deviceRepository, IReportRepository reportRepository) : IReportService
     {
         private readonly IDeviceRepository _deviceRepository = deviceRepository;
         private readonly IDeviceLogRepository _deviceLogRepository = deviceLogRepository;
@@ -24,6 +26,9 @@ namespace BackBuddy.Api.Service.V1.Device.Services
 
         public async Task<ReportDto> CreateReport(string userId, ReportCreateDto request, CancellationToken cancellationToken = default)
         {
+            if (!NameRegex().IsMatch(request.Name))
+                throw new ReportInvalidNameException();
+
             DeviceEntity device = await _deviceRepository.Get(request.DeviceId, cancellationToken) ?? throw new DeviceNotFoundException();
             if (device.UserId != userId)
                 throw new DeviceUserForbiddenException();
@@ -35,7 +40,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
             {
                 StartTime = request.StartTime,
                 EndTime = request.EndTime,
-                LogType = Enums.DeviceLogType.Sit,
+                LogType = DeviceLogType.Sit,
                 Descending = false
             };
             List<DeviceLogEntity> logs = [];
@@ -58,6 +63,8 @@ namespace BackBuddy.Api.Service.V1.Device.Services
             ReportEntity reportEntity = new()
             {
                 Id = Guid.CreateVersion7(),
+                Name = request.Name,
+                VisibilityType = request.VisibilityType,
                 UserId = userId,
                 DeviceId = request.DeviceId,
                 StartTime = request.StartTime,
@@ -67,7 +74,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
             };
 
             await _reportRepository.Add(reportEntity, cancellationToken);
-            return reportEntity.ToDto();
+            return reportEntity.ToDto(true);
         }
 
         public async Task DeleteReport(string userId, Guid reportId, CancellationToken cancellationToken = default)
@@ -77,23 +84,38 @@ namespace BackBuddy.Api.Service.V1.Device.Services
                 throw new DeviceUserForbiddenException();
             await _reportRepository.Delete(reportId, cancellationToken);
         }
-        public async Task<ReportDto> GetReport(string userId, Guid reportId, CancellationToken cancellationToken = default)
+
+        public async Task<ReportDto> GetReport(string userId, Guid reportId, ReportExpandType expandType, CancellationToken cancellationToken = default)
         {
             ReportEntity report = await _reportRepository.Get(reportId, cancellationToken) ?? throw new ReportNotFoundException();
             if (report.UserId != userId)
                 throw new DeviceUserForbiddenException();
-            return report.ToDto();
+
+            List<DeviceLogDto>? logs = null;
+            if (expandType == ReportExpandType.DeviceLogs)
+            {
+                logs = await GetDeviceLogDtos(report);
+            }
+
+            return report.ToDto(report.UserId == userId, logs);
         }
 
-        public async Task<Page<List<ReportDto>>> GetReports(string userId, ReportQueryDto query, PageRequestDto page, CancellationToken cancellationToken = default)
+        public async Task<Page<List<ReportDto>>> GetReports(string userId, ReportQueryDto query, PageRequestDto page, ReportExpandType expandType, CancellationToken cancellationToken = default)
         {
             Page<List<ReportEntity>> reports = await _reportRepository.GetAll(userId, query, page, cancellationToken);
             Page<List<ReportDto>> response = new()
             {
-                Items = reports.Items.ToDto(),
+                Items = await reports.Items.ToDto(x => x.UserId == userId, expandType == ReportExpandType.DeviceLogs ? GetDeviceLogDtos : null),
                 HasMoreEntries = reports.HasMoreEntries
             };
             return response;
+        }
+
+        private async Task<List<DeviceLogDto>> GetDeviceLogDtos(ReportEntity report)
+        {
+            IEnumerable<Task<DeviceLogEntity>> deviceLogTasks = report.UsedLogs.Select(x => _deviceLogRepository.GetLog(x)).OfType<Task<DeviceLogEntity>>();
+            DeviceLogEntity[] logs = await Task.WhenAll(deviceLogTasks);
+            return logs.ToDto();
         }
 
         internal static (ReportMetadataEntity MetaData, IEnumerable<DeviceLogEntity> UsedLogs) AnalyzeLogs(List<DeviceLogEntity> logs, DateTime startTime, DateTime endTime)
@@ -133,5 +155,8 @@ namespace BackBuddy.Api.Service.V1.Device.Services
                 AverageSitPeriod = averageSitPeriod
             }, sitLogs);
         }
+
+        [GeneratedRegex(@"^[a-zA-Z0-9 \-]{3,32}$")]
+        private static partial Regex NameRegex();
     }
 }

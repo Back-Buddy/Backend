@@ -1,9 +1,14 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using BackBuddy.Api.Service.V1.Device.Enums;
+using System.ComponentModel.DataAnnotations;
 
 namespace BackBuddy.Api.Service.V1.Device.DTOs.Http
 {
     public class ReportCreateDto
     {
+        [Required]
+        public required string Name { get; init; }
+        [Required]
+        public required ReportVisibilityType VisibilityType { get; init; }
         [Required]
         public required Guid DeviceId { get; init; }
         [Required]
