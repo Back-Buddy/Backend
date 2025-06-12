@@ -214,6 +214,7 @@ builder.Services.AddMassTransit(x =>
     x.AddConsumer<ValidateDeviceStatusConsumer>();
     x.AddConsumer<SendNotificationConsumer>();
     x.AddConsumer<GetFcmTokensConsumer>();
+    x.AddConsumer<UserDeletedConsumer>();
 
     string connection = builder.Configuration.GetValue<string>($"MESSAGE_QUEUE_CONNECTION") ?? throw new InvalidOperationException("MESSAGE_QUEUE_CONNECTION is not set!");
     if (builder.Environment.IsDevelopment())

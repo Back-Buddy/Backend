@@ -24,6 +24,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
         Task<DeviceSecretDto> Create(string userId, DeviceCreateRequestDto request, CancellationToken cancellationToken = default);
         Task Update(string userId, Guid deviceId, DeviceUpdateRequestDto request, CancellationToken cancellationToken = default);
         Task Delete(string userId, Guid deviceId, CancellationToken cancellationToken = default);
+        Task DeleteAll(string userId, CancellationToken cancellationToken = default);
         Task<DeviceDto> Get(string userId, Guid deviceId, CancellationToken cancellationToken = default);
         Task<Page<List<DeviceDto>>> GetAll(string userId, PageRequestDto page, DeviceQueryDto query, CancellationToken cancellationToken = default);
         Task<DeviceDto> Authorize(string secret, CancellationToken cancellationToken = default);
@@ -92,6 +93,31 @@ namespace BackBuddy.Api.Service.V1.Device.Services
             await _deviceStatusRepository.DeleteCurrentStatus(deviceId, cancellationToken);
             await _deviceLogRepository.DeleteLogs(deviceId, cancellationToken);
             await _repository.Delete(deviceId, cancellationToken);
+        }
+
+        public async Task DeleteAll(string userId, CancellationToken cancellationToken = default)
+        {
+            DeviceQueryDto query = new();
+            int page = 1;
+
+            Page<List<DeviceEntity>> devicesPage;
+            List<DeviceEntity> entities = [];
+            do
+            {
+                PageRequestDto pageRequestDto = new()
+                {
+                    Page = page,
+                    Size = 10000
+                };
+                devicesPage = await _repository.GetAll(userId, pageRequestDto, query, cancellationToken);
+
+                entities.AddRange(devicesPage.Items);
+            } while (devicesPage.HasMoreEntries && page++ < 1000);
+
+
+            IEnumerable<Task> tasks = entities.Select(x => Delete(userId, x.Id, cancellationToken));
+
+            await Task.WhenAll(tasks);
         }
 
         public async Task<DeviceDto> Get(string userId, Guid deviceId, CancellationToken cancellationToken = default)
@@ -352,7 +378,5 @@ namespace BackBuddy.Api.Service.V1.Device.Services
 
         [GeneratedRegex(NAME_PATTERN)]
         private static partial Regex NameRegex();
-
-
     }
 }
