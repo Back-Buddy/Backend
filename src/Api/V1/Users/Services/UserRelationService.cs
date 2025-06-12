@@ -1,8 +1,10 @@
 ﻿using BackBuddy.Api.Service.V1.Users.Dtos;
+using BackBuddy.Api.Service.V1.Users.Dtos.Messages;
 using BackBuddy.Api.Service.V1.Users.Entities;
 using BackBuddy.Api.Service.V1.Users.Exceptions;
 using BackBuddy.Api.Service.V1.Users.Repositories;
 using BackBuddy.Api.Service.V1.Utilities;
+using MassTransit;
 
 namespace BackBuddy.Api.Service.V1.Users.Services
 {
@@ -27,9 +29,10 @@ namespace BackBuddy.Api.Service.V1.Users.Services
         Task<UserRelationDto> GetUserRelation(string userId, string targetUserId, CancellationToken cancellationToken = default);
     }
 
-    public class UserRelationService(IUserRelationRepository repository) : IUserRelationService
+    public class UserRelationService(IUserRelationRepository repository, IPublishEndpoint publishEndpoint) : IUserRelationService
     {
         private readonly IUserRelationRepository _repository = repository;
+        private readonly IPublishEndpoint _publishEndpoint = publishEndpoint;
 
         public async Task AddRelation(string userId, string targetUserId, CancellationToken cancellationToken = default)
         {
@@ -49,6 +52,14 @@ namespace BackBuddy.Api.Service.V1.Users.Services
             };
 
             await _repository.Add(userFollowEntity, cancellationToken);
+
+            // Notify that the user has followed another user
+            UserFollowedMessage userFollowedMessage = new()
+            {
+                UserId = userId,
+                TargetUserId = targetUserId,
+            };
+            await _publishEndpoint.Publish(userFollowedMessage);
         }
 
         public async Task RemoveRelation(string userId, string targetUserId, CancellationToken cancellationToken = default)
