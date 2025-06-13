@@ -77,7 +77,7 @@ namespace BackBuddy.Integration_Test.V1.Libs
             return reportObj;
         }
 
-        public async Task<(JsonArray reports, bool hasMoreEntries)> GetReports(string accessToken, List<Guid> deviceIds = null, DateTime? startTime = null, DateTime? endTime = null, bool descending = true, int pageSize = 10, int page = 1, string expandType = "None")
+        public async Task<(JsonArray reports, bool hasMoreEntries)> GetReports(string accessToken, List<Guid> deviceIds = null, string userId = null, DateTime? startTime = null, DateTime? endTime = null, bool descending = true, int pageSize = 10, int page = 1, string expandType = "None")
         {
             StringBuilder queryBuilder = new();
             queryBuilder.Append($"?size={pageSize}&page={page}&expandType={expandType}");
@@ -90,6 +90,9 @@ namespace BackBuddy.Integration_Test.V1.Libs
                 queryBuilder.Append($"&startTime={startTime.Value:o}");
             if (endTime.HasValue)
                 queryBuilder.Append($"&endTime={endTime.Value:o}");
+            if (!string.IsNullOrEmpty(userId))
+                queryBuilder.Append($"&userId={userId}");
+
             queryBuilder.Append($"&descending={descending}");
 
             HttpRequestMessage requestMessage = new(HttpMethod.Get, $"/api/v1/report{queryBuilder}");
