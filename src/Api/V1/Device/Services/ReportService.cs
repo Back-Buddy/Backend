@@ -110,8 +110,6 @@ namespace BackBuddy.Api.Service.V1.Device.Services
         public async Task<ReportDto> GetReport(string userId, Guid reportId, ReportExpandType expandType, CancellationToken cancellationToken = default)
         {
             ReportEntity report = await _reportRepository.Get(reportId, cancellationToken) ?? throw new ReportNotFoundException();
-            if (report.UserId != userId)
-                throw new DeviceUserForbiddenException();
 
             List<DeviceLogDto>? logs = null;
             if (expandType == ReportExpandType.DeviceLogs)
