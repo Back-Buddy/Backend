@@ -1,5 +1,6 @@
 ﻿using BackBuddy.Api.Service.V1.Device.DTOs.Http;
 using BackBuddy.Api.Service.V1.Device.Entities;
+using BackBuddy.Api.Service.V1.Device.Enums;
 using BackBuddy.Api.Service.V1.Utilities;
 using MongoDB.Driver;
 
@@ -8,7 +9,7 @@ namespace BackBuddy.Api.Service.V1.Device.Repositories
     public interface IReportRepository
     {
         Task<ReportEntity?> Get(Guid id, CancellationToken cancellationToken = default);
-        Task<Page<List<ReportEntity>>> GetAll(string userId, ReportQueryDto query, PageRequestDto page, CancellationToken cancellationToken = default);
+        Task<Page<List<ReportEntity>>> GetAll(string userId, IEnumerable<ReportVisibilityType> visibilityTypes, ReportQueryDto query, PageRequestDto page, CancellationToken cancellationToken = default);
         Task Add(ReportEntity entity, CancellationToken cancellationToken = default);
         Task Update(ReportEntity entity, CancellationToken cancellationToken = default);
         Task Delete(Guid id, CancellationToken cancellationToken = default);
@@ -45,10 +46,11 @@ namespace BackBuddy.Api.Service.V1.Device.Repositories
             return await cursor.FirstOrDefaultAsync(cancellationToken);
         }
 
-        public async Task<Page<List<ReportEntity>>> GetAll(string userId, ReportQueryDto query, PageRequestDto page, CancellationToken cancellationToken = default)
+        public async Task<Page<List<ReportEntity>>> GetAll(string userId, IEnumerable<ReportVisibilityType> visibilityTypes, ReportQueryDto query, PageRequestDto page, CancellationToken cancellationToken = default)
         {
             List<FilterDefinition<ReportEntity>> filters = [];
             filters.Add(Builders<ReportEntity>.Filter.Eq(x => x.UserId, userId));
+            filters.Add(Builders<ReportEntity>.Filter.In(x => x.VisibilityType, visibilityTypes));
             if (query.Devices.Count > 0)
                 filters.Add(Builders<ReportEntity>.Filter.In(x => x.DeviceId, query.Devices));
             if (query.StartTime != null)

@@ -12,6 +12,9 @@ namespace BackBuddy.Api.Service.V1.Users.Services
         Task RemoveRelation(string userId, string targetUserId, CancellationToken cancellationToken = default);
 
         Task<bool> HasRelation(string userId, string targetUserId, CancellationToken cancellationToken = default);
+        ///<summary>
+        /// Checks if the user has a strong relation with the target user, meaning both users follow each other.
+        /// </summary>
         Task<bool> HasStrongRelation(string userId, string targetUserId, CancellationToken cancellationToken = default);
 
         Task<long> CountIncomingRelations(string userId, CancellationToken cancellationToken = default);

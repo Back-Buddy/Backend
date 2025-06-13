@@ -4,6 +4,7 @@ namespace BackBuddy.Api.Service.V1.Device.DTOs.Http
 {
     public record ReportQueryDto
     {
+        public string? UserId { get; init; } = null;
         public List<Guid> Devices { get; init; } = [];
 
         [DefaultValue(null)]

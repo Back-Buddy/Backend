@@ -5,6 +5,7 @@ using BackBuddy.Api.Service.V1.Device.Enums;
 using BackBuddy.Api.Service.V1.Device.Exceptions;
 using BackBuddy.Api.Service.V1.Device.Mapper;
 using BackBuddy.Api.Service.V1.Device.Repositories;
+using BackBuddy.Api.Service.V1.Users.Services;
 using BackBuddy.Api.Service.V1.Utilities;
 using System.Text.RegularExpressions;
 
@@ -17,13 +18,15 @@ namespace BackBuddy.Api.Service.V1.Device.Services
         Task<ReportDto> GetReport(string userId, Guid reportId, ReportExpandType expandType, CancellationToken cancellationToken = default);
         Task<Page<List<ReportDto>>> GetReports(string userId, ReportQueryDto query, PageRequestDto page, ReportExpandType expandType, CancellationToken cancellationToken = default);
         Task DeleteReport(string userId, Guid reportId, CancellationToken cancellationToken = default);
+        Task<IEnumerable<ReportVisibilityType>> GetVisibilityTypeForUser(string userId, Guid targetReport, CancellationToken cancellationToken = default);
     }
 
-    public partial class ReportService(IDeviceLogRepository deviceLogRepository, IDeviceRepository deviceRepository, IReportRepository reportRepository) : IReportService
+    public partial class ReportService(IUserRelationService relationService, IDeviceLogRepository deviceLogRepository, IDeviceRepository deviceRepository, IReportRepository reportRepository) : IReportService
     {
         private readonly IDeviceRepository _deviceRepository = deviceRepository;
         private readonly IDeviceLogRepository _deviceLogRepository = deviceLogRepository;
         private readonly IReportRepository _reportRepository = reportRepository;
+        private readonly IUserRelationService _relationService = relationService;
 
         public async Task<ReportDto> CreateReport(string userId, ReportCreateDto request, CancellationToken cancellationToken = default)
         {
@@ -111,6 +114,10 @@ namespace BackBuddy.Api.Service.V1.Device.Services
         {
             ReportEntity report = await _reportRepository.Get(reportId, cancellationToken) ?? throw new ReportNotFoundException();
 
+            IEnumerable<ReportVisibilityType> visibilityTypes = await GetReportVisibilityTypeForUser(report.UserId, userId);
+            if (!visibilityTypes.Contains(report.VisibilityType))
+                throw new ReportNotFoundException(); // User does not have access to this report (e.g., private report)
+
             List<DeviceLogDto>? logs = null;
             if (expandType == ReportExpandType.DeviceLogs)
             {
@@ -122,10 +129,14 @@ namespace BackBuddy.Api.Service.V1.Device.Services
 
         public async Task<Page<List<ReportDto>>> GetReports(string userId, ReportQueryDto query, PageRequestDto page, ReportExpandType expandType, CancellationToken cancellationToken = default)
         {
-            Page<List<ReportEntity>> reports = await _reportRepository.GetAll(userId, query, page, cancellationToken);
+            string targetUserId = query.UserId ?? userId; // default to the current user if no user is specified
+
+            IEnumerable<ReportVisibilityType> visibilityTypes = await GetReportVisibilityTypeForUser(userId, targetUserId);
+
+            Page<List<ReportEntity>> reports = await _reportRepository.GetAll(targetUserId, visibilityTypes, query, page, cancellationToken);
             Page<List<ReportDto>> response = new()
             {
-                Items = await reports.Items.ToDto(x => x.UserId == userId, expandType == ReportExpandType.DeviceLogs ? GetDeviceLogDtos : null),
+                Items = await reports.Items.ToDto(x => x.UserId == targetUserId, expandType == ReportExpandType.DeviceLogs ? GetDeviceLogDtos : null),
                 HasMoreEntries = reports.HasMoreEntries
             };
             return response;
@@ -174,6 +185,22 @@ namespace BackBuddy.Api.Service.V1.Device.Services
                 ShortestSitPeriod = shortestSitPeriod,
                 AverageSitPeriod = averageSitPeriod
             }, sitLogs);
+        }
+        public async Task<IEnumerable<ReportVisibilityType>> GetVisibilityTypeForUser(string userId, Guid targetReport, CancellationToken cancellationToken = default)
+        {
+            ReportEntity report = await _reportRepository.Get(targetReport, cancellationToken) ?? throw new ReportNotFoundException();
+            return await GetReportVisibilityTypeForUser(report.UserId, userId);
+        }
+
+        internal async Task<IEnumerable<ReportVisibilityType>> GetReportVisibilityTypeForUser(string creatorId, string userId)
+        {
+            if (creatorId == userId)
+                return [ReportVisibilityType.All, ReportVisibilityType.Followers, ReportVisibilityType.Private];
+
+            bool hasStrongRelation = await _relationService.HasStrongRelation(userId, creatorId);
+            if (hasStrongRelation)
+                return [ReportVisibilityType.All, ReportVisibilityType.Followers];
+            return [ReportVisibilityType.All];
         }
 
         [GeneratedRegex(@"^[a-zA-Z0-9 \-]{3,128}$")]
