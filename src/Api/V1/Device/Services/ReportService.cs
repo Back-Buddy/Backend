@@ -132,6 +132,8 @@ namespace BackBuddy.Api.Service.V1.Device.Services
             string targetUserId = query.UserId ?? userId; // default to the current user if no user is specified
 
             IEnumerable<ReportVisibilityType> visibilityTypes = await GetReportVisibilityTypeForUser(userId, targetUserId);
+            if (userId != targetUserId)
+                throw new ReportOnlyCreatorCanFilterDevicesException(); // Only the creator of the report can filter by devices
 
             Page<List<ReportEntity>> reports = await _reportRepository.GetAll(targetUserId, visibilityTypes, query, page, cancellationToken);
             Page<List<ReportDto>> response = new()
@@ -151,6 +153,12 @@ namespace BackBuddy.Api.Service.V1.Device.Services
 
         internal static (ReportMetadataEntity MetaData, IEnumerable<DeviceLogEntity> UsedLogs) AnalyzeLogs(List<DeviceLogEntity> logs, DateTime startTime, DateTime endTime)
         {
+            startTime = startTime.ToUniversalTime();
+            endTime = endTime.ToUniversalTime();
+
+            if (startTime > DateTime.UtcNow.AddMinutes(5)) // Start time is in the future, which is invalid (5 minutes buffer to allow for clock skew)
+                throw new ReportInvalidTimeFilterException();
+
             TimeSpan totalTime = endTime - startTime;
             if (totalTime <= TimeSpan.Zero)
                 throw new ReportInvalidTimeFilterException();

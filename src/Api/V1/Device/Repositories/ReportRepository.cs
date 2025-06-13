@@ -54,9 +54,9 @@ namespace BackBuddy.Api.Service.V1.Device.Repositories
             if (query.Devices.Count > 0)
                 filters.Add(Builders<ReportEntity>.Filter.In(x => x.DeviceId, query.Devices));
             if (query.StartTime != null)
-                filters.Add(Builders<ReportEntity>.Filter.Gte(x => x.StartTime, query.StartTime));
+                filters.Add(Builders<ReportEntity>.Filter.Gte(x => x.StartTime, query.StartTime.Value.ToUniversalTime()));
             if (query.EndTime != null)
-                filters.Add(Builders<ReportEntity>.Filter.Lte(x => x.EndTime, query.EndTime));
+                filters.Add(Builders<ReportEntity>.Filter.Lte(x => x.EndTime, query.EndTime.Value.ToUniversalTime()));
 
             FilterDefinition<ReportEntity> finalFilter = Builders<ReportEntity>.Filter.And(filters);
 
