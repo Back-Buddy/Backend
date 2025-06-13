@@ -64,9 +64,9 @@ namespace BackBuddy.Integration_Test.V1.Libs
                 throw new RequestFailedException(responseMessage);
         }
 
-        public async Task<JsonObject> GetReport(string accessToken, Guid reportId)
+        public async Task<JsonObject> GetReport(string accessToken, Guid reportId, string expandType = "None")
         {
-            HttpRequestMessage requestMessage = new(HttpMethod.Get, $"/api/v1/report/{reportId}");
+            HttpRequestMessage requestMessage = new(HttpMethod.Get, $"/api/v1/report/{reportId}?expandType={expandType}");
             requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
             HttpResponseMessage responseMessage = await _httpClient.SendAsync(requestMessage);
             if (!responseMessage.IsSuccessStatusCode)
@@ -77,10 +77,10 @@ namespace BackBuddy.Integration_Test.V1.Libs
             return reportObj;
         }
 
-        public async Task<(JsonArray reports, bool hasMoreEntries)> GetReports(string accessToken, List<Guid> deviceIds = null, DateTime? startTime = null, DateTime? endTime = null, bool descending = true, int pageSize = 10, int page = 1)
+        public async Task<(JsonArray reports, bool hasMoreEntries)> GetReports(string accessToken, List<Guid> deviceIds = null, DateTime? startTime = null, DateTime? endTime = null, bool descending = true, int pageSize = 10, int page = 1, string expandType = "None")
         {
             StringBuilder queryBuilder = new();
-            queryBuilder.Append($"?size={pageSize}&page={page}");
+            queryBuilder.Append($"?size={pageSize}&page={page}&expandType={expandType}");
 
             foreach (Guid deviceId in deviceIds ?? [])
             {

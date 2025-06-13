@@ -92,7 +92,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             Assert.AreEqual(startTime, report["startTime"].GetValue<DateTime>());
             Assert.AreEqual(endTime, report["endTime"].GetValue<DateTime>());
 
-            Assert.AreEqual(1, report["usedLogs"].AsArray().Count);
+            Assert.AreEqual(1, report["usedLogsIds"].AsArray().Count);
 
             JsonObject metaData = report["metadata"].AsObject();
             Assert.IsNotNull(metaData);
@@ -209,7 +209,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             Assert.IsTrue(report.ContainsKey("id"));
             Assert.AreEqual(deviceId, Guid.Parse(report["deviceId"].GetValue<string>()));
 
-            Assert.IsEmpty(report["usedLogs"].AsArray());
+            Assert.IsEmpty(report["usedLogsIds"].AsArray());
         }
 
         [TestMethod]
@@ -236,7 +236,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             Assert.IsTrue(report.ContainsKey("id"));
             Assert.AreEqual(deviceId, Guid.Parse(report["deviceId"].GetValue<string>()));
 
-            Assert.AreEqual(10, report["usedLogs"].AsArray().Count);
+            Assert.AreEqual(10, report["usedLogsIds"].AsArray().Count);
         }
 
         [TestMethod]
@@ -265,6 +265,38 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             Assert.AreEqual(deviceId, Guid.Parse(getReport["deviceId"].GetValue<string>()));
             Assert.AreEqual(startTime.ToString("f"), getReport["startTime"].GetValue<DateTime>().ToString("f"));
             Assert.AreEqual(endTime.ToString("f"), getReport["endTime"].GetValue<DateTime>().ToString("f"));
+            Assert.AreEqual(1, getReport["usedLogsIds"].AsArray().Count);
+            Assert.IsNull(getReport["usedLogs"]);
+        }
+
+        [TestMethod]
+        public async Task Test_GetReport_Success_Expand_Type()
+        {
+            // Arrange 
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            string secret = device["secret"].GetValue<string>();
+            _deviceIds.Add(deviceId);
+
+            TimeSpan sitDuration = TimeSpan.FromSeconds(1);
+
+            DateTime startTime = DateTime.UtcNow.AddSeconds(-10);
+            await DeviceLogLib.CreateSampleLogs(_webSocketUri, secret, 1, 0, sitDuration);
+            DateTime endTime = DateTime.UtcNow;
+
+            JsonObject createdReport = await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "All", startTime, endTime);
+
+            // Act
+            JsonObject getReport = await _reportLib.GetReport(_accessToken, Guid.Parse(createdReport["id"].GetValue<string>()), expandType: "DeviceLogs");
+
+            // Assert
+            Assert.IsNotNull(getReport);
+            Assert.IsTrue(getReport.ContainsKey("id"));
+            Assert.AreEqual(createdReport["id"].GetValue<string>(), getReport["id"].GetValue<string>());
+            Assert.AreEqual(deviceId, Guid.Parse(getReport["deviceId"].GetValue<string>()));
+            Assert.AreEqual(startTime.ToString("f"), getReport["startTime"].GetValue<DateTime>().ToString("f"));
+            Assert.AreEqual(endTime.ToString("f"), getReport["endTime"].GetValue<DateTime>().ToString("f"));
+            Assert.AreEqual(1, getReport["usedLogsIds"].AsArray().Count);
             Assert.AreEqual(1, getReport["usedLogs"].AsArray().Count);
         }
 
