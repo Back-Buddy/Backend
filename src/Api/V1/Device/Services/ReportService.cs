@@ -13,6 +13,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
     public interface IReportService
     {
         Task<ReportDto> CreateReport(string userId, ReportCreateDto request, CancellationToken cancellationToken = default);
+        Task UpdateReport(string userId, Guid reportId, ReportUpdateDto request, CancellationToken cancellationToken = default);
         Task<ReportDto> GetReport(string userId, Guid reportId, ReportExpandType expandType, CancellationToken cancellationToken = default);
         Task<Page<List<ReportDto>>> GetReports(string userId, ReportQueryDto query, PageRequestDto page, ReportExpandType expandType, CancellationToken cancellationToken = default);
         Task DeleteReport(string userId, Guid reportId, CancellationToken cancellationToken = default);
@@ -75,6 +76,27 @@ namespace BackBuddy.Api.Service.V1.Device.Services
 
             await _reportRepository.Add(reportEntity, cancellationToken);
             return reportEntity.ToDto(true);
+        }
+
+        public async Task UpdateReport(string userId, Guid reportId, ReportUpdateDto request, CancellationToken cancellationToken = default)
+        {
+            ReportEntity report = await _reportRepository.Get(reportId, cancellationToken) ?? throw new ReportNotFoundException();
+            if (report.UserId != userId)
+                throw new DeviceUserForbiddenException();
+
+            if (!string.IsNullOrEmpty(request.Name) && request.Name != report.Name)
+            {
+                if (!NameRegex().IsMatch(request.Name))
+                    throw new ReportInvalidNameException();
+                report.Name = request.Name;
+            }
+
+            if (request.VisibilityType != null && request.VisibilityType != report.VisibilityType)
+            {
+                report.VisibilityType = request.VisibilityType.Value;
+            }
+
+            await _reportRepository.Update(report, cancellationToken);
         }
 
         public async Task DeleteReport(string userId, Guid reportId, CancellationToken cancellationToken = default)

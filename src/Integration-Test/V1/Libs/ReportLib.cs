@@ -43,6 +43,25 @@ namespace BackBuddy.Integration_Test.V1.Libs
             return reportObj;
         }
 
+        public async Task UpdateReport(string accessToken, Guid reportId, string name = null, string visibilityType = null)
+        {
+            JsonObject request = [];
+            if (name != null)
+                request["name"] = name;
+            if (visibilityType != null)
+                request["visibilityType"] = visibilityType;
+
+            StringContent content = new(request.ToJsonString(), Encoding.UTF8, MediaTypeNames.Application.Json);
+
+            HttpRequestMessage requestMessage = new(HttpMethod.Patch, $"/api/v1/report/{reportId}");
+            requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            requestMessage.Content = content;
+
+            HttpResponseMessage responseMessage = await _httpClient.SendAsync(requestMessage);
+            if (!responseMessage.IsSuccessStatusCode)
+                throw new RequestFailedException(responseMessage);
+        }
+
         public async Task<JsonObject> GetReport(string accessToken, Guid reportId)
         {
             HttpRequestMessage requestMessage = new(HttpMethod.Get, $"/api/v1/report/{reportId}");

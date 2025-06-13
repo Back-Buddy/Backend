@@ -10,6 +10,7 @@ namespace BackBuddy.Api.Service.V1.Device.Repositories
         Task<ReportEntity?> Get(Guid id, CancellationToken cancellationToken = default);
         Task<Page<List<ReportEntity>>> GetAll(string userId, ReportQueryDto query, PageRequestDto page, CancellationToken cancellationToken = default);
         Task Add(ReportEntity entity, CancellationToken cancellationToken = default);
+        Task Update(ReportEntity entity, CancellationToken cancellationToken = default);
         Task Delete(Guid id, CancellationToken cancellationToken = default);
         Task DeleteFromDevice(Guid deviceId, CancellationToken cancellationToken = default);
     }
@@ -21,6 +22,11 @@ namespace BackBuddy.Api.Service.V1.Device.Repositories
         public async Task Add(ReportEntity entity, CancellationToken cancellationToken = default)
         {
             await _collection.InsertOneAsync(entity, cancellationToken: cancellationToken);
+        }
+
+        public async Task Update(ReportEntity entity, CancellationToken cancellationToken = default)
+        {
+            await _collection.ReplaceOneAsync(entity => entity.Id == entity.Id, entity, cancellationToken: cancellationToken);
         }
 
         public async Task Delete(Guid id, CancellationToken cancellationToken = default)

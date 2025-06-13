@@ -17,10 +17,18 @@ namespace BackBuddy.Api.Service.V1.Device.Controllers
 
         [HttpPost]
         [ProducesResponseType(typeof(ReportDto), StatusCodes.Status201Created)]
-        public async Task<IActionResult> CreateReport([FromBody] ReportCreateDto request, CancellationToken cancellationToken = default)
+        public async Task<IActionResult> CreateReport([FromBody] ReportCreateDto request)
         {
-            ReportDto report = await _reportService.CreateReport(this.GetUserId(), request, cancellationToken);
+            ReportDto report = await _reportService.CreateReport(this.GetUserId(), request);
             return CreatedAtAction(nameof(GetReport), new { reportId = report.Id }, report);
+        }
+
+        [HttpPatch("{reportId:guid}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> UpdateReport([FromRoute] Guid reportId, [FromBody] ReportUpdateDto request)
+        {
+            await _reportService.UpdateReport(this.GetUserId(), reportId, request);
+            return NoContent();
         }
 
         [HttpGet("{reportId:guid}")]
