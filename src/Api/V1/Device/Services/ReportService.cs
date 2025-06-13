@@ -132,7 +132,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
             string targetUserId = query.UserId ?? userId; // default to the current user if no user is specified
 
             IEnumerable<ReportVisibilityType> visibilityTypes = await GetReportVisibilityTypeForUser(userId, targetUserId);
-            if (userId != targetUserId)
+            if (userId != targetUserId && query.Devices.Count != 0)
                 throw new ReportOnlyCreatorCanFilterDevicesException(); // Only the creator of the report can filter by devices
 
             Page<List<ReportEntity>> reports = await _reportRepository.GetAll(targetUserId, visibilityTypes, query, page, cancellationToken);
