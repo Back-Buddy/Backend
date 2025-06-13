@@ -20,10 +20,12 @@ namespace BackBuddy.Integration_Test.V1.Libs
             };
         }
 
-        public async Task<JsonObject> CreateReport(string accessToken, Guid deviceId, DateTime startTime, DateTime endTime)
+        public async Task<JsonObject> CreateReport(string accessToken, Guid deviceId, string name, string visibilityType, DateTime startTime, DateTime endTime)
         {
             JsonObject request = new()
             {
+                ["name"] = name,
+                ["visibilityType"] = visibilityType,
                 ["deviceId"] = deviceId,
                 ["startTime"] = startTime,
                 ["endTime"] = endTime
@@ -113,13 +115,13 @@ namespace BackBuddy.Integration_Test.V1.Libs
                 throw new RequestFailedException(responseMessage);
         }
 
-        public async Task CreateSampleReports(string websocketUri, string deviceSecret, string accessToken, Guid deviceId, int count, TimeSpan delay)
+        public async Task CreateSampleReports(string websocketUri, string deviceSecret, string accessToken, Guid deviceId, string name, string visibilityType, int count, TimeSpan delay)
         {
             for (int i = 0; i < count; i++)
             {
                 DateTime start = DateTime.UtcNow;
                 await DeviceLogLib.CreateSampleLogs(websocketUri, deviceSecret, 1, 0, delay);
-                await CreateReport(accessToken, deviceId, start, DateTime.UtcNow);
+                await CreateReport(accessToken, deviceId, name, visibilityType, start, DateTime.UtcNow);
             }
         }
 

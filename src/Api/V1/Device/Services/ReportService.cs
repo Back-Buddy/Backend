@@ -178,7 +178,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
             }, sitLogs);
         }
 
-        [GeneratedRegex(@"^[a-zA-Z0-9 \-]{3,32}$")]
+        [GeneratedRegex(@"^[a-zA-Z0-9 \-]{3,128}$")]
         private static partial Regex NameRegex();
     }
 }

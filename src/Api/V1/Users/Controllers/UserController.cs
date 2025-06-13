@@ -33,7 +33,7 @@ namespace BackBuddy.Api.Service.V1.Users.Controllers
             return Ok(users);
         }
 
-        [HttpGet("{userId:string}")]
+        [HttpGet("{userId}")]
         [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetUserById([FromRoute] string userId, [FromQuery][DefaultValue(UserExpandType.None)] UserExpandType expandType)
         {
@@ -41,7 +41,7 @@ namespace BackBuddy.Api.Service.V1.Users.Controllers
             return Ok(user);
         }
 
-        [HttpGet("{userId:string}/relation")]
+        [HttpGet("{userId}/relation")]
         [ProducesResponseType(typeof(UserRelationDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetUserRelation([FromRoute] string userId)
         {
@@ -52,7 +52,7 @@ namespace BackBuddy.Api.Service.V1.Users.Controllers
             return Ok(relation);
         }
 
-        [HttpGet("{userId:string}/followers")]
+        [HttpGet("{userId}/followers")]
         [ProducesResponseType(typeof(List<UserDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetFollowers([FromRoute] string userId, [FromQuery] PageRequestDto pageQuery, [FromQuery][DefaultValue(UserExpandType.None)] UserExpandType expandType = UserExpandType.None)
         {
@@ -67,7 +67,7 @@ namespace BackBuddy.Api.Service.V1.Users.Controllers
             return Ok(followersAsUser);
         }
 
-        [HttpGet("{userId:string}/following")]
+        [HttpGet("{userId}/following")]
         [ProducesResponseType(typeof(List<UserDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetFollowing([FromRoute] string userId, [FromQuery] PageRequestDto pageQuery, [FromQuery][DefaultValue(UserExpandType.None)] UserExpandType expandType = UserExpandType.None)
         {
@@ -82,7 +82,7 @@ namespace BackBuddy.Api.Service.V1.Users.Controllers
             return Ok(followingAsUser);
         }
 
-        [HttpPut("{userId:string}/follow")]
+        [HttpPut("{userId}/follow")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> FollowUser([FromRoute] string userId)
         {
@@ -93,7 +93,7 @@ namespace BackBuddy.Api.Service.V1.Users.Controllers
             return NoContent();
         }
 
-        [HttpDelete("{userId:string}/follow")]
+        [HttpDelete("{userId}/follow")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> UnFollowUser([FromRoute] string userId)
         {

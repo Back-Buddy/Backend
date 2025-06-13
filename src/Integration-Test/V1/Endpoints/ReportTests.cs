@@ -79,7 +79,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             DateTime endTime = DateTime.UtcNow;
 
             // Act
-            JsonObject report = await _reportLib.CreateReport(_accessToken, deviceId, startTime, endTime);
+            JsonObject report = await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "All", startTime, endTime);
 
             // Assert
             Assert.IsNotNull(report);
@@ -97,6 +97,60 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
         }
 
         [TestMethod]
+        [DataRow("")]
+        [DataRow("a")]
+        [DataRow("ab")]
+        [DataRow("thisstringiswaytoolongtobevalidbecauseitexceeds32characters_andnowweareaddingmoredatatofilluptoexactlyonehundredtwentyeight1")]
+        [DataRow("name_with_underscore")]
+        [DataRow("name.with.dot")]
+        [DataRow("name@domain")]
+        [DataRow("namé")]
+        [DataRow("na🚀me")]
+        [DataRow("na\tme")]
+        [DataRow("na\nme")]
+        [DataRow("name!")]
+        [DataRow("na#me")]
+
+        public async Task Test_Create_Report_Invalid_Name(string name)
+        {
+            // Arrange 
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            _deviceIds.Add(deviceId);
+
+            // Act
+            RequestFailedException exception = await Assert.ThrowsExactlyAsync<RequestFailedException>(async () => await _reportLib.CreateReport(_accessToken, deviceId, name, "All", DateTime.UtcNow.AddMinutes(-5), DateTime.UtcNow));
+
+            // Assert
+            Assert.AreEqual(System.Net.HttpStatusCode.BadRequest, exception.ResponseMessage.StatusCode);
+        }
+
+        [TestMethod]
+        [DataRow("abc")]
+        [DataRow("Test123")]
+        [DataRow("Valid-Name")]
+        [DataRow("Name With Spaces")]
+        [DataRow("A1-B2 C3")]
+        [DataRow("SimpleName")]
+        [DataRow("Name-Name-Name")]
+        [DataRow("Name With-Mixed Characters")]
+        [DataRow("aB3")]
+        [DataRow("ABCDEFGHIJKLMNOPQRSTUVWXYZ123456")]
+        public async Task Test_Create_Report_Valid_Name(string name)
+        {
+            // Arrange 
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            _deviceIds.Add(deviceId);
+
+            // Act
+            JsonObject report = await _reportLib.CreateReport(_accessToken, deviceId, name, "All", DateTime.UtcNow.AddMinutes(-5), DateTime.UtcNow);
+
+            // Assert
+            Assert.IsNotNull(report);
+        }
+
+        [TestMethod]
         public async Task Test_CreateReport_NoLogs()
         {
             // Arrange 
@@ -108,7 +162,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             DateTime endTime = DateTime.UtcNow;
 
             // Act
-            JsonObject report = await _reportLib.CreateReport(_accessToken, deviceId, startTime, endTime);
+            JsonObject report = await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "All", startTime, endTime);
 
             // Assert
             Assert.IsNotNull(report);
@@ -135,7 +189,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             DateTime endTime = DateTime.UtcNow;
 
             // Act
-            JsonObject report = await _reportLib.CreateReport(_accessToken, deviceId, startTime, endTime);
+            JsonObject report = await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "All", startTime, endTime);
 
             // Assert
             Assert.IsNotNull(report);
@@ -159,7 +213,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
 
             DateTime startTime = DateTime.UtcNow.AddSeconds(-10);
             DateTime endTime = DateTime.UtcNow;
-            JsonObject createdReport = await _reportLib.CreateReport(_accessToken, deviceId, startTime, endTime);
+            JsonObject createdReport = await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "All", startTime, endTime);
 
             // Act
             JsonObject getReport = await _reportLib.GetReport(_accessToken, Guid.Parse(createdReport["id"].GetValue<string>()));
@@ -188,7 +242,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
 
             DateTime startTime = DateTime.UtcNow.AddSeconds(-10);
             DateTime endTime = DateTime.UtcNow;
-            JsonObject createdReport = await _reportLib.CreateReport(_accessToken, deviceId, startTime, endTime);
+            JsonObject createdReport = await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "All", startTime, endTime);
             Guid reportId = Guid.Parse(createdReport["id"].GetValue<string>());
 
             // Act
@@ -208,7 +262,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             string secret = device["secret"].GetValue<string>();
             _deviceIds.Add(deviceId);
 
-            await _reportLib.CreateSampleReports(_webSocketUri, secret, _accessToken, deviceId, 8, TimeSpan.FromSeconds(2));
+            await _reportLib.CreateSampleReports(_webSocketUri, secret, _accessToken, deviceId, "Test Report", "All", 8, TimeSpan.FromSeconds(2));
 
             // Act & Assert
             (JsonArray result, bool hasMoreResults) = await _reportLib.GetReports(_accessToken, [deviceId], pageSize: 3, page: 1);
@@ -233,7 +287,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             string secret = device["secret"].GetValue<string>();
             _deviceIds.Add(deviceId);
 
-            await _reportLib.CreateSampleReports(_webSocketUri, secret, _accessToken, deviceId, 5, TimeSpan.FromSeconds(1));
+            await _reportLib.CreateSampleReports(_webSocketUri, secret, _accessToken, deviceId, "Test Report", "All", 5, TimeSpan.FromSeconds(1));
 
             // Act
             (JsonArray resultDescending, _) = await _reportLib.GetReports(_accessToken, [deviceId], descending: true, pageSize: 5, page: 1);
@@ -257,7 +311,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             string secret = device["secret"].GetValue<string>();
             _deviceIds.Add(deviceId);
 
-            await _reportLib.CreateSampleReports(_webSocketUri, secret, _accessToken, deviceId, 5, TimeSpan.FromSeconds(1));
+            await _reportLib.CreateSampleReports(_webSocketUri, secret, _accessToken, deviceId, "Test Report", "All", 5, TimeSpan.FromSeconds(1));
             (JsonArray result, _) = await _reportLib.GetReports(_accessToken, [deviceId], descending: false, pageSize: 5, page: 1);
 
             // Act
@@ -279,7 +333,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             string secret = device["secret"].GetValue<string>();
             _deviceIds.Add(deviceId);
 
-            await _reportLib.CreateSampleReports(_webSocketUri, secret, _accessToken, deviceId, 5, TimeSpan.FromSeconds(1));
+            await _reportLib.CreateSampleReports(_webSocketUri, secret, _accessToken, deviceId, "Test Report", "All", 5, TimeSpan.FromSeconds(1));
             (JsonArray result, _) = await _reportLib.GetReports(_accessToken, [deviceId], descending: true, pageSize: 5, page: 1);
 
             // Act
@@ -312,8 +366,8 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
 
             List<Task> tasks =
                 [
-                _reportLib.CreateSampleReports(_webSocketUri, secret, _accessToken, deviceId, 5, TimeSpan.FromSeconds(2)),
-                _reportLib.CreateSampleReports(_webSocketUri, secret2, _accessToken, device2Id, 6, TimeSpan.FromSeconds(2))
+                _reportLib.CreateSampleReports(_webSocketUri, secret, _accessToken, deviceId, "Test Report", "All", 5, TimeSpan.FromSeconds(2)),
+                _reportLib.CreateSampleReports(_webSocketUri, secret2, _accessToken, device2Id, "Test Report", "All",6, TimeSpan.FromSeconds(2))
                 ];
             await Task.WhenAll(tasks);
 
@@ -330,5 +384,76 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             Assert.AreEqual(6, device2Reports.Count, "Device 2 reports should contain 6 entries");
         }
 
+        [TestMethod]
+        public async Task Test_Update_Report_Name()
+        {
+            // Arrange 
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            _deviceIds.Add(deviceId);
+
+            JsonObject createdReport = await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "All", DateTime.UtcNow.AddMinutes(-5), DateTime.UtcNow);
+            Guid reportId = Guid.Parse(createdReport["id"].GetValue<string>());
+
+            // Act
+            string newName = "Updated Report Name";
+            await _reportLib.UpdateReport(_accessToken, reportId, name: newName);
+
+            // Assert
+            JsonObject updatedReport = await _reportLib.GetReport(_accessToken, reportId);
+            Assert.AreEqual(newName, updatedReport["name"].GetValue<string>());
+        }
+
+        [TestMethod]
+        [DataRow("a")]
+        [DataRow("ab")]
+        [DataRow("thisstringiswaytoolongtobevalidbecauseitexceeds32characters_andnowweareaddingmoredatatofilluptoexactlyonehundredtwentyeight1")]
+        [DataRow("name_with_underscore")]
+        [DataRow("name.with.dot")]
+        [DataRow("name@domain")]
+        [DataRow("namé")]
+        [DataRow("na🚀me")]
+        [DataRow("na\tme")]
+        [DataRow("na\nme")]
+        [DataRow("name!")]
+        [DataRow("na#me")]
+        public async Task Test_Update_Report_Name_Invalid(string invalidNewName)
+        {
+            // Arrange 
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            _deviceIds.Add(deviceId);
+
+            JsonObject createdReport = await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "All", DateTime.UtcNow.AddMinutes(-5), DateTime.UtcNow);
+            Guid reportId = Guid.Parse(createdReport["id"].GetValue<string>());
+
+            // Act
+            RequestFailedException exception = await Assert.ThrowsExactlyAsync<RequestFailedException>(async () => await _reportLib.UpdateReport(_accessToken, reportId, name: invalidNewName));
+
+            // Assert
+            Assert.AreEqual(System.Net.HttpStatusCode.BadRequest, exception.ResponseMessage.StatusCode, "Expected BadRequest for invalid report name");
+        }
+
+        [TestMethod]
+        [DataRow("All")]
+        [DataRow("Followers")]
+        [DataRow("Private")]
+        public async Task Test_Update_Report_Visibility(string newVisibility)
+        {
+            // Arrange 
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            _deviceIds.Add(deviceId);
+            JsonObject createdReport = await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "All", DateTime.UtcNow.AddMinutes(-5), DateTime.UtcNow);
+            Guid reportId = Guid.Parse(createdReport["id"].GetValue<string>());
+
+            // Act
+            await _reportLib.UpdateReport(_accessToken, reportId, visibilityType: newVisibility);
+
+            // Assert
+            JsonObject updatedReport = await _reportLib.GetReport(_accessToken, reportId);
+            Assert.AreEqual(newVisibility, updatedReport["visibilityType"].GetValue<string>());
+
+        }
     }
 }
