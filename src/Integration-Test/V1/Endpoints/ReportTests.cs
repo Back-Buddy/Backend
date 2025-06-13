@@ -72,6 +72,8 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             string secret = device["secret"].GetValue<string>();
             _deviceIds.Add(deviceId);
 
+            string name = "Test Report";
+            string visibilityType = "All";
             TimeSpan sitDuration = TimeSpan.FromSeconds(5);
             await DeviceLogLib.CreateSampleLogs(_webSocketUri, secret, 1, 0, sitDuration);
 
@@ -79,12 +81,14 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             DateTime endTime = DateTime.UtcNow;
 
             // Act
-            JsonObject report = await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "All", startTime, endTime);
+            JsonObject report = await _reportLib.CreateReport(_accessToken, deviceId, name, visibilityType, startTime, endTime);
 
             // Assert
             Assert.IsNotNull(report);
             Assert.IsTrue(report.ContainsKey("id"));
             Assert.AreEqual(deviceId, Guid.Parse(report["deviceId"].GetValue<string>()));
+            Assert.AreEqual(name, report["name"].GetValue<string>());
+            Assert.AreEqual(visibilityType, report["visibilityType"].GetValue<string>());
             Assert.AreEqual(startTime, report["startTime"].GetValue<DateTime>());
             Assert.AreEqual(endTime, report["endTime"].GetValue<DateTime>());
 
@@ -148,6 +152,42 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
 
             // Assert
             Assert.IsNotNull(report);
+            Assert.AreEqual(name, report["name"].GetValue<string>());
+        }
+
+        [TestMethod]
+        [DataRow("All")]
+        [DataRow("Followers")]
+        [DataRow("Private")]
+        public async Task Test_Create_Report_Valid_Visibility(string validVisibility)
+        {
+            // Arrange 
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            _deviceIds.Add(deviceId);
+
+            // Act
+            JsonObject report = await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", validVisibility, DateTime.UtcNow.AddMinutes(-5), DateTime.UtcNow);
+
+            // Assert
+            Assert.IsNotNull(report);
+            Assert.AreEqual(validVisibility, report["visibilityType"].GetValue<string>());
+        }
+
+        [TestMethod]
+        public async Task Test_Create_Report_Invalid_Visibility()
+        {
+            // Arrange 
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            _deviceIds.Add(deviceId);
+            string invalidVisibility = "test";
+
+            // Act
+            RequestFailedException requestFailedException = await Assert.ThrowsExactlyAsync<RequestFailedException>(async () => await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", invalidVisibility, DateTime.UtcNow.AddMinutes(-5), DateTime.UtcNow));
+
+            // Assert
+            Assert.AreEqual(System.Net.HttpStatusCode.BadRequest, requestFailedException.ResponseMessage.StatusCode);
         }
 
         [TestMethod]
@@ -385,7 +425,17 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
         }
 
         [TestMethod]
-        public async Task Test_Update_Report_Name()
+        [DataRow("abc")]
+        [DataRow("Test123")]
+        [DataRow("Valid-Name")]
+        [DataRow("Name With Spaces")]
+        [DataRow("A1-B2 C3")]
+        [DataRow("SimpleName")]
+        [DataRow("Name-Name-Name")]
+        [DataRow("Name With-Mixed Characters")]
+        [DataRow("aB3")]
+        [DataRow("ABCDEFGHIJKLMNOPQRSTUVWXYZ123456")]
+        public async Task Test_Update_Report_Valid_Name(string newName)
         {
             // Arrange 
             JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
@@ -396,7 +446,6 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             Guid reportId = Guid.Parse(createdReport["id"].GetValue<string>());
 
             // Act
-            string newName = "Updated Report Name";
             await _reportLib.UpdateReport(_accessToken, reportId, name: newName);
 
             // Assert
@@ -417,7 +466,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
         [DataRow("na\nme")]
         [DataRow("name!")]
         [DataRow("na#me")]
-        public async Task Test_Update_Report_Name_Invalid(string invalidNewName)
+        public async Task Test_Update_Report_Invalid_Name(string invalidNewName)
         {
             // Arrange 
             JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
@@ -438,7 +487,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
         [DataRow("All")]
         [DataRow("Followers")]
         [DataRow("Private")]
-        public async Task Test_Update_Report_Visibility(string newVisibility)
+        public async Task Test_Update_Report_Valid_Visibility(string newVisibility)
         {
             // Arrange 
             JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
@@ -453,7 +502,24 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             // Assert
             JsonObject updatedReport = await _reportLib.GetReport(_accessToken, reportId);
             Assert.AreEqual(newVisibility, updatedReport["visibilityType"].GetValue<string>());
+        }
 
+        [TestMethod]
+        public async Task Test_Update_Report_Invalid_Visibility()
+        {
+            // Arrange 
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            _deviceIds.Add(deviceId);
+            JsonObject createdReport = await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "All", DateTime.UtcNow.AddMinutes(-5), DateTime.UtcNow);
+            Guid reportId = Guid.Parse(createdReport["id"].GetValue<string>());
+
+            // Act
+            string invalidNewVisibility = "test";
+            RequestFailedException requestFailedException = await Assert.ThrowsExactlyAsync<RequestFailedException>(async () => await _reportLib.UpdateReport(_accessToken, reportId, visibilityType: invalidNewVisibility));
+
+            // Assert
+            Assert.AreEqual(System.Net.HttpStatusCode.BadRequest, requestFailedException.ResponseMessage.StatusCode);
         }
     }
 }
