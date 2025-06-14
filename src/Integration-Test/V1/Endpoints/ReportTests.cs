@@ -64,6 +64,12 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
         {
             await CleanUpDevices();
             await _firestoreLib.CleanUpUsers();
+
+            foreach (string otherUserId in _otherUserIds)
+            {
+                await _firebaseLib.DeleteUserAsync(otherUserId);
+            }
+            _otherUserIds.Clear();
         }
 
         private static async Task CleanUpDevices()
