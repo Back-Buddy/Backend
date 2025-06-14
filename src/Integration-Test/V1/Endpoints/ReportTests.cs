@@ -14,13 +14,13 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
         private static ReportLib _reportLib;
         private static string _accessToken;
         private static string _userId;
-        private static List<string> _otherUserIds = [];
         private static string _webSocketUri;
         private static FirebaseLib _firebaseLib;
         private static FirestoreLib _firestoreLib;
         private static UserLib _userLib;
 
         private readonly static List<Guid> _deviceIds = [];
+        private readonly static List<string> _otherUserIds = [];
 
         [ClassInitialize]
         public static async Task ClassInitialize(TestContext _)
@@ -615,6 +615,56 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             Assert.IsNotEmpty(filteredResult);
             Assert.AreNotEqual(filteredResult[0]["id"].GetValue<string>(), result[0]["id"].GetValue<string>());
             Assert.AreNotEqual(result.Count, filteredResult.Count, "Filtered result should not contain the first report");
+        }
+
+        [TestMethod]
+        public async Task Test_GetReports_Expand_Type_DeviceLogs()
+        {
+            // Arrange 
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            string secret = device["secret"].GetValue<string>();
+            _deviceIds.Add(deviceId);
+
+            await _reportLib.CreateSampleReports(_webSocketUri, secret, _accessToken, deviceId, "Test Report", "All", 1, TimeSpan.FromSeconds(1));
+
+            // Act
+            (JsonArray result, _) = await _reportLib.GetReports(_accessToken, [deviceId], descending: false, pageSize: 5, page: 1, expandType: "DeviceLogs");
+
+            // Assert
+            JsonObject report = result[0].AsObject();
+
+            Assert.IsNotNull(report);
+            Assert.IsTrue(report.ContainsKey("id"));
+            Assert.AreEqual(report["id"].GetValue<string>(), report["id"].GetValue<string>());
+            Assert.IsNotNull(report["deviceId"]);
+            Assert.AreEqual(1, report["usedLogsIds"].AsArray().Count);
+            Assert.AreEqual(1, report["usedLogs"].AsArray().Count);
+        }
+
+        [TestMethod]
+        public async Task Test_GetReports_Expand_Type_None()
+        {
+            // Arrange 
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            string secret = device["secret"].GetValue<string>();
+            _deviceIds.Add(deviceId);
+
+            await _reportLib.CreateSampleReports(_webSocketUri, secret, _accessToken, deviceId, "Test Report", "All", 1, TimeSpan.FromSeconds(1));
+
+            // Act
+            (JsonArray result, _) = await _reportLib.GetReports(_accessToken, [deviceId], descending: false, pageSize: 5, page: 1);
+
+            // Assert
+            JsonObject report = result[0].AsObject();
+
+            Assert.IsNotNull(report);
+            Assert.IsTrue(report.ContainsKey("id"));
+            Assert.AreEqual(report["id"].GetValue<string>(), report["id"].GetValue<string>());
+            Assert.IsNotNull(report["deviceId"]);
+            Assert.AreEqual(1, report["usedLogsIds"].AsArray().Count);
+            Assert.IsNull(report["usedLogs"]);
         }
 
         [TestMethod]
