@@ -138,7 +138,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
             Page<List<ReportEntity>> reports = await _reportRepository.GetAll(targetUserId, visibilityTypes, query, page, cancellationToken);
             Page<List<ReportDto>> response = new()
             {
-                Items = await reports.Items.ToDto(x => x.UserId == targetUserId, expandType == ReportExpandType.DeviceLogs ? GetDeviceLogDtos : null),
+                Items = await reports.Items.ToDto(x => x.UserId == userId, expandType == ReportExpandType.DeviceLogs ? GetDeviceLogDtos : null),
                 HasMoreEntries = reports.HasMoreEntries
             };
             return response;

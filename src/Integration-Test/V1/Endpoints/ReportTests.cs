@@ -618,6 +618,265 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
         }
 
         [TestMethod]
+        public async Task Test_GetReports_Other_User_VisibilityType_All()
+        {
+            // Arrange 
+            FirebaseRegisterResponseDto otherUser = await _firebaseLib.RegisterUserAsync("test2@gmail.com", "stringG.1212"); //NOT A REAL SECRET
+            string userId2 = otherUser.LocalId;
+            _otherUserIds.Add(userId2);
+            FirebaseLoginResponseDto loginUser2 = await _firebaseLib.SignInUserAsync("test2@gmail.com", "stringG.1212"); //NOT A REAL SECRET
+            string accessToken2 = loginUser2.IdToken;
+
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            _deviceIds.Add(deviceId);
+
+            await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "All", DateTime.UtcNow.AddMinutes(-5), DateTime.UtcNow);
+            await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "All", DateTime.UtcNow.AddMinutes(-5), DateTime.UtcNow);
+            await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "All", DateTime.UtcNow.AddMinutes(-5), DateTime.UtcNow);
+
+            // Act
+            (JsonArray filteredResult, _) = await _reportLib.GetReports(accessToken2, [], descending: false, pageSize: 5, page: 1, userId: _userId);
+
+            // Assert
+            Assert.AreEqual(3, filteredResult.Count);
+        }
+
+        [TestMethod]
+        public async Task Test_GetReports_Other_User_Expand_Type_None()
+        {
+            // Arrange 
+            FirebaseRegisterResponseDto otherUser = await _firebaseLib.RegisterUserAsync("test2@gmail.com", "stringG.1212"); //NOT A REAL SECRET
+            string userId2 = otherUser.LocalId;
+            _otherUserIds.Add(userId2);
+            FirebaseLoginResponseDto loginUser2 = await _firebaseLib.SignInUserAsync("test2@gmail.com", "stringG.1212"); //NOT A REAL SECRET
+            string accessToken2 = loginUser2.IdToken;
+
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            _deviceIds.Add(deviceId);
+
+            await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "All", DateTime.UtcNow.AddMinutes(-5), DateTime.UtcNow);
+            await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "All", DateTime.UtcNow.AddMinutes(-5), DateTime.UtcNow);
+            await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "All", DateTime.UtcNow.AddMinutes(-5), DateTime.UtcNow);
+
+            // Act
+            (JsonArray filteredResult, _) = await _reportLib.GetReports(accessToken2, [], descending: false, pageSize: 5, page: 1, userId: _userId);
+
+            // Assert
+            Assert.AreEqual(3, filteredResult.Count);
+
+            JsonObject report = filteredResult[0].AsObject();
+
+            Assert.IsNotNull(report);
+            Assert.IsTrue(report.ContainsKey("id"));
+            Assert.AreEqual(report["id"].GetValue<string>(), report["id"].GetValue<string>());
+            Assert.IsNull(report["deviceId"]);
+            Assert.IsNull(report["usedLogsIds"]);
+            Assert.IsNull(report["usedLogs"]);
+        }
+
+        [TestMethod]
+        public async Task Test_GetReports_Other_User_Expand_Type_DeviceLogs()
+        {
+            // Arrange 
+            FirebaseRegisterResponseDto otherUser = await _firebaseLib.RegisterUserAsync("test2@gmail.com", "stringG.1212"); //NOT A REAL SECRET
+            string userId2 = otherUser.LocalId;
+            _otherUserIds.Add(userId2);
+            FirebaseLoginResponseDto loginUser2 = await _firebaseLib.SignInUserAsync("test2@gmail.com", "stringG.1212"); //NOT A REAL SECRET
+            string accessToken2 = loginUser2.IdToken;
+
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            _deviceIds.Add(deviceId);
+
+            await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "All", DateTime.UtcNow.AddMinutes(-5), DateTime.UtcNow);
+            await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "All", DateTime.UtcNow.AddMinutes(-5), DateTime.UtcNow);
+            await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "All", DateTime.UtcNow.AddMinutes(-5), DateTime.UtcNow);
+
+            // Act
+            (JsonArray filteredResult, _) = await _reportLib.GetReports(accessToken2, [], descending: false, pageSize: 5, page: 1, userId: _userId, expandType: "DeviceLogs");
+
+            // Assert
+            Assert.AreEqual(3, filteredResult.Count);
+
+            JsonObject report = filteredResult[0].AsObject();
+
+            Assert.IsNotNull(report);
+            Assert.IsTrue(report.ContainsKey("id"));
+            Assert.AreEqual(report["id"].GetValue<string>(), report["id"].GetValue<string>());
+            Assert.IsNull(report["deviceId"]);
+            Assert.IsNull(report["usedLogsIds"]);
+            Assert.AreEqual(0, report["usedLogs"].AsArray().Count);
+        }
+
+        [TestMethod]
+        public async Task Test_GetReports_Other_User_VisibilityType_Private()
+        {
+            // Arrange 
+            FirebaseRegisterResponseDto otherUser = await _firebaseLib.RegisterUserAsync("test2@gmail.com", "stringG.1212"); //NOT A REAL SECRET
+            string userId2 = otherUser.LocalId;
+            _otherUserIds.Add(userId2);
+            FirebaseLoginResponseDto loginUser2 = await _firebaseLib.SignInUserAsync("test2@gmail.com", "stringG.1212"); //NOT A REAL SECRET
+            string accessToken2 = loginUser2.IdToken;
+
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            _deviceIds.Add(deviceId);
+
+            await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "Private", DateTime.UtcNow.AddMinutes(-5), DateTime.UtcNow);
+            await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "Private", DateTime.UtcNow.AddMinutes(-5), DateTime.UtcNow);
+            await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "Private", DateTime.UtcNow.AddMinutes(-5), DateTime.UtcNow);
+
+            // Act
+            (JsonArray filteredResult, _) = await _reportLib.GetReports(accessToken2, [], descending: false, pageSize: 5, page: 1, userId: _userId);
+
+            // Assert
+            Assert.AreEqual(0, filteredResult.Count);
+        }
+
+        [TestMethod]
+        public async Task Test_GetReports_Other_User_VisibilityType_Followers()
+        {
+            // Arrange 
+            FirebaseRegisterResponseDto otherUser = await _firebaseLib.RegisterUserAsync("test2@gmail.com", "stringG.1212"); //NOT A REAL SECRET
+            string userId2 = otherUser.LocalId;
+            _otherUserIds.Add(userId2);
+            FirebaseLoginResponseDto loginUser2 = await _firebaseLib.SignInUserAsync("test2@gmail.com", "stringG.1212"); //NOT A REAL SECRET
+            string accessToken2 = loginUser2.IdToken;
+
+            await _firestoreLib.CreateUserObject(_userId, "Test User", []);
+            await _firestoreLib.CreateUserObject(userId2, "Test User 2", []);
+
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            _deviceIds.Add(deviceId);
+
+            await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "Followers", DateTime.UtcNow.AddMinutes(-5), DateTime.UtcNow);
+            await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "Followers", DateTime.UtcNow.AddMinutes(-5), DateTime.UtcNow);
+            await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "Followers", DateTime.UtcNow.AddMinutes(-5), DateTime.UtcNow);
+
+            await _userLib.FollowUser(_accessToken, userId2);
+            await _userLib.FollowUser(accessToken2, _userId);
+
+            // Act
+            (JsonArray filteredResult, _) = await _reportLib.GetReports(accessToken2, [], descending: false, pageSize: 5, page: 1, userId: _userId);
+
+            // Assert
+            Assert.AreEqual(3, filteredResult.Count);
+        }
+
+        [TestMethod]
+        public async Task Test_GetReports_Other_User_VisibilityType_Followers_No_Strong_Relation()
+        {
+            // Arrange 
+            FirebaseRegisterResponseDto otherUser = await _firebaseLib.RegisterUserAsync("test2@gmail.com", "stringG.1212"); //NOT A REAL SECRET
+            string userId2 = otherUser.LocalId;
+            _otherUserIds.Add(userId2);
+            FirebaseLoginResponseDto loginUser2 = await _firebaseLib.SignInUserAsync("test2@gmail.com", "stringG.1212"); //NOT A REAL SECRET
+            string accessToken2 = loginUser2.IdToken;
+
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            _deviceIds.Add(deviceId);
+
+            await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "Followers", DateTime.UtcNow.AddMinutes(-5), DateTime.UtcNow);
+            await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "Followers", DateTime.UtcNow.AddMinutes(-5), DateTime.UtcNow);
+            await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "Followers", DateTime.UtcNow.AddMinutes(-5), DateTime.UtcNow);
+
+            // Act
+            (JsonArray filteredResult, _) = await _reportLib.GetReports(accessToken2, [], descending: false, pageSize: 5, page: 1, userId: _userId);
+
+            // Assert
+            Assert.AreEqual(0, filteredResult.Count);
+        }
+
+        [TestMethod]
+        public async Task Test_GetReports_Other_User_VisibilityType_Mixed_No_Strong_Relation()
+        {
+            // Arrange 
+            FirebaseRegisterResponseDto otherUser = await _firebaseLib.RegisterUserAsync("test2@gmail.com", "stringG.1212"); //NOT A REAL SECRET
+            string userId2 = otherUser.LocalId;
+            _otherUserIds.Add(userId2);
+            FirebaseLoginResponseDto loginUser2 = await _firebaseLib.SignInUserAsync("test2@gmail.com", "stringG.1212"); //NOT A REAL SECRET
+            string accessToken2 = loginUser2.IdToken;
+
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            _deviceIds.Add(deviceId);
+
+            await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "All", DateTime.UtcNow.AddMinutes(-5), DateTime.UtcNow);
+            await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "Followers", DateTime.UtcNow.AddMinutes(-5), DateTime.UtcNow);
+            await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "Private", DateTime.UtcNow.AddMinutes(-5), DateTime.UtcNow);
+
+            // Act
+            (JsonArray filteredResult, _) = await _reportLib.GetReports(accessToken2, [], descending: false, pageSize: 5, page: 1, userId: _userId);
+
+            // Assert
+            Assert.AreEqual(1, filteredResult.Count);
+        }
+
+        [TestMethod]
+        public async Task Test_GetReports_Other_User_VisibilityType_Mixed_Strong_Relation()
+        {
+            // Arrange 
+            FirebaseRegisterResponseDto otherUser = await _firebaseLib.RegisterUserAsync("test2@gmail.com", "stringG.1212"); //NOT A REAL SECRET
+            string userId2 = otherUser.LocalId;
+            _otherUserIds.Add(userId2);
+            FirebaseLoginResponseDto loginUser2 = await _firebaseLib.SignInUserAsync("test2@gmail.com", "stringG.1212"); //NOT A REAL SECRET
+            string accessToken2 = loginUser2.IdToken;
+
+            await _firestoreLib.CreateUserObject(_userId, "Test User", []);
+            await _firestoreLib.CreateUserObject(userId2, "Test User 2", []);
+
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            _deviceIds.Add(deviceId);
+
+            await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "All", DateTime.UtcNow.AddMinutes(-5), DateTime.UtcNow);
+            await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "Followers", DateTime.UtcNow.AddMinutes(-5), DateTime.UtcNow);
+            await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "Private", DateTime.UtcNow.AddMinutes(-5), DateTime.UtcNow);
+
+            await _userLib.FollowUser(_accessToken, userId2);
+            await _userLib.FollowUser(accessToken2, _userId);
+
+            // Act
+            (JsonArray filteredResult, _) = await _reportLib.GetReports(accessToken2, [], descending: false, pageSize: 5, page: 1, userId: _userId);
+
+            // Assert
+            Assert.AreEqual(2, filteredResult.Count);
+        }
+
+        [TestMethod]
+        public async Task Test_GetReports_Other_User_Device_Filter_Failed()
+        {
+            // Arrange 
+            FirebaseRegisterResponseDto otherUser = await _firebaseLib.RegisterUserAsync("test2@gmail.com", "stringG.1212"); //NOT A REAL SECRET
+            string userId2 = otherUser.LocalId;
+            _otherUserIds.Add(userId2);
+            FirebaseLoginResponseDto loginUser2 = await _firebaseLib.SignInUserAsync("test2@gmail.com", "stringG.1212"); //NOT A REAL SECRET
+            string accessToken2 = loginUser2.IdToken;
+
+            await _firestoreLib.CreateUserObject(_userId, "Test User", []);
+            await _firestoreLib.CreateUserObject(userId2, "Test User 2", []);
+
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            _deviceIds.Add(deviceId);
+
+            await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "All", DateTime.UtcNow.AddMinutes(-5), DateTime.UtcNow);
+            await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "Followers", DateTime.UtcNow.AddMinutes(-5), DateTime.UtcNow);
+            await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "Private", DateTime.UtcNow.AddMinutes(-5), DateTime.UtcNow);
+
+            // Act
+            RequestFailedException requestFailedException = await Assert.ThrowsExactlyAsync<RequestFailedException>(async () =>
+                await _reportLib.GetReports(accessToken2, [deviceId], descending: false, pageSize: 5, page: 1, userId: _userId));
+
+            // Assert
+            Assert.AreEqual(System.Net.HttpStatusCode.Forbidden, requestFailedException.ResponseMessage.StatusCode);
+        }
+
+        [TestMethod]
         public async Task Test_GetReports_EndDate()
         {
             // Arrange 
