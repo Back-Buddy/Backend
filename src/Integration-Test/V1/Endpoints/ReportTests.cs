@@ -76,7 +76,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
         }
 
         [TestMethod]
-        public async Task Test_CreateReport_Success()
+        public async Task Test_Create_Report_Success()
         {
             // Arrange 
             JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
@@ -203,7 +203,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
         }
 
         [TestMethod]
-        public async Task Test_CreateReport_NoLogs()
+        public async Task Test_Create_Report_No_Logs()
         {
             // Arrange 
             JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
@@ -225,7 +225,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
         }
 
         [TestMethod]
-        public async Task Test_CreateReport_MoreLogs()
+        public async Task Test_Create_Report_More_Logs()
         {
             // Arrange 
             JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
