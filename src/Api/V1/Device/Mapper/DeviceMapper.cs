@@ -40,7 +40,8 @@ namespace BackBuddy.Api.Service.V1.Device.Mapper
                 EndTime = entity.EndTime,
                 UsedLogsIds = isOwner ? entity.UsedLogs : null,
                 UsedLogs = deviceLogDtos,
-                Metadata = entity.Metadata.ToDto()
+                Metadata = entity.Metadata.ToDto(),
+                CreatedAt = entity.CreatedAt,
             };
         }
 

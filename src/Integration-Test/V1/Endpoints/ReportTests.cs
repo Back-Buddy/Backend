@@ -596,8 +596,8 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             Assert.AreEqual(5, resultDescending.Count);
             Assert.AreEqual(5, resultAscending.Count);
 
-            Assert.IsTrue(resultDescending[0]["startTime"].GetValue<DateTime>() >= resultDescending[4]["startTime"].GetValue<DateTime>(), "Descending order failed");
-            Assert.IsTrue(resultAscending[0]["startTime"].GetValue<DateTime>() <= resultAscending[4]["startTime"].GetValue<DateTime>(), "Ascending order failed");
+            Assert.IsTrue(resultDescending[0]["createdAt"].GetValue<DateTime>() >= resultDescending[4]["createdAt"].GetValue<DateTime>(), "Descending order failed");
+            Assert.IsTrue(resultAscending[0]["createdAt"].GetValue<DateTime>() <= resultAscending[4]["createdAt"].GetValue<DateTime>(), "Ascending order failed");
             Assert.AreEqual(resultDescending[0]["id"].GetValue<string>(), resultAscending[4]["id"].GetValue<string>(), "First report in descending order should match last report in ascending order");
         }
 

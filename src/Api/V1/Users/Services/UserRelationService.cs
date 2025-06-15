@@ -3,6 +3,7 @@ using BackBuddy.Api.Service.V1.Users.Entities;
 using BackBuddy.Api.Service.V1.Users.Exceptions;
 using BackBuddy.Api.Service.V1.Users.Repositories;
 using BackBuddy.Api.Service.V1.Utilities;
+using System.Collections.Concurrent;
 
 namespace BackBuddy.Api.Service.V1.Users.Services
 {
@@ -28,6 +29,7 @@ namespace BackBuddy.Api.Service.V1.Users.Services
         Task DeleteUser(string userId, CancellationToken cancellationToken = default);
 
         Task<UserRelationDto> GetUserRelation(string userId, string targetUserId, CancellationToken cancellationToken = default);
+        Task<IEnumerable<string>> GetStrongRelationsOfUser(string userId, CancellationToken cancellationToken = default);
     }
 
     public class UserRelationService(IUserRelationRepository repository) : IUserRelationService
@@ -135,6 +137,37 @@ namespace BackBuddy.Api.Service.V1.Users.Services
                 IsFollowing = hasRelations[0],
                 IsFollowedBy = hasRelations[1],
             };
+        }
+
+        public async Task<IEnumerable<string>> GetStrongRelationsOfUser(string userId, CancellationToken cancellationToken = default)
+        {
+            int page = 1;
+            Page<List<UserFollowEntity>> bufferedIncomingRelations;
+            List<UserFollowEntity> incomingRelations = [];
+            do
+            {
+                PageRequestDto pageDto = new()
+                {
+                    Page = page++,
+                    Size = 10000,
+                };
+                bufferedIncomingRelations = await _repository.GetIncomingRelations(userId, pageDto, cancellationToken);
+                incomingRelations.AddRange(bufferedIncomingRelations.Items);
+            } while (bufferedIncomingRelations.HasMoreEntries && !cancellationToken.IsCancellationRequested);
+
+            ConcurrentBag<string> strongRelations = [];
+
+            await Parallel.ForEachAsync(incomingRelations,
+                new ParallelOptions
+                {
+                    CancellationToken = cancellationToken
+                }, async (relation, token) =>
+                {
+                    if (await HasStrongRelation(userId, relation.UserId, cancellationToken))
+                        strongRelations.Add(relation.UserId);
+                }
+            );
+            return strongRelations;
         }
     }
 }

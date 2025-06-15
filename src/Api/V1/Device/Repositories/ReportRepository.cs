@@ -14,6 +14,7 @@ namespace BackBuddy.Api.Service.V1.Device.Repositories
         Task Update(ReportEntity entity, CancellationToken cancellationToken = default);
         Task Delete(Guid id, CancellationToken cancellationToken = default);
         Task DeleteFromDevice(Guid deviceId, CancellationToken cancellationToken = default);
+        Task<Page<List<ReportEntity>>> GetReportFeed(string userId, IEnumerable<string> strongRelationUser, ReportFeedQueryDto query, PageRequestDto page, CancellationToken cancellationToken = default);
     }
 
     public class ReportRepository(IMongoCollection<ReportEntity> collection) : IReportRepository
@@ -27,7 +28,7 @@ namespace BackBuddy.Api.Service.V1.Device.Repositories
 
         public async Task Update(ReportEntity entity, CancellationToken cancellationToken = default)
         {
-            await _collection.ReplaceOneAsync(entity => entity.Id == entity.Id, entity, cancellationToken: cancellationToken);
+            await _collection.ReplaceOneAsync(x => x.Id == entity.Id, entity, cancellationToken: cancellationToken);
         }
 
         public async Task Delete(Guid id, CancellationToken cancellationToken = default)
@@ -64,11 +65,45 @@ namespace BackBuddy.Api.Service.V1.Device.Repositories
             {
                 Skip = page.Offset(),
                 Limit = page.Size,
-                Sort = query.Descending ? Builders<ReportEntity>.Sort.Descending(x => x.StartTime) : Builders<ReportEntity>.Sort.Ascending(x => x.StartTime)
+                Sort = query.Descending ? Builders<ReportEntity>.Sort.Descending(x => x.CreatedAt) : Builders<ReportEntity>.Sort.Ascending(x => x.CreatedAt)
             };
 
             IAsyncCursor<ReportEntity> cursor = await _collection.FindAsync(finalFilter, findOptions, cancellationToken: cancellationToken);
             List<ReportEntity> reportEntities = await cursor.ToListAsync(cancellationToken);
+            long total = await _collection.CountDocumentsAsync(finalFilter, cancellationToken: cancellationToken);
+            bool hasMoreEntries = total > (page.Offset() + reportEntities.Count);
+
+            return new Page<List<ReportEntity>>
+            {
+                HasMoreEntries = hasMoreEntries,
+                Items = reportEntities
+            };
+        }
+
+        public async Task<Page<List<ReportEntity>>> GetReportFeed(string userId, IEnumerable<string> strongRelationUser, ReportFeedQueryDto query, PageRequestDto page, CancellationToken cancellationToken = default)
+        {
+            FilterDefinitionBuilder<ReportEntity> filterBuilder = Builders<ReportEntity>.Filter;
+
+            FilterDefinition<ReportEntity> ownFilter = filterBuilder.Eq(x => x.UserId, userId);
+
+            FilterDefinition<ReportEntity> strongRelationFilter = filterBuilder.In(x => x.UserId, strongRelationUser);
+            FilterDefinition<ReportEntity> visibilityFilterRelation = filterBuilder.Eq(x => x.VisibilityType, ReportVisibilityType.Followers);
+
+            FilterDefinition<ReportEntity> finalRelationFilter = filterBuilder.And(strongRelationFilter, visibilityFilterRelation);
+
+            FilterDefinition<ReportEntity> visibilityFilterPublic = filterBuilder.Eq(x => x.VisibilityType, ReportVisibilityType.All);
+
+            FilterDefinition<ReportEntity> finalFilter = filterBuilder.Or(ownFilter, finalRelationFilter, visibilityFilterPublic);
+
+            FindOptions<ReportEntity> findOptions = new()
+            {
+                Skip = page.Offset(),
+                Limit = page.Size,
+                Sort = query.Descending ? Builders<ReportEntity>.Sort.Descending(x => x.CreatedAt) : Builders<ReportEntity>.Sort.Ascending(x => x.CreatedAt)
+            };
+            IAsyncCursor<ReportEntity> cursor = await _collection.FindAsync(finalFilter, findOptions, cancellationToken: cancellationToken);
+            List<ReportEntity> reportEntities = await cursor.ToListAsync(cancellationToken);
+
             long total = await _collection.CountDocumentsAsync(finalFilter, cancellationToken: cancellationToken);
             bool hasMoreEntries = total > (page.Offset() + reportEntities.Count);
 

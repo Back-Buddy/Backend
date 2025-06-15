@@ -31,6 +31,14 @@ namespace BackBuddy.Api.Service.V1.Device.Controllers
             return NoContent();
         }
 
+        [HttpDelete("{reportId:guid}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> DeleteReport([FromRoute] Guid reportId, CancellationToken cancellationToken = default)
+        {
+            await _reportService.DeleteReport(this.GetUserId(), reportId, cancellationToken);
+            return NoContent();
+        }
+
         [HttpGet("{reportId:guid}")]
         [ProducesResponseType(typeof(ReportDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetReport([FromRoute] Guid reportId, [FromQuery][DefaultValue(ReportExpandType.None)] ReportExpandType expandType = ReportExpandType.None)
@@ -48,12 +56,14 @@ namespace BackBuddy.Api.Service.V1.Device.Controllers
             return Ok(reports.Items);
         }
 
-        [HttpDelete("{reportId:guid}")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
-        public async Task<IActionResult> DeleteReport([FromRoute] Guid reportId, CancellationToken cancellationToken = default)
+        [HttpGet]
+        [Route("feed")]
+        [ProducesResponseType(typeof(List<ReportDto>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetReportFeed([FromQuery] ReportFeedQueryDto feedQuery, [FromQuery] PageRequestDto pageQuery)
         {
-            await _reportService.DeleteReport(this.GetUserId(), reportId, cancellationToken);
-            return NoContent();
+            Page<List<ReportDto>> reports = await _reportService.GetReportFeed(this.GetUserId(), feedQuery, pageQuery);
+            Response.AddPageHeader(reports.HasMoreEntries);
+            return Ok(reports.Items);
         }
     }
 }

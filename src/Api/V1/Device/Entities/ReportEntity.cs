@@ -13,6 +13,7 @@ namespace BackBuddy.Api.Service.V1.Device.Entities
         public required DateTime EndTime { get; set; }
         public required ReportMetadataEntity Metadata { get; set; }
         public required List<Guid> UsedLogs { get; set; }
+        public required DateTime CreatedAt { get; set; }
     }
 
     public record ReportMetadataEntity

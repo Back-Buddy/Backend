@@ -13,5 +13,6 @@ namespace BackBuddy.Api.Service.V1.Device.DTOs
         public required List<Guid>? UsedLogsIds { get; set; } // Only set if the report is getted by the user who created it
         public required List<DeviceLogDto>? UsedLogs { get; init; }
         public required ReportMetadataDto Metadata { get; init; }
+        public required DateTime CreatedAt { get; init; }
     }
 }

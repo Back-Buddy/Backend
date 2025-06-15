@@ -19,6 +19,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
         Task<Page<List<ReportDto>>> GetReports(string userId, ReportQueryDto query, PageRequestDto page, ReportExpandType expandType, CancellationToken cancellationToken = default);
         Task DeleteReport(string userId, Guid reportId, CancellationToken cancellationToken = default);
         Task<IEnumerable<ReportVisibilityType>> GetVisibilityTypeForUser(string userId, Guid targetReport, CancellationToken cancellationToken = default);
+        Task<Page<List<ReportDto>>> GetReportFeed(string userId, ReportFeedQueryDto query, PageRequestDto page, CancellationToken cancellationToken = default);
     }
 
     public partial class ReportService(IUserRelationService relationService, IDeviceLogRepository deviceLogRepository, IDeviceRepository deviceRepository, IReportRepository reportRepository) : IReportService
@@ -74,7 +75,8 @@ namespace BackBuddy.Api.Service.V1.Device.Services
                 StartTime = request.StartTime,
                 EndTime = request.EndTime,
                 Metadata = reportMetadata,
-                UsedLogs = [.. usedLogs.Select(log => log.Id)]
+                UsedLogs = [.. usedLogs.Select(log => log.Id)],
+                CreatedAt = DateTime.UtcNow
             };
 
             await _reportRepository.Add(reportEntity, cancellationToken);
@@ -149,6 +151,18 @@ namespace BackBuddy.Api.Service.V1.Device.Services
             IEnumerable<Task<DeviceLogEntity>> deviceLogTasks = report.UsedLogs.Select(x => _deviceLogRepository.GetLog(x)).OfType<Task<DeviceLogEntity>>();
             DeviceLogEntity[] logs = await Task.WhenAll(deviceLogTasks);
             return logs.ToDto();
+        }
+
+        public async Task<Page<List<ReportDto>>> GetReportFeed(string userId, ReportFeedQueryDto query, PageRequestDto page, CancellationToken cancellationToken = default)
+        {
+            IEnumerable<string> strongRelations = await _relationService.GetStrongRelationsOfUser(userId, cancellationToken);
+            Page<List<ReportEntity>> reports = await _reportRepository.GetReportFeed(userId, strongRelations, query, page, cancellationToken);
+            Page<List<ReportDto>> response = new()
+            {
+                Items = await reports.Items.ToDto(x => x.UserId == userId, query.ExpandType == ReportExpandType.DeviceLogs ? GetDeviceLogDtos : null),
+                HasMoreEntries = reports.HasMoreEntries
+            };
+            return response;
         }
 
         internal static (ReportMetadataEntity MetaData, IEnumerable<DeviceLogEntity> UsedLogs) AnalyzeLogs(List<DeviceLogEntity> logs, DateTime startTime, DateTime endTime)
