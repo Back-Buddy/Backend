@@ -14,7 +14,7 @@ namespace BackBuddy.Api.Service.V1.Device.Repositories
         Task Update(ReportEntity entity, CancellationToken cancellationToken = default);
         Task Delete(Guid id, CancellationToken cancellationToken = default);
         Task DeleteFromDevice(Guid deviceId, CancellationToken cancellationToken = default);
-        Task<Page<List<ReportEntity>>> GetReportFeed(string userId, IEnumerable<string> strongRelationUser, ReportFeedQueryDto query, PageRequestDto page, CancellationToken cancellationToken = default);
+        Task<Page<List<ReportEntity>>> GetReportFeed(string userId, IEnumerable<string> strongRelationUser, IEnumerable<string> following, ReportFeedQueryDto query, PageRequestDto page, CancellationToken cancellationToken = default);
     }
 
     public class ReportRepository(IMongoCollection<ReportEntity> collection) : IReportRepository
@@ -80,7 +80,7 @@ namespace BackBuddy.Api.Service.V1.Device.Repositories
             };
         }
 
-        public async Task<Page<List<ReportEntity>>> GetReportFeed(string userId, IEnumerable<string> strongRelationUser, ReportFeedQueryDto query, PageRequestDto page, CancellationToken cancellationToken = default)
+        public async Task<Page<List<ReportEntity>>> GetReportFeed(string userId, IEnumerable<string> strongRelationUser, IEnumerable<string> following, ReportFeedQueryDto query, PageRequestDto page, CancellationToken cancellationToken = default)
         {
             FilterDefinitionBuilder<ReportEntity> filterBuilder = Builders<ReportEntity>.Filter;
 
@@ -92,8 +92,10 @@ namespace BackBuddy.Api.Service.V1.Device.Repositories
             FilterDefinition<ReportEntity> finalRelationFilter = filterBuilder.And(strongRelationFilter, visibilityFilterRelation);
 
             FilterDefinition<ReportEntity> visibilityFilterPublic = filterBuilder.Eq(x => x.VisibilityType, ReportVisibilityType.All);
+            FilterDefinition<ReportEntity> followRelationFilter = filterBuilder.In(x => x.UserId, following);
+            FilterDefinition<ReportEntity> visibilityFilterFollowing = filterBuilder.And(visibilityFilterPublic, followRelationFilter);
 
-            FilterDefinition<ReportEntity> finalFilter = filterBuilder.Or(ownFilter, finalRelationFilter, visibilityFilterPublic);
+            FilterDefinition<ReportEntity> finalFilter = filterBuilder.Or(ownFilter, finalRelationFilter, visibilityFilterFollowing);
 
             FindOptions<ReportEntity> findOptions = new()
             {

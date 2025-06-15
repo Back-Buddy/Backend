@@ -29,7 +29,7 @@ namespace BackBuddy.Api.Service.V1.Users.Services
         Task DeleteUser(string userId, CancellationToken cancellationToken = default);
 
         Task<UserRelationDto> GetUserRelation(string userId, string targetUserId, CancellationToken cancellationToken = default);
-        Task<IEnumerable<string>> GetStrongRelationsOfUser(string userId, CancellationToken cancellationToken = default);
+        Task<(IEnumerable<string> StrongRelations, IEnumerable<string> Following)> GetStrongFollowRelationsAndAllFollowings(string userId, CancellationToken cancellationToken = default);
     }
 
     public class UserRelationService(IUserRelationRepository repository) : IUserRelationService
@@ -139,11 +139,11 @@ namespace BackBuddy.Api.Service.V1.Users.Services
             };
         }
 
-        public async Task<IEnumerable<string>> GetStrongRelationsOfUser(string userId, CancellationToken cancellationToken = default)
+        public async Task<(IEnumerable<string> StrongRelations, IEnumerable<string> Following)> GetStrongFollowRelationsAndAllFollowings(string userId, CancellationToken cancellationToken = default)
         {
             int page = 1;
-            Page<List<UserFollowEntity>> bufferedIncomingRelations;
-            List<UserFollowEntity> incomingRelations = [];
+            Page<List<UserFollowEntity>> bufferedOutgoingRelations;
+            List<UserFollowEntity> outgoingRelations = [];
             do
             {
                 PageRequestDto pageDto = new()
@@ -151,23 +151,23 @@ namespace BackBuddy.Api.Service.V1.Users.Services
                     Page = page++,
                     Size = 10000,
                 };
-                bufferedIncomingRelations = await _repository.GetIncomingRelations(userId, pageDto, cancellationToken);
-                incomingRelations.AddRange(bufferedIncomingRelations.Items);
-            } while (bufferedIncomingRelations.HasMoreEntries && !cancellationToken.IsCancellationRequested);
+                bufferedOutgoingRelations = await _repository.GetOutgoingRelations(userId, pageDto, cancellationToken);
+                outgoingRelations.AddRange(bufferedOutgoingRelations.Items);
+            } while (bufferedOutgoingRelations.HasMoreEntries && !cancellationToken.IsCancellationRequested);
 
             ConcurrentBag<string> strongRelations = [];
 
-            await Parallel.ForEachAsync(incomingRelations,
+            await Parallel.ForEachAsync(outgoingRelations,
                 new ParallelOptions
                 {
                     CancellationToken = cancellationToken
                 }, async (relation, token) =>
                 {
-                    if (await HasStrongRelation(userId, relation.UserId, cancellationToken))
-                        strongRelations.Add(relation.UserId);
+                    if (await HasStrongRelation(userId, relation.TargetId, cancellationToken))
+                        strongRelations.Add(relation.TargetId);
                 }
             );
-            return strongRelations;
+            return (strongRelations, outgoingRelations.Select(x => x.TargetId));
         }
     }
 }

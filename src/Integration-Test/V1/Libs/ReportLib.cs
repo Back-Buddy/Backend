@@ -109,6 +109,19 @@ namespace BackBuddy.Integration_Test.V1.Libs
             return (reports, hasMoreEntries);
         }
 
+        public async Task<(JsonArray reports, bool hasMoreEntries)> GetFeed(string accessToken, bool descending = true, string expandType = "None", int page = 1, int pageSize = 10)
+        {
+            HttpRequestMessage requestMessage = new(HttpMethod.Get, $"/api/v1/report/feed?page={page}&size={pageSize}&expandType={expandType}&descending={descending}");
+            requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            HttpResponseMessage responseMessage = await _httpClient.SendAsync(requestMessage);
+            if (!responseMessage.IsSuccessStatusCode)
+                throw new RequestFailedException(responseMessage);
+            string rawContent = await responseMessage.Content.ReadAsStringAsync();
+            JsonArray reports = JsonSerializer.Deserialize<JsonArray>(rawContent);
+            bool hasMoreEntries = bool.Parse(responseMessage.Headers.GetValues("X-Has-More-Entries").First().ToString());
+            return (reports, hasMoreEntries);
+        }
+
         public async Task DeleteReport(string accessToken, Guid reportId)
         {
             HttpRequestMessage requestMessage = new(HttpMethod.Delete, $"/api/v1/report/{reportId}");

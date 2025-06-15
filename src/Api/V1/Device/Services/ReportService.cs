@@ -155,8 +155,8 @@ namespace BackBuddy.Api.Service.V1.Device.Services
 
         public async Task<Page<List<ReportDto>>> GetReportFeed(string userId, ReportFeedQueryDto query, PageRequestDto page, CancellationToken cancellationToken = default)
         {
-            IEnumerable<string> strongRelations = await _relationService.GetStrongRelationsOfUser(userId, cancellationToken);
-            Page<List<ReportEntity>> reports = await _reportRepository.GetReportFeed(userId, strongRelations, query, page, cancellationToken);
+            (IEnumerable<string> strongRelations, IEnumerable<string> following) = await _relationService.GetStrongFollowRelationsAndAllFollowings(userId, cancellationToken);
+            Page<List<ReportEntity>> reports = await _reportRepository.GetReportFeed(userId, strongRelations, following, query, page, cancellationToken);
             Page<List<ReportDto>> response = new()
             {
                 Items = await reports.Items.ToDto(x => x.UserId == userId, query.ExpandType == ReportExpandType.DeviceLogs ? GetDeviceLogDtos : null),
