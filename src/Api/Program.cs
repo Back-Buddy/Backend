@@ -205,6 +205,9 @@ builder.Services.AddScoped<IWebSocketService, WebSocketService>();
 
 builder.Services.AddSingleton<IConnectedDeviceRepository, ConnectedDeviceRepository>();
 
+builder.Services.AddScoped<IReportLikeRepository, ReportLikeRepository>();
+builder.Services.AddScoped<IReportLikeService, ReportLikeService>();
+
 builder.Services.AddSingleton<ConnectedDeviceHeartbeatService>();
 
 builder.Services.AddHostedService(x =>

@@ -16,18 +16,20 @@ namespace BackBuddy.Api.Service.V1.Device.Services
         Task<ReportDto> CreateReport(string userId, ReportCreateDto request, CancellationToken cancellationToken = default);
         Task UpdateReport(string userId, Guid reportId, ReportUpdateDto request, CancellationToken cancellationToken = default);
         Task<ReportDto> GetReport(string userId, Guid reportId, ReportExpandType expandType, CancellationToken cancellationToken = default);
+        Task<ReportEntity> GetReportEntity(Guid reportId, CancellationToken cancellationToken = default);
         Task<Page<List<ReportDto>>> GetReports(string userId, ReportQueryDto query, PageRequestDto page, ReportExpandType expandType, CancellationToken cancellationToken = default);
         Task DeleteReport(string userId, Guid reportId, CancellationToken cancellationToken = default);
         Task<IEnumerable<ReportVisibilityType>> GetVisibilityTypeForUser(string userId, Guid targetReport, CancellationToken cancellationToken = default);
         Task<Page<List<ReportDto>>> GetReportFeed(string userId, ReportFeedQueryDto query, PageRequestDto page, CancellationToken cancellationToken = default);
     }
 
-    public partial class ReportService(IUserRelationService relationService, IDeviceLogRepository deviceLogRepository, IDeviceRepository deviceRepository, IReportRepository reportRepository) : IReportService
+    public partial class ReportService(IReportLikeService reportLikeService, IUserRelationService relationService, IDeviceLogRepository deviceLogRepository, IDeviceRepository deviceRepository, IReportRepository reportRepository) : IReportService
     {
         private readonly IDeviceRepository _deviceRepository = deviceRepository;
         private readonly IDeviceLogRepository _deviceLogRepository = deviceLogRepository;
         private readonly IReportRepository _reportRepository = reportRepository;
         private readonly IUserRelationService _relationService = relationService;
+        private readonly IReportLikeService _reportLikeService = reportLikeService;
 
         public async Task<ReportDto> CreateReport(string userId, ReportCreateDto request, CancellationToken cancellationToken = default)
         {
@@ -80,7 +82,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
             };
 
             await _reportRepository.Add(reportEntity, cancellationToken);
-            return reportEntity.ToDto(true);
+            return reportEntity.ToDto(true, 0);
         }
 
         public async Task UpdateReport(string userId, Guid reportId, ReportUpdateDto request, CancellationToken cancellationToken = default)
@@ -126,7 +128,14 @@ namespace BackBuddy.Api.Service.V1.Device.Services
                 logs = await GetDeviceLogDtos(report);
             }
 
-            return report.ToDto(report.UserId == userId, logs);
+            long reportLikeCount = await _reportLikeService.CountLikesFromReport(reportId, cancellationToken);
+            return report.ToDto(report.UserId == userId, reportLikeCount, logs);
+        }
+
+        public async Task<ReportEntity> GetReportEntity(Guid reportId, CancellationToken cancellationToken = default)
+        {
+            ReportEntity report = await _reportRepository.Get(reportId, cancellationToken) ?? throw new ReportNotFoundException();
+            return report;
         }
 
         public async Task<Page<List<ReportDto>>> GetReports(string userId, ReportQueryDto query, PageRequestDto page, ReportExpandType expandType, CancellationToken cancellationToken = default)
@@ -140,7 +149,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
             Page<List<ReportEntity>> reports = await _reportRepository.GetAll(targetUserId, visibilityTypes, query, page, cancellationToken);
             Page<List<ReportDto>> response = new()
             {
-                Items = await reports.Items.ToDto(x => x.UserId == userId, expandType == ReportExpandType.DeviceLogs ? GetDeviceLogDtos : null),
+                Items = await reports.Items.ToDto(x => x.UserId == userId, x => _reportLikeService.CountLikesFromReport(x.Id, cancellationToken), expandType == ReportExpandType.DeviceLogs ? GetDeviceLogDtos : null),
                 HasMoreEntries = reports.HasMoreEntries
             };
             return response;
@@ -159,7 +168,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
             Page<List<ReportEntity>> reports = await _reportRepository.GetReportFeed(userId, strongRelations, following, query, page, cancellationToken);
             Page<List<ReportDto>> response = new()
             {
-                Items = await reports.Items.ToDto(x => x.UserId == userId, query.ExpandType == ReportExpandType.DeviceLogs ? GetDeviceLogDtos : null),
+                Items = await reports.Items.ToDto(x => x.UserId == userId, x => _reportLikeService.CountLikesFromReport(x.Id, cancellationToken), query.ExpandType == ReportExpandType.DeviceLogs ? GetDeviceLogDtos : null),
                 HasMoreEntries = reports.HasMoreEntries
             };
             return response;

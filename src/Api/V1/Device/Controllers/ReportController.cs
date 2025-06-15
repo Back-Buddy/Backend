@@ -1,8 +1,11 @@
 ﻿using BackBuddy.Api.Service.V1.Auth.Extensions;
 using BackBuddy.Api.Service.V1.Device.DTOs;
 using BackBuddy.Api.Service.V1.Device.DTOs.Http;
+using BackBuddy.Api.Service.V1.Device.Entities;
 using BackBuddy.Api.Service.V1.Device.Enums;
 using BackBuddy.Api.Service.V1.Device.Services;
+using BackBuddy.Api.Service.V1.Users.Dtos;
+using BackBuddy.Api.Service.V1.Users.Services;
 using BackBuddy.Api.Service.V1.Utilities;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel;
@@ -11,9 +14,11 @@ namespace BackBuddy.Api.Service.V1.Device.Controllers
 {
     [ApiController]
     [Route("api/v{version:apiVersion}/[controller]")]
-    public class ReportController(IReportService reportService) : ControllerBase
+    public class ReportController(IReportService reportService, IReportLikeService reportLikeService, IUserService userService) : ControllerBase
     {
         private readonly IReportService _reportService = reportService;
+        private readonly IReportLikeService _reportLikeService = reportLikeService;
+        private readonly IUserService _userService = userService;
 
         [HttpPost]
         [ProducesResponseType(typeof(ReportDto), StatusCodes.Status201Created)]
@@ -64,6 +69,34 @@ namespace BackBuddy.Api.Service.V1.Device.Controllers
             Page<List<ReportDto>> reports = await _reportService.GetReportFeed(this.GetUserId(), feedQuery, pageQuery);
             Response.AddPageHeader(reports.HasMoreEntries);
             return Ok(reports.Items);
+        }
+
+        [HttpPut]
+        [Route("{reportId:guid}/like")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> LikeReport([FromRoute] Guid reportId, CancellationToken cancellationToken = default)
+        {
+            IEnumerable<ReportVisibilityType> visibilityTypes = await _reportService.GetVisibilityTypeForUser(this.GetUserId(), reportId, cancellationToken);
+            ReportEntity reportEntity = await _reportService.GetReportEntity(reportId, cancellationToken);
+
+            await _reportLikeService.AddLike(this.GetUserId(), reportEntity, visibilityTypes, cancellationToken);
+            return NoContent();
+        }
+
+        [HttpGet]
+        [Route("{reportId:guid}/likes")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetLikes([FromRoute] Guid reportId, [FromQuery] PageRequestDto pageQuery, CancellationToken cancellationToken = default)
+        {
+            ReportEntity reportEntity = await _reportService.GetReportEntity(reportId, cancellationToken);
+            IEnumerable<ReportVisibilityType> visibilityTypes = await _reportService.GetVisibilityTypeForUser(this.GetUserId(), reportId, cancellationToken);
+
+            Page<List<string>> result = await _reportLikeService.GetReportLikesFromReport(reportEntity, visibilityTypes, pageQuery, cancellationToken);
+
+            IEnumerable<Task<UserDto>> tasks = result.Items.Select(x => _userService.GetUserByIdAsync(x));
+            UserDto[] users = await Task.WhenAll(tasks);
+
+            return Ok(users.ToList());
         }
     }
 }
