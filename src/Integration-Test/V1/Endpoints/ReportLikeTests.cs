@@ -101,6 +101,29 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
         }
 
         [TestMethod]
+        public async Task Test_Like_Error_Invalid_VisbilityType()
+        {
+            // Arrange
+            (string userId2, string accessToken2) = await CreateDefaultUser("test2@gmail.com");
+
+            await _firestoreLib.CreateUserObject(_userId, "Test User", []);
+            await _firestoreLib.CreateUserObject(userId2, "Test User 2", []);
+
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            _deviceIds.Add(deviceId);
+
+            JsonObject report = await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "Private", DateTime.UtcNow.AddSeconds(-10), DateTime.UtcNow);
+            Guid reportId = Guid.Parse(report["id"].GetValue<string>());
+
+            // Act
+            RequestFailedException requestFailed = await Assert.ThrowsExactlyAsync<RequestFailedException>(async () => await _reportLib.LikeReport(accessToken2, reportId));
+
+            // Assert
+            Assert.AreEqual(System.Net.HttpStatusCode.NotFound, requestFailed.ResponseMessage.StatusCode);
+        }
+
+        [TestMethod]
         public async Task Test_Like_Own_Error()
         {
             // Arrange
@@ -173,6 +196,30 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             Assert.AreEqual(userId2, like["userId"].GetValue<string>());
             Assert.AreEqual("Test User 2", like["username"].GetValue<string>());
         }
+
+        [TestMethod]
+        public async Task Test_GetLikes_Invalid_Visibility_Type()
+        {
+            // Arrange
+            (string userId2, string accessToken2) = await CreateDefaultUser("test2@gmail.com");
+
+            await _firestoreLib.CreateUserObject(_userId, "Test User", []);
+            await _firestoreLib.CreateUserObject(userId2, "Test User 2", []);
+
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            _deviceIds.Add(deviceId);
+
+            JsonObject report = await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "Private", DateTime.UtcNow.AddSeconds(-10), DateTime.UtcNow);
+            Guid reportId = Guid.Parse(report["id"].GetValue<string>());
+
+            // Act
+            RequestFailedException requestFailed = await Assert.ThrowsExactlyAsync<RequestFailedException>(async () => await _reportLib.GetLikes(accessToken2, reportId));
+
+            // Assert
+            Assert.AreEqual(System.Net.HttpStatusCode.NotFound, requestFailed.ResponseMessage.StatusCode);
+        }
+
 
         [TestMethod]
         public async Task Test_GetLikes_Pagination()
