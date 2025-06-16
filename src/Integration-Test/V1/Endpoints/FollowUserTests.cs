@@ -13,6 +13,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
         private static string _userId;
         private static string _userId2;
         private static UserLib _userLib;
+        private static NotificationLib _notificationLib;
         private static FirebaseLib _firebaseLib;
         private static FirestoreLib _firestoreLib;
 
@@ -22,8 +23,10 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             _accessToken = Environment.GetEnvironmentVariable("E2E_ACCESS_TOKEN");
             _userId = Environment.GetEnvironmentVariable("E2E_USER_ID");
             Uri baseUri = new(Environment.GetEnvironmentVariable("E2E_BASE_URI") ?? "http://localhost:8080/");
+            Uri notificationUri = new(Environment.GetEnvironmentVariable("E2E_NOTIFICATION_URI") ?? "http://localhost:8083/");
 
             _userLib = new UserLib(baseUri.ToString());
+            _notificationLib = new NotificationLib(notificationUri.ToString());
 
             if (_accessToken == null)
             {
@@ -53,7 +56,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             await _firestoreLib.CreateUserObject(_userId, "TestUser", []);
 
             _userId2 = Guid.CreateVersion7().ToString("N");
-            await _firestoreLib.CreateUserObject(_userId2, "TestUser2", []);
+            await _firestoreLib.CreateUserObject(_userId2, "TestUser2", ["test_token"]);
         }
 
         [TestCleanup]
@@ -61,6 +64,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
         {
             await _firestoreLib.CleanUpUsers();
             await _userLib.DeleteUser(_accessToken);
+            await _notificationLib.ClearNotifications();
         }
 
         [TestMethod]
@@ -82,6 +86,22 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
 
             Assert.IsNull(following[0].AsObject()["followers"]);
             Assert.IsNull(followers[0].AsObject()["following"]);
+        }
+
+        [TestMethod]
+        public async Task Test_FollowUser_Notification()
+        {
+            // Act
+            await _userLib.FollowUser(_accessToken, _userId2);
+            await Task.Delay(2000); // Wait for notification to be processed
+
+            // Assert
+            JsonArray notifications = await _notificationLib.GetNotifications();
+            Assert.AreEqual(1, notifications.Count);
+
+            JsonObject notification = notifications[0].AsObject();
+            Assert.AreEqual(1, notification["tokens"].AsArray().Count);
+            Assert.AreEqual("test_token", notification["tokens"].AsArray()[0].AsValue().GetValue<string>());
         }
 
         [TestMethod]
