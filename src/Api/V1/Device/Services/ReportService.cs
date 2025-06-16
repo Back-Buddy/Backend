@@ -19,6 +19,13 @@ namespace BackBuddy.Api.Service.V1.Device.Services
         Task<ReportEntity> GetReportEntity(Guid reportId, CancellationToken cancellationToken = default);
         Task<Page<List<ReportDto>>> GetReports(string userId, ReportQueryDto query, PageRequestDto page, ReportExpandType expandType, CancellationToken cancellationToken = default);
         Task DeleteReport(string userId, Guid reportId, CancellationToken cancellationToken = default);
+        /// <summary>
+        /// Deletes all reports from a device. This will also delete all likes from the reports. *Important*: No permission check is done here, so this should only be used by the device service when deleting a device.
+        /// </summary>
+        /// <param name="deviceId"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        Task DeleteAllFromDeviceId(Guid deviceId, CancellationToken cancellationToken = default);
         Task<IEnumerable<ReportVisibilityType>> GetVisibilityTypeForUser(string userId, ReportEntity targetReport);
         Task<IEnumerable<ReportVisibilityType>> GetVisibilityTypeForUser(string userId, Guid targetReport, CancellationToken cancellationToken = default);
         Task<Page<List<ReportDto>>> GetReportFeed(string userId, ReportFeedQueryDto query, PageRequestDto page, CancellationToken cancellationToken = default);
@@ -112,7 +119,20 @@ namespace BackBuddy.Api.Service.V1.Device.Services
             ReportEntity report = await _reportRepository.Get(reportId, cancellationToken) ?? throw new ReportNotFoundException();
             if (report.UserId != userId)
                 throw new DeviceUserForbiddenException();
+            await _reportLikeService.DeleteAllLikesFromReport(reportId, cancellationToken);
             await _reportRepository.Delete(reportId, cancellationToken);
+        }
+
+        public async Task DeleteAllFromDeviceId(Guid deviceId, CancellationToken cancellationToken = default)
+        {
+            IEnumerable<ReportEntity> reports = await _reportRepository.GetAllFromDevice(deviceId);
+
+            IEnumerable<Task> tasks = reports.Select(async report =>
+            {
+                await _reportLikeService.DeleteAllLikesFromReport(report.Id, cancellationToken);
+                await _reportRepository.Delete(report.Id, cancellationToken);
+            });
+            await Task.WhenAll(tasks);
         }
 
         public async Task<ReportDto> GetReport(string userId, Guid reportId, ReportExpandType expandType, CancellationToken cancellationToken = default)

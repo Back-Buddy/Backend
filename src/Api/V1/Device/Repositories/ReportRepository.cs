@@ -15,6 +15,7 @@ namespace BackBuddy.Api.Service.V1.Device.Repositories
         Task Delete(Guid id, CancellationToken cancellationToken = default);
         Task DeleteFromDevice(Guid deviceId, CancellationToken cancellationToken = default);
         Task<Page<List<ReportEntity>>> GetReportFeed(string userId, IEnumerable<string> strongRelationUser, IEnumerable<string> following, ReportFeedQueryDto query, PageRequestDto page, CancellationToken cancellationToken = default);
+        Task<IEnumerable<ReportEntity>> GetAllFromDevice(Guid deviceId, CancellationToken cancellationToken = default);
     }
 
     public class ReportRepository(IMongoCollection<ReportEntity> collection) : IReportRepository
@@ -114,6 +115,13 @@ namespace BackBuddy.Api.Service.V1.Device.Repositories
                 HasMoreEntries = hasMoreEntries,
                 Items = reportEntities
             };
+        }
+
+        public async Task<IEnumerable<ReportEntity>> GetAllFromDevice(Guid deviceId, CancellationToken cancellationToken = default)
+        {
+            FilterDefinition<ReportEntity> filter = Builders<ReportEntity>.Filter.Eq(x => x.DeviceId, deviceId);
+            IAsyncCursor<ReportEntity> cursor = await _collection.FindAsync(filter, cancellationToken: cancellationToken);
+            return await cursor.ToListAsync(cancellationToken);
         }
     }
 }

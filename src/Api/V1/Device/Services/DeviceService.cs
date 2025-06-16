@@ -35,7 +35,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
         Task<bool> IsDeviceConnected(Guid deviceId);
     }
 
-    public partial class DeviceService(IDeviceRepository repository, IDeviceStatusRepository deviceStatusRepository, IDeviceLogRepository deviceLogRepository, IReportRepository reportRepository, ISecretProvider secretProvider, IWebSocketService webSocketService, IPublisher publisher, IPublishEndpoint publishEndpoint, IRequestClient<GetFcmTokensRequestMessage> fcmTokenRequestClient, ILogger<DeviceService> logger) : IDeviceService
+    public partial class DeviceService(IDeviceRepository repository, IDeviceStatusRepository deviceStatusRepository, IDeviceLogRepository deviceLogRepository, IReportService reportService, ISecretProvider secretProvider, IWebSocketService webSocketService, IPublisher publisher, IPublishEndpoint publishEndpoint, IRequestClient<GetFcmTokensRequestMessage> fcmTokenRequestClient, ILogger<DeviceService> logger) : IDeviceService
     {
         private const string NAME_PATTERN = @"^[a-zA-Z0-9 \-]{3,16}$";
         private readonly static TimeSpan SECRET_EXPIRATION_TIME = TimeSpan.FromSeconds(1);
@@ -43,7 +43,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
         private readonly IDeviceRepository _repository = repository;
         private readonly IDeviceStatusRepository _deviceStatusRepository = deviceStatusRepository;
         private readonly IDeviceLogRepository _deviceLogRepository = deviceLogRepository;
-        private readonly IReportRepository _reportRepository = reportRepository;
+        private readonly IReportService _reportService = reportService;
         private readonly ISecretProvider _secretProvider = secretProvider;
         private readonly IWebSocketService _webSocketService = webSocketService;
         private readonly IPublisher _publisher = publisher;
@@ -89,7 +89,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
                 throw new DeviceUnauthorizedException();
 
             await _secretProvider.DeleteSecret(deviceId.ToString(), cancellationToken);
-            await _reportRepository.DeleteFromDevice(deviceId, cancellationToken);
+            await _reportService.DeleteAllFromDeviceId(deviceId, cancellationToken);
             await _deviceStatusRepository.DeleteCurrentStatus(deviceId, cancellationToken);
             await _deviceLogRepository.DeleteLogs(deviceId, cancellationToken);
             await _repository.Delete(deviceId, cancellationToken);

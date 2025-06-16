@@ -42,12 +42,12 @@ namespace BackBuddy.Api.Service.V1.Device.Repositories
 
         public async Task DeleteAllLikesFromReport(Guid reportId, CancellationToken cancellationToken = default)
         {
-            await _collection.DeleteOneAsync(x => x.ReportId == reportId, cancellationToken);
+            await _collection.DeleteManyAsync(x => x.ReportId == reportId, cancellationToken);
         }
 
         public async Task DeleteAllLikesFromUser(string userId, CancellationToken cancellationToken = default)
         {
-            await _collection.DeleteOneAsync(x => x.UserId == userId, cancellationToken);
+            await _collection.DeleteManyAsync(x => x.UserId == userId, cancellationToken);
         }
 
         public async Task DeleteLike(string userId, Guid reportId, CancellationToken cancellationToken = default)
