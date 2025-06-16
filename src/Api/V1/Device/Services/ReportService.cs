@@ -125,7 +125,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
 
         public async Task DeleteAllFromDeviceId(Guid deviceId, CancellationToken cancellationToken = default)
         {
-            IEnumerable<ReportEntity> reports = await _reportRepository.GetAllFromDevice(deviceId);
+            IEnumerable<ReportEntity> reports = await _reportRepository.GetAllFromDevice(deviceId, cancellationToken);
 
             IEnumerable<Task> tasks = reports.Select(async report =>
             {

@@ -17,8 +17,9 @@ namespace BackBuddy.Api.Test.V1
             IDeviceLogRepository deviceLogRepository = Substitute.For<IDeviceLogRepository>();
             IDeviceRepository deviceRepository = Substitute.For<IDeviceRepository>();
             IReportRepository reportRepository = Substitute.For<IReportRepository>();
+            IReportLikeService reportLikeService = Substitute.For<IReportLikeService>();
 
-            ReportService reportService = new(relationService, deviceLogRepository, deviceRepository, reportRepository);
+            ReportService reportService = new(reportLikeService, relationService, deviceLogRepository, deviceRepository, reportRepository);
 
             string creatorId = "user1";
             string userId = "user1";
@@ -46,7 +47,8 @@ namespace BackBuddy.Api.Test.V1
             IReportRepository reportRepository = Substitute.For<IReportRepository>();
 
             relationService.HasStrongRelation("user2", "user1").Returns(Task.FromResult(true));
-            ReportService reportService = new(relationService, deviceLogRepository, deviceRepository, reportRepository);
+            IReportLikeService reportLikeService = Substitute.For<IReportLikeService>();
+            ReportService reportService = new(reportLikeService, relationService, deviceLogRepository, deviceRepository, reportRepository);
 
             string creatorId = "user1";
             string userId = "user2";
@@ -71,9 +73,10 @@ namespace BackBuddy.Api.Test.V1
             IDeviceLogRepository deviceLogRepository = Substitute.For<IDeviceLogRepository>();
             IDeviceRepository deviceRepository = Substitute.For<IDeviceRepository>();
             IReportRepository reportRepository = Substitute.For<IReportRepository>();
+            IReportLikeService reportLikeService = Substitute.For<IReportLikeService>();
 
             relationService.HasStrongRelation("user3", "user1").Returns(Task.FromResult(false));
-            ReportService reportService = new(relationService, deviceLogRepository, deviceRepository, reportRepository);
+            ReportService reportService = new(reportLikeService, relationService, deviceLogRepository, deviceRepository, reportRepository);
 
             string creatorId = "user1";
             string userId = "user3";
