@@ -96,6 +96,7 @@ namespace BackBuddy.Api.Service.V1.Device.Controllers
             IEnumerable<Task<UserDto>> tasks = result.Items.Select(x => _userService.GetUserByIdAsync(x));
             UserDto[] users = await Task.WhenAll(tasks);
 
+            Response.AddPageHeader(result.HasMoreEntries);
             return Ok(users.ToList());
         }
     }

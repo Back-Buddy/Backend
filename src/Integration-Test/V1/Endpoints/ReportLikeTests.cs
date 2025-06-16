@@ -14,7 +14,6 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
         private static string _userId;
         private static FirebaseLib _firebaseLib;
         private static FirestoreLib _firestoreLib;
-        private static UserLib _userLib;
 
         private readonly static List<Guid> _deviceIds = [];
         private readonly static List<string> _otherUserIds = [];
@@ -27,7 +26,6 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             Uri baseUri = new(Environment.GetEnvironmentVariable("E2E_BASE_URI") ?? "http://localhost:8080/");
 
             _deviceLib = new DeviceLib(baseUri.ToString());
-            _userLib = new UserLib(baseUri.ToString());
             _reportLib = new ReportLib(baseUri.ToString());
 
             if (_accessToken == null)
@@ -81,17 +79,14 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
         public async Task Test_Like_Successful()
         {
             // Arrange
-            FirebaseRegisterResponseDto otherUser = await _firebaseLib.RegisterUserAsync("test2@gmail.com", "stringG.1212"); //NOT A REAL SECRET
-            string userId2 = otherUser.LocalId;
-            _otherUserIds.Add(userId2);
-            FirebaseLoginResponseDto loginUser2 = await _firebaseLib.SignInUserAsync("test2@gmail.com", "stringG.1212"); //NOT A REAL SECRET
-            string accessToken2 = loginUser2.IdToken;
+            (string userId2, string accessToken2) = await CreateDefaultUser("test2@gmail.com");
 
             await _firestoreLib.CreateUserObject(_userId, "Test User", []);
             await _firestoreLib.CreateUserObject(userId2, "Test User 2", []);
 
             JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
             Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            _deviceIds.Add(deviceId);
 
             JsonObject report = await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "All", DateTime.UtcNow.AddSeconds(-10), DateTime.UtcNow);
             Guid reportId = Guid.Parse(report["id"].GetValue<string>());
@@ -111,6 +106,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             // Arrange
             JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
             Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            _deviceIds.Add(deviceId);
 
             JsonObject report = await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "All", DateTime.UtcNow.AddSeconds(-10), DateTime.UtcNow);
             Guid reportId = Guid.Parse(report["id"].GetValue<string>());
@@ -126,17 +122,14 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
         public async Task Test_Like_Double_Like_Error()
         {
             // Arrange
-            FirebaseRegisterResponseDto otherUser = await _firebaseLib.RegisterUserAsync("test2@gmail.com", "stringG.1212"); //NOT A REAL SECRET
-            string userId2 = otherUser.LocalId;
-            _otherUserIds.Add(userId2);
-            FirebaseLoginResponseDto loginUser2 = await _firebaseLib.SignInUserAsync("test2@gmail.com", "stringG.1212"); //NOT A REAL SECRET
-            string accessToken2 = loginUser2.IdToken;
+            (string userId2, string accessToken2) = await CreateDefaultUser("test2@gmail.com");
 
             await _firestoreLib.CreateUserObject(_userId, "Test User", []);
             await _firestoreLib.CreateUserObject(userId2, "Test User 2", []);
 
             JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
             Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            _deviceIds.Add(deviceId);
 
             JsonObject report = await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "All", DateTime.UtcNow.AddSeconds(-10), DateTime.UtcNow);
             Guid reportId = Guid.Parse(report["id"].GetValue<string>());
@@ -151,6 +144,88 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             JsonObject likedReport = await _reportLib.GetReport(accessToken2, reportId, "None");
             Assert.IsNotNull(likedReport);
             Assert.AreEqual(1, likedReport["likeCount"].GetValue<long>());
+        }
+
+        [TestMethod]
+        public async Task Test_GetLikes_Successful()
+        {
+            // Arrange
+            (string userId2, string accessToken2) = await CreateDefaultUser("test2@gmail.com");
+
+            await _firestoreLib.CreateUserObject(_userId, "Test User", []);
+            await _firestoreLib.CreateUserObject(userId2, "Test User 2", []);
+
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            _deviceIds.Add(deviceId);
+
+            JsonObject report = await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "All", DateTime.UtcNow.AddSeconds(-10), DateTime.UtcNow);
+            Guid reportId = Guid.Parse(report["id"].GetValue<string>());
+
+            await _reportLib.LikeReport(accessToken2, reportId);
+
+            // Act
+            (JsonArray likes, bool _) = await _reportLib.GetLikes(accessToken2, reportId);
+
+            // Assert
+            Assert.AreEqual(1, likes.Count);
+            JsonObject like = likes[0].AsObject();
+            Assert.AreEqual(userId2, like["userId"].GetValue<string>());
+            Assert.AreEqual("Test User 2", like["username"].GetValue<string>());
+        }
+
+        [TestMethod]
+        public async Task Test_GetLikes_Pagination()
+        {
+            // Arrange
+            (string userId2, string accessToken2) = await CreateDefaultUser("test2@gmail.com");
+            (string userId3, string accessToken3) = await CreateDefaultUser("test3@gmail.com");
+            (string userId4, string accessToken4) = await CreateDefaultUser("test4@gmail.com");
+            (string userId5, string accessToken5) = await CreateDefaultUser("test5@gmail.com");
+            (string userId6, string accessToken6) = await CreateDefaultUser("test6@gmail.com");
+
+            await _firestoreLib.CreateUserObject(_userId, "Test User", []);
+            await _firestoreLib.CreateUserObject(userId2, "Test User 2", []);
+            await _firestoreLib.CreateUserObject(userId3, "Test User 3", []);
+            await _firestoreLib.CreateUserObject(userId4, "Test User 4", []);
+            await _firestoreLib.CreateUserObject(userId5, "Test User 5", []);
+            await _firestoreLib.CreateUserObject(userId6, "Test User 6", []);
+
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            _deviceIds.Add(deviceId);
+
+            JsonObject report = await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "All", DateTime.UtcNow.AddSeconds(-10), DateTime.UtcNow);
+            Guid reportId = Guid.Parse(report["id"].GetValue<string>());
+
+            await _reportLib.LikeReport(accessToken2, reportId);
+            await _reportLib.LikeReport(accessToken3, reportId);
+            await _reportLib.LikeReport(accessToken4, reportId);
+            await _reportLib.LikeReport(accessToken5, reportId);
+            await _reportLib.LikeReport(accessToken6, reportId);
+
+            // Act & Assert
+            (JsonArray likes, bool hasMoreEntries) = await _reportLib.GetLikes(accessToken2, reportId, page: 1, pageSize: 2);
+            Assert.IsTrue(hasMoreEntries);
+            Assert.AreEqual(2, likes.Count);
+
+            (JsonArray likes2, bool hasMoreEntries2) = await _reportLib.GetLikes(accessToken2, reportId, page: 2, pageSize: 2);
+            Assert.IsTrue(hasMoreEntries2);
+            Assert.AreEqual(2, likes2.Count);
+
+            (JsonArray likes3, bool hasMoreEntries3) = await _reportLib.GetLikes(accessToken2, reportId, page: 3, pageSize: 2);
+            Assert.IsFalse(hasMoreEntries3);
+            Assert.AreEqual(1, likes3.Count);
+        }
+
+        private static async Task<(string, string)> CreateDefaultUser(string email)
+        {
+            FirebaseRegisterResponseDto user = await _firebaseLib.RegisterUserAsync(email, "stringG.1212"); //NOT A REAL SECRET
+            string userId = user.LocalId;
+            _otherUserIds.Add(userId);
+            FirebaseLoginResponseDto loginUser = await _firebaseLib.SignInUserAsync(email, "stringG.1212"); //NOT A REAL SECRET
+            string accessToken = loginUser.IdToken;
+            return (userId, accessToken);
         }
     }
 }
