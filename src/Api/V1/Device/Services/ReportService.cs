@@ -19,6 +19,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
         Task<ReportEntity> GetReportEntity(Guid reportId, CancellationToken cancellationToken = default);
         Task<Page<List<ReportDto>>> GetReports(string userId, ReportQueryDto query, PageRequestDto page, ReportExpandType expandType, CancellationToken cancellationToken = default);
         Task DeleteReport(string userId, Guid reportId, CancellationToken cancellationToken = default);
+        Task<IEnumerable<ReportVisibilityType>> GetVisibilityTypeForUser(string userId, ReportEntity targetReport);
         Task<IEnumerable<ReportVisibilityType>> GetVisibilityTypeForUser(string userId, Guid targetReport, CancellationToken cancellationToken = default);
         Task<Page<List<ReportDto>>> GetReportFeed(string userId, ReportFeedQueryDto query, PageRequestDto page, CancellationToken cancellationToken = default);
     }
@@ -217,6 +218,12 @@ namespace BackBuddy.Api.Service.V1.Device.Services
                 AverageSitPeriod = averageSitPeriod
             }, sitLogs);
         }
+
+        public async Task<IEnumerable<ReportVisibilityType>> GetVisibilityTypeForUser(string userId, ReportEntity targetReport)
+        {
+            return await GetReportVisibilityTypeForUser(targetReport.UserId, userId);
+        }
+
         public async Task<IEnumerable<ReportVisibilityType>> GetVisibilityTypeForUser(string userId, Guid targetReport, CancellationToken cancellationToken = default)
         {
             ReportEntity report = await _reportRepository.Get(targetReport, cancellationToken) ?? throw new ReportNotFoundException();

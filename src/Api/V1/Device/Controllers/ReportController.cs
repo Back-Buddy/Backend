@@ -76,8 +76,8 @@ namespace BackBuddy.Api.Service.V1.Device.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> LikeReport([FromRoute] Guid reportId, CancellationToken cancellationToken = default)
         {
-            IEnumerable<ReportVisibilityType> visibilityTypes = await _reportService.GetVisibilityTypeForUser(this.GetUserId(), reportId, cancellationToken);
             ReportEntity reportEntity = await _reportService.GetReportEntity(reportId, cancellationToken);
+            IEnumerable<ReportVisibilityType> visibilityTypes = await _reportService.GetVisibilityTypeForUser(this.GetUserId(), reportEntity);
 
             await _reportLikeService.AddLike(this.GetUserId(), reportEntity, visibilityTypes, cancellationToken);
             return NoContent();
@@ -89,7 +89,7 @@ namespace BackBuddy.Api.Service.V1.Device.Controllers
         public async Task<IActionResult> GetLikes([FromRoute] Guid reportId, [FromQuery] PageRequestDto pageQuery, CancellationToken cancellationToken = default)
         {
             ReportEntity reportEntity = await _reportService.GetReportEntity(reportId, cancellationToken);
-            IEnumerable<ReportVisibilityType> visibilityTypes = await _reportService.GetVisibilityTypeForUser(this.GetUserId(), reportId, cancellationToken);
+            IEnumerable<ReportVisibilityType> visibilityTypes = await _reportService.GetVisibilityTypeForUser(this.GetUserId(), reportEntity);
 
             Page<List<string>> result = await _reportLikeService.GetReportLikesFromReport(reportEntity, visibilityTypes, pageQuery, cancellationToken);
 
