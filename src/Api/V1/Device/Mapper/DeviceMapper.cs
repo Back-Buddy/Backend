@@ -28,7 +28,7 @@ namespace BackBuddy.Api.Service.V1.Device.Mapper
             };
         }
 
-        public static ReportDto ToDto(this ReportEntity entity, bool isOwner, long likeCont, List<DeviceLogDto>? deviceLogDtos = null)
+        public static ReportDto ToDto(this ReportEntity entity, bool isOwner, long likeCount, List<DeviceLogDto>? deviceLogDtos = null)
         {
             return new ReportDto()
             {
@@ -42,7 +42,7 @@ namespace BackBuddy.Api.Service.V1.Device.Mapper
                 UsedLogs = deviceLogDtos,
                 Metadata = entity.Metadata.ToDto(),
                 CreatedAt = entity.CreatedAt,
-                LikeCount = likeCont,
+                LikeCount = likeCount,
             };
         }
 
