@@ -109,7 +109,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             Assert.AreEqual(visibilityType, report["visibilityType"].GetValue<string>());
             Assert.AreEqual(startTime, report["startTime"].GetValue<DateTime>());
             Assert.AreEqual(endTime, report["endTime"].GetValue<DateTime>());
-
+            Assert.AreEqual(0, report["likeCount"].GetValue<long>());
             Assert.AreEqual(1, report["usedLogsIds"].AsArray().Count);
 
             JsonObject metaData = report["metadata"].AsObject();
@@ -284,6 +284,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             Assert.AreEqual(startTime.ToString("f"), getReport["startTime"].GetValue<DateTime>().ToString("f"));
             Assert.AreEqual(endTime.ToString("f"), getReport["endTime"].GetValue<DateTime>().ToString("f"));
             Assert.AreEqual(1, getReport["usedLogsIds"].AsArray().Count);
+            Assert.AreEqual(0, getReport["likeCount"].GetValue<long>());
             Assert.IsNull(getReport["usedLogs"]);
         }
 

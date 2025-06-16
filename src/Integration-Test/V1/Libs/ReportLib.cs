@@ -131,6 +131,28 @@ namespace BackBuddy.Integration_Test.V1.Libs
                 throw new RequestFailedException(responseMessage);
         }
 
+        public async Task LikeReport(string accessToken, Guid reportId)
+        {
+            HttpRequestMessage requestMessage = new(HttpMethod.Put, $"/api/v1/report/{reportId}/like");
+            requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            HttpResponseMessage responseMessage = await _httpClient.SendAsync(requestMessage);
+            if (!responseMessage.IsSuccessStatusCode)
+                throw new RequestFailedException(responseMessage);
+        }
+
+        public async Task<(JsonArray likes, bool hasMoreEntries)> GetLikes(string accessToken, Guid reportId, int page = 1, int pageSize = 10)
+        {
+            HttpRequestMessage requestMessage = new(HttpMethod.Get, $"/api/v1/report/{reportId}/likes?page={page}&size={pageSize}");
+            requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            HttpResponseMessage responseMessage = await _httpClient.SendAsync(requestMessage);
+            if (!responseMessage.IsSuccessStatusCode)
+                throw new RequestFailedException(responseMessage);
+            string rawContent = await responseMessage.Content.ReadAsStringAsync();
+            JsonArray likes = JsonSerializer.Deserialize<JsonArray>(rawContent);
+            bool hasMoreEntries = bool.Parse(responseMessage.Headers.GetValues("X-Has-More-Entries").First().ToString());
+            return (likes, hasMoreEntries);
+        }
+
         public async Task CreateSampleReports(string websocketUri, string deviceSecret, string accessToken, Guid deviceId, string name, string visibilityType, int count, TimeSpan delay)
         {
             for (int i = 0; i < count; i++)

@@ -11,7 +11,6 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
         private static ReportLib _reportLib;
         private static string _accessToken;
         private static string _userId;
-        private static string _webSocketUri;
         private static FirebaseLib _firebaseLib;
         private static FirestoreLib _firestoreLib;
         private static UserLib _userLib;
@@ -22,7 +21,6 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
         [ClassInitialize]
         public static async Task ClassInitialize(TestContext _)
         {
-            _webSocketUri = Environment.GetEnvironmentVariable("E2E_WEBSOCKET_URI") ?? "ws://localhost:8080/";
             _accessToken = Environment.GetEnvironmentVariable("E2E_ACCESS_TOKEN");
             _userId = Environment.GetEnvironmentVariable("E2E_USER_ID");
             Uri baseUri = new(Environment.GetEnvironmentVariable("E2E_BASE_URI") ?? "http://localhost:8080/");
