@@ -1,5 +1,4 @@
 ﻿using BackBuddy.Api.Service.V1.Device.Enums;
-using BackBuddy.Api.Service.V1.Users.Dtos;
 
 namespace BackBuddy.Api.Service.V1.Device.DTOs
 {
@@ -16,6 +15,5 @@ namespace BackBuddy.Api.Service.V1.Device.DTOs
         public required ReportMetadataDto Metadata { get; init; }
         public required DateTime CreatedAt { get; init; }
         public required long LikeCount { get; init; } = 0;
-        public required List<UserDto>? Likes { get; init; }
     }
 }

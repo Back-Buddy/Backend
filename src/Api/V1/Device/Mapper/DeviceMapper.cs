@@ -1,6 +1,5 @@
 ﻿using BackBuddy.Api.Service.V1.Device.DTOs;
 using BackBuddy.Api.Service.V1.Device.Entities;
-using BackBuddy.Api.Service.V1.Users.Dtos;
 
 namespace BackBuddy.Api.Service.V1.Device.Mapper
 {
@@ -29,7 +28,7 @@ namespace BackBuddy.Api.Service.V1.Device.Mapper
             };
         }
 
-        public static ReportDto ToDto(this ReportEntity entity, bool isOwner, long likeCont, List<DeviceLogDto>? deviceLogDtos = null, List<UserDto>? likes = null)
+        public static ReportDto ToDto(this ReportEntity entity, bool isOwner, long likeCont, List<DeviceLogDto>? deviceLogDtos = null)
         {
             return new ReportDto()
             {
@@ -44,7 +43,6 @@ namespace BackBuddy.Api.Service.V1.Device.Mapper
                 Metadata = entity.Metadata.ToDto(),
                 CreatedAt = entity.CreatedAt,
                 LikeCount = likeCont,
-                Likes = likes,
             };
         }
 
@@ -76,9 +74,9 @@ namespace BackBuddy.Api.Service.V1.Device.Mapper
             return [.. dtos];
         }
 
-        public async static Task<List<ReportDto>> ToDto(this IEnumerable<ReportEntity> entities, Func<ReportEntity, bool> isOwnerFunction, Func<ReportEntity, Task<long>> likeCountFunc, Func<ReportEntity, Task<List<DeviceLogDto>>>? getDeviceLogsFunction = null, Func<ReportEntity, Task<List<UserDto>>>? userLikeFunc = null)
+        public async static Task<List<ReportDto>> ToDto(this IEnumerable<ReportEntity> entities, Func<ReportEntity, bool> isOwnerFunction, Func<ReportEntity, Task<long>> likeCountFunc, Func<ReportEntity, Task<List<DeviceLogDto>>>? getDeviceLogsFunction = null)
         {
-            IEnumerable<Task<ReportDto>> tasks = entities.Select(async e => e.ToDto(isOwnerFunction.Invoke(e), await likeCountFunc.Invoke(e), getDeviceLogsFunction != null ? await getDeviceLogsFunction.Invoke(e) : null, userLikeFunc != null ? await userLikeFunc.Invoke(e) : null));
+            IEnumerable<Task<ReportDto>> tasks = entities.Select(async e => e.ToDto(isOwnerFunction.Invoke(e), await likeCountFunc.Invoke(e), getDeviceLogsFunction != null ? await getDeviceLogsFunction.Invoke(e) : null));
             ReportDto[] dtos = await Task.WhenAll(tasks);
             return [.. dtos];
         }

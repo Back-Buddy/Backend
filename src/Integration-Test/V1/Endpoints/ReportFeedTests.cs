@@ -15,7 +15,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
         private static FirestoreLib _firestoreLib;
         private static UserLib _userLib;
 
-        private readonly static List<Guid> _deviceIds = [];
+        private readonly static List<(Guid, string)> _deviceIds = [];
         private readonly static List<string> _otherUserIds = [];
 
         [ClassInitialize]
@@ -69,9 +69,9 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
 
         private static async Task CleanUpDevices()
         {
-            foreach (Guid deviceId in _deviceIds)
+            foreach ((Guid deviceId, string accessToken) in _deviceIds)
             {
-                await _deviceLib.DeleteDevice(_accessToken, deviceId);
+                await _deviceLib.DeleteDevice(accessToken, deviceId);
             }
             _deviceIds.Clear();
         }
@@ -85,7 +85,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             // Arrange
             JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
             Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
-            _deviceIds.Add(deviceId);
+            _deviceIds.Add((deviceId, _accessToken));
 
             JsonObject report = await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", visibilityType, DateTime.UtcNow.AddSeconds(-10), DateTime.UtcNow);
 
@@ -113,6 +113,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
 
             JsonObject device = await _deviceLib.CreateDevice(accessToken2, "TestDevice");
             Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            _deviceIds.Add((deviceId, accessToken2));
 
             JsonObject report = await _reportLib.CreateReport(accessToken2, deviceId, "Test Report", "All", DateTime.UtcNow.AddSeconds(-10), DateTime.UtcNow);
 
@@ -142,6 +143,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
 
             JsonObject device = await _deviceLib.CreateDevice(accessToken2, "TestDevice");
             Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            _deviceIds.Add((deviceId, accessToken2));
 
             await _reportLib.CreateReport(accessToken2, deviceId, "Test Report", "All", DateTime.UtcNow.AddSeconds(-10), DateTime.UtcNow);
 
@@ -168,6 +170,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
 
             JsonObject device = await _deviceLib.CreateDevice(accessToken2, "TestDevice");
             Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            _deviceIds.Add((deviceId, accessToken2));
 
             JsonObject report = await _reportLib.CreateReport(accessToken2, deviceId, "Test Report", "Followers", DateTime.UtcNow.AddSeconds(-10), DateTime.UtcNow);
 
@@ -198,6 +201,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
 
             JsonObject device = await _deviceLib.CreateDevice(accessToken2, "TestDevice");
             Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            _deviceIds.Add((deviceId, accessToken2));
 
             await _reportLib.CreateReport(accessToken2, deviceId, "Test Report", "Followers", DateTime.UtcNow.AddSeconds(-10), DateTime.UtcNow);
 
@@ -233,13 +237,15 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
 
             JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
             Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
-            _deviceIds.Add(deviceId);
+            _deviceIds.Add((deviceId, _accessToken));
 
             JsonObject deviceUser1 = await _deviceLib.CreateDevice(accessToken2, "TestDevice");
             Guid deviceIdUser1 = Guid.Parse(deviceUser1["deviceId"].GetValue<string>());
+            _deviceIds.Add((deviceIdUser1, accessToken2));
 
             JsonObject deviceUser2 = await _deviceLib.CreateDevice(accessToken3, "TestDevice");
             Guid deviceIdUser2 = Guid.Parse(deviceUser2["deviceId"].GetValue<string>());
+            _deviceIds.Add((deviceIdUser2, accessToken3));
 
             JsonObject report1 = await _reportLib.CreateReport(_accessToken, deviceId, "Test Report 1", "All", DateTime.UtcNow.AddSeconds(-10), DateTime.UtcNow);
             JsonObject report2 = await _reportLib.CreateReport(_accessToken, deviceId, "Test Report 2", "Private", DateTime.UtcNow.AddSeconds(-10), DateTime.UtcNow);
@@ -289,13 +295,15 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
 
             JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
             Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
-            _deviceIds.Add(deviceId);
+            _deviceIds.Add((deviceId, _accessToken));
 
             JsonObject deviceUser1 = await _deviceLib.CreateDevice(accessToken2, "TestDevice");
             Guid deviceIdUser1 = Guid.Parse(deviceUser1["deviceId"].GetValue<string>());
+            _deviceIds.Add((deviceIdUser1, accessToken2));
 
             JsonObject deviceUser2 = await _deviceLib.CreateDevice(accessToken3, "TestDevice");
             Guid deviceIdUser2 = Guid.Parse(deviceUser2["deviceId"].GetValue<string>());
+            _deviceIds.Add((deviceIdUser2, accessToken3));
 
             JsonObject report1 = await _reportLib.CreateReport(_accessToken, deviceId, "Test Report 1", "All", DateTime.UtcNow.AddSeconds(-10), DateTime.UtcNow);
             JsonObject report2 = await _reportLib.CreateReport(_accessToken, deviceId, "Test Report 2", "Private", DateTime.UtcNow.AddSeconds(-10), DateTime.UtcNow);
@@ -329,7 +337,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             // Arrange
             JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
             Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
-            _deviceIds.Add(deviceId);
+            _deviceIds.Add((deviceId, _accessToken));
 
             await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "All", DateTime.UtcNow.AddSeconds(-10), DateTime.UtcNow);
 
@@ -348,12 +356,12 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             // Arrange
             JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
             Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
-            _deviceIds.Add(deviceId);
+            _deviceIds.Add((deviceId, _accessToken));
 
             await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "All", DateTime.UtcNow.AddSeconds(-10), DateTime.UtcNow);
 
             // Act
-            (JsonArray reports, bool hasMoreEntries) = await _reportLib.GetFeed(_accessToken, expandType: "DeviceLogs");
+            (JsonArray reports, bool hasMoreEntries) = await _reportLib.GetFeed(_accessToken, expandType: "None");
 
             // Assert
             Assert.IsFalse(hasMoreEntries);
@@ -383,13 +391,15 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
 
             JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
             Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
-            _deviceIds.Add(deviceId);
+            _deviceIds.Add((deviceId, _accessToken));
 
             JsonObject deviceUser1 = await _deviceLib.CreateDevice(accessToken2, "TestDevice");
             Guid deviceIdUser1 = Guid.Parse(deviceUser1["deviceId"].GetValue<string>());
+            _deviceIds.Add((deviceIdUser1, accessToken2));
 
             JsonObject deviceUser2 = await _deviceLib.CreateDevice(accessToken3, "TestDevice");
             Guid deviceIdUser2 = Guid.Parse(deviceUser2["deviceId"].GetValue<string>());
+            _deviceIds.Add((deviceIdUser2, accessToken3));
 
             await _reportLib.CreateReport(_accessToken, deviceId, "Test Report 1", "All", DateTime.UtcNow.AddSeconds(-10), DateTime.UtcNow);
             await _reportLib.CreateReport(_accessToken, deviceId, "Test Report 2", "Private", DateTime.UtcNow.AddSeconds(-10), DateTime.UtcNow);
