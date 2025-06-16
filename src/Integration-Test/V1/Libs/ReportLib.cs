@@ -20,10 +20,12 @@ namespace BackBuddy.Integration_Test.V1.Libs
             };
         }
 
-        public async Task<JsonObject> CreateReport(string accessToken, Guid deviceId, DateTime startTime, DateTime endTime)
+        public async Task<JsonObject> CreateReport(string accessToken, Guid deviceId, string name, string visibilityType, DateTime startTime, DateTime endTime)
         {
             JsonObject request = new()
             {
+                ["name"] = name,
+                ["visibilityType"] = visibilityType,
                 ["deviceId"] = deviceId,
                 ["startTime"] = startTime,
                 ["endTime"] = endTime
@@ -43,9 +45,28 @@ namespace BackBuddy.Integration_Test.V1.Libs
             return reportObj;
         }
 
-        public async Task<JsonObject> GetReport(string accessToken, Guid reportId)
+        public async Task UpdateReport(string accessToken, Guid reportId, string name = null, string visibilityType = null)
         {
-            HttpRequestMessage requestMessage = new(HttpMethod.Get, $"/api/v1/report/{reportId}");
+            JsonObject request = [];
+            if (name != null)
+                request["name"] = name;
+            if (visibilityType != null)
+                request["visibilityType"] = visibilityType;
+
+            StringContent content = new(request.ToJsonString(), Encoding.UTF8, MediaTypeNames.Application.Json);
+
+            HttpRequestMessage requestMessage = new(HttpMethod.Patch, $"/api/v1/report/{reportId}");
+            requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            requestMessage.Content = content;
+
+            HttpResponseMessage responseMessage = await _httpClient.SendAsync(requestMessage);
+            if (!responseMessage.IsSuccessStatusCode)
+                throw new RequestFailedException(responseMessage);
+        }
+
+        public async Task<JsonObject> GetReport(string accessToken, Guid reportId, string expandType = "None")
+        {
+            HttpRequestMessage requestMessage = new(HttpMethod.Get, $"/api/v1/report/{reportId}?expandType={expandType}");
             requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
             HttpResponseMessage responseMessage = await _httpClient.SendAsync(requestMessage);
             if (!responseMessage.IsSuccessStatusCode)
@@ -56,10 +77,10 @@ namespace BackBuddy.Integration_Test.V1.Libs
             return reportObj;
         }
 
-        public async Task<(JsonArray reports, bool hasMoreEntries)> GetReports(string accessToken, List<Guid> deviceIds = null, DateTime? startTime = null, DateTime? endTime = null, bool descending = true, int pageSize = 10, int page = 1)
+        public async Task<(JsonArray reports, bool hasMoreEntries)> GetReports(string accessToken, List<Guid> deviceIds = null, string userId = null, DateTime? startTime = null, DateTime? endTime = null, bool descending = true, int pageSize = 10, int page = 1, string expandType = "None")
         {
             StringBuilder queryBuilder = new();
-            queryBuilder.Append($"?size={pageSize}&page={page}");
+            queryBuilder.Append($"?size={pageSize}&page={page}&expandType={expandType}");
 
             foreach (Guid deviceId in deviceIds ?? [])
             {
@@ -69,6 +90,9 @@ namespace BackBuddy.Integration_Test.V1.Libs
                 queryBuilder.Append($"&startTime={startTime.Value:o}");
             if (endTime.HasValue)
                 queryBuilder.Append($"&endTime={endTime.Value:o}");
+            if (!string.IsNullOrEmpty(userId))
+                queryBuilder.Append($"&userId={userId}");
+
             queryBuilder.Append($"&descending={descending}");
 
             HttpRequestMessage requestMessage = new(HttpMethod.Get, $"/api/v1/report{queryBuilder}");
@@ -85,6 +109,19 @@ namespace BackBuddy.Integration_Test.V1.Libs
             return (reports, hasMoreEntries);
         }
 
+        public async Task<(JsonArray reports, bool hasMoreEntries)> GetFeed(string accessToken, bool descending = true, string expandType = "None", int page = 1, int pageSize = 10)
+        {
+            HttpRequestMessage requestMessage = new(HttpMethod.Get, $"/api/v1/report/feed?page={page}&size={pageSize}&expandType={expandType}&descending={descending}");
+            requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            HttpResponseMessage responseMessage = await _httpClient.SendAsync(requestMessage);
+            if (!responseMessage.IsSuccessStatusCode)
+                throw new RequestFailedException(responseMessage);
+            string rawContent = await responseMessage.Content.ReadAsStringAsync();
+            JsonArray reports = JsonSerializer.Deserialize<JsonArray>(rawContent);
+            bool hasMoreEntries = bool.Parse(responseMessage.Headers.GetValues("X-Has-More-Entries").First().ToString());
+            return (reports, hasMoreEntries);
+        }
+
         public async Task DeleteReport(string accessToken, Guid reportId)
         {
             HttpRequestMessage requestMessage = new(HttpMethod.Delete, $"/api/v1/report/{reportId}");
@@ -94,13 +131,35 @@ namespace BackBuddy.Integration_Test.V1.Libs
                 throw new RequestFailedException(responseMessage);
         }
 
-        public async Task CreateSampleReports(string websocketUri, string deviceSecret, string accessToken, Guid deviceId, int count, TimeSpan delay)
+        public async Task LikeReport(string accessToken, Guid reportId)
+        {
+            HttpRequestMessage requestMessage = new(HttpMethod.Put, $"/api/v1/report/{reportId}/like");
+            requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            HttpResponseMessage responseMessage = await _httpClient.SendAsync(requestMessage);
+            if (!responseMessage.IsSuccessStatusCode)
+                throw new RequestFailedException(responseMessage);
+        }
+
+        public async Task<(JsonArray likes, bool hasMoreEntries)> GetLikes(string accessToken, Guid reportId, int page = 1, int pageSize = 10)
+        {
+            HttpRequestMessage requestMessage = new(HttpMethod.Get, $"/api/v1/report/{reportId}/likes?page={page}&size={pageSize}");
+            requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            HttpResponseMessage responseMessage = await _httpClient.SendAsync(requestMessage);
+            if (!responseMessage.IsSuccessStatusCode)
+                throw new RequestFailedException(responseMessage);
+            string rawContent = await responseMessage.Content.ReadAsStringAsync();
+            JsonArray likes = JsonSerializer.Deserialize<JsonArray>(rawContent);
+            bool hasMoreEntries = bool.Parse(responseMessage.Headers.GetValues("X-Has-More-Entries").First().ToString());
+            return (likes, hasMoreEntries);
+        }
+
+        public async Task CreateSampleReports(string websocketUri, string deviceSecret, string accessToken, Guid deviceId, string name, string visibilityType, int count, TimeSpan delay)
         {
             for (int i = 0; i < count; i++)
             {
                 DateTime start = DateTime.UtcNow;
                 await DeviceLogLib.CreateSampleLogs(websocketUri, deviceSecret, 1, 0, delay);
-                await CreateReport(accessToken, deviceId, start, DateTime.UtcNow);
+                await CreateReport(accessToken, deviceId, name, visibilityType, start, DateTime.UtcNow);
             }
         }
 

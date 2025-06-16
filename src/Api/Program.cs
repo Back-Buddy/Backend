@@ -86,6 +86,23 @@ builder.Services
                                                         .Ascending(x => x.UserId);
         CreateIndexModel<UserFollowEntity> userIndexModel = new(userIndexKeys, new CreateIndexOptions { Unique = false });
         await collection.Indexes.CreateOneAsync(userIndexModel);
+    })
+    .AddCollection<ReportLikeEntity>(nameof(ReportLikeEntity), async collection =>
+    {
+        IndexKeysDefinition<ReportLikeEntity> indexKeys = new IndexKeysDefinitionBuilder<ReportLikeEntity>()
+                                                .Ascending(x => x.UserId).Ascending(x => x.ReportId);
+        CreateIndexModel<ReportLikeEntity> indexModel = new(indexKeys, new CreateIndexOptions { Unique = true });
+        await collection.Indexes.CreateOneAsync(indexModel);
+
+        IndexKeysDefinition<ReportLikeEntity> targetIndexKeys = new IndexKeysDefinitionBuilder<ReportLikeEntity>()
+                                                        .Ascending(x => x.ReportId);
+        CreateIndexModel<ReportLikeEntity> targetIndexModel = new(targetIndexKeys, new CreateIndexOptions { Unique = false });
+        await collection.Indexes.CreateOneAsync(targetIndexModel);
+
+        IndexKeysDefinition<ReportLikeEntity> userIndexKeys = new IndexKeysDefinitionBuilder<ReportLikeEntity>()
+                                                        .Ascending(x => x.UserId);
+        CreateIndexModel<ReportLikeEntity> userIndexModel = new(userIndexKeys, new CreateIndexOptions { Unique = false });
+        await collection.Indexes.CreateOneAsync(userIndexModel);
     });
 #endregion
 
@@ -188,6 +205,9 @@ builder.Services.AddScoped<IWebSocketService, WebSocketService>();
 
 builder.Services.AddSingleton<IConnectedDeviceRepository, ConnectedDeviceRepository>();
 
+builder.Services.AddScoped<IReportLikeRepository, ReportLikeRepository>();
+builder.Services.AddScoped<IReportLikeService, ReportLikeService>();
+
 builder.Services.AddSingleton<ConnectedDeviceHeartbeatService>();
 
 builder.Services.AddHostedService(x =>
@@ -215,6 +235,7 @@ builder.Services.AddMassTransit(x =>
     x.AddConsumer<SendNotificationConsumer>();
     x.AddConsumer<GetFcmTokensConsumer>();
     x.AddConsumer<UserDeletedConsumer>();
+    x.AddConsumer<GetUserConsumer>();
     x.AddConsumer<UserFollowedConsumer>();
 
     string connection = builder.Configuration.GetValue<string>($"MESSAGE_QUEUE_CONNECTION") ?? throw new InvalidOperationException("MESSAGE_QUEUE_CONNECTION is not set!");

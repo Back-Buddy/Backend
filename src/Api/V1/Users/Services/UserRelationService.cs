@@ -4,6 +4,7 @@ using BackBuddy.Api.Service.V1.Users.Entities;
 using BackBuddy.Api.Service.V1.Users.Exceptions;
 using BackBuddy.Api.Service.V1.Users.Repositories;
 using BackBuddy.Api.Service.V1.Utilities;
+using System.Collections.Concurrent;
 using MassTransit;
 
 namespace BackBuddy.Api.Service.V1.Users.Services
@@ -14,6 +15,9 @@ namespace BackBuddy.Api.Service.V1.Users.Services
         Task RemoveRelation(string userId, string targetUserId, CancellationToken cancellationToken = default);
 
         Task<bool> HasRelation(string userId, string targetUserId, CancellationToken cancellationToken = default);
+        ///<summary>
+        /// Checks if the user has a strong relation with the target user, meaning both users follow each other.
+        /// </summary>
         Task<bool> HasStrongRelation(string userId, string targetUserId, CancellationToken cancellationToken = default);
 
         Task<long> CountIncomingRelations(string userId, CancellationToken cancellationToken = default);
@@ -27,6 +31,7 @@ namespace BackBuddy.Api.Service.V1.Users.Services
         Task DeleteUser(string userId, CancellationToken cancellationToken = default);
 
         Task<UserRelationDto> GetUserRelation(string userId, string targetUserId, CancellationToken cancellationToken = default);
+        Task<(IEnumerable<string> StrongRelations, IEnumerable<string> Following)> GetStrongFollowRelationsAndAllFollowings(string userId, CancellationToken cancellationToken = default);
     }
 
     public class UserRelationService(IUserRelationRepository repository, IPublishEndpoint publishEndpoint) : IUserRelationService
@@ -143,6 +148,37 @@ namespace BackBuddy.Api.Service.V1.Users.Services
                 IsFollowing = hasRelations[0],
                 IsFollowedBy = hasRelations[1],
             };
+        }
+
+        public async Task<(IEnumerable<string> StrongRelations, IEnumerable<string> Following)> GetStrongFollowRelationsAndAllFollowings(string userId, CancellationToken cancellationToken = default)
+        {
+            int page = 1;
+            Page<List<UserFollowEntity>> bufferedOutgoingRelations;
+            List<UserFollowEntity> outgoingRelations = [];
+            do
+            {
+                PageRequestDto pageDto = new()
+                {
+                    Page = page++,
+                    Size = 10000,
+                };
+                bufferedOutgoingRelations = await _repository.GetOutgoingRelations(userId, pageDto, cancellationToken);
+                outgoingRelations.AddRange(bufferedOutgoingRelations.Items);
+            } while (bufferedOutgoingRelations.HasMoreEntries && !cancellationToken.IsCancellationRequested);
+
+            ConcurrentBag<string> strongRelations = [];
+
+            await Parallel.ForEachAsync(outgoingRelations,
+                new ParallelOptions
+                {
+                    CancellationToken = cancellationToken
+                }, async (relation, token) =>
+                {
+                    if (await HasStrongRelation(userId, relation.TargetId, cancellationToken))
+                        strongRelations.Add(relation.TargetId);
+                }
+            );
+            return (strongRelations, outgoingRelations.Select(x => x.TargetId));
         }
     }
 }

@@ -28,16 +28,21 @@ namespace BackBuddy.Api.Service.V1.Device.Mapper
             };
         }
 
-        public static ReportDto ToDto(this ReportEntity entity)
+        public static ReportDto ToDto(this ReportEntity entity, bool isOwner, long likeCount, List<DeviceLogDto>? deviceLogDtos = null)
         {
             return new ReportDto()
             {
                 Id = entity.Id,
-                DeviceId = entity.DeviceId,
+                Name = entity.Name,
+                VisibilityType = isOwner ? entity.VisibilityType : null,
+                DeviceId = isOwner ? entity.DeviceId : null,
                 StartTime = entity.StartTime,
                 EndTime = entity.EndTime,
-                UsedLogs = entity.UsedLogs,
-                Metadata = entity.Metadata.ToDto()
+                UsedLogsIds = isOwner ? entity.UsedLogs : null,
+                UsedLogs = deviceLogDtos,
+                Metadata = entity.Metadata.ToDto(),
+                CreatedAt = entity.CreatedAt,
+                LikeCount = likeCount,
             };
         }
 
@@ -69,9 +74,11 @@ namespace BackBuddy.Api.Service.V1.Device.Mapper
             return [.. dtos];
         }
 
-        public static List<ReportDto> ToDto(this IEnumerable<ReportEntity> entities)
+        public async static Task<List<ReportDto>> ToDto(this IEnumerable<ReportEntity> entities, Func<ReportEntity, bool> isOwnerFunction, Func<ReportEntity, Task<long>> likeCountFunc, Func<ReportEntity, Task<List<DeviceLogDto>>>? getDeviceLogsFunction = null)
         {
-            return [.. entities.Select(e => e.ToDto())];
+            IEnumerable<Task<ReportDto>> tasks = entities.Select(async e => e.ToDto(isOwnerFunction.Invoke(e), await likeCountFunc.Invoke(e), getDeviceLogsFunction != null ? await getDeviceLogsFunction.Invoke(e) : null));
+            ReportDto[] dtos = await Task.WhenAll(tasks);
+            return [.. dtos];
         }
 
         public static DeviceSecret ToSecret(this DeviceEntity entity, string secret)

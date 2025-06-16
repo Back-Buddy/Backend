@@ -17,7 +17,7 @@ namespace BackBuddy.Api.Service.V1.Users.Services
         Task<IEnumerable<UserDto>> SearchUser(SearchUserQueryDto query, UserExpandType userExpandType = UserExpandType.None);
         Task<bool> IsUserIdValid(string userId);
         Task<UserDto> GetUserByIdAsync(string userId, UserExpandType userExpandType = UserExpandType.None);
-        Task<List<UserDto>> GetUsers(List<string> users, UserExpandType expandType = UserExpandType.None);
+        Task<List<UserDto>> GetUsers(List<string> users, UserExpandType userExpandType = UserExpandType.None);
         Task DeleteUser(string userId);
     }
 
