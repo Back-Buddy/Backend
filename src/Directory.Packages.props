@@ -15,7 +15,7 @@
     <PackageVersion Include="MassTransit.RabbitMQ" Version="8.4.1" />
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.6" />
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="9.0.6" />
-    <PackageVersion Include="Scalar.AspNetCore" Version="2.4.13" />
+    <PackageVersion Include="Scalar.AspNetCore" Version="2.4.16" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
     <PackageVersion Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="9.0.6" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
@@ -23,6 +23,6 @@
     <PackageVersion Include="MSTest.TestAdapter" Version="3.9.2" />
     <PackageVersion Include="MSTest.TestFramework" Version="3.9.2" />
     <PackageVersion Include="NSubstitute" Version="5.3.0" />
-    <PackageVersion Include="Swashbuckle.AspNetCore" Version="8.1.4" />
+    <PackageVersion Include="Swashbuckle.AspNetCore" Version="9.0.1" />
   </ItemGroup>
 </Project>
