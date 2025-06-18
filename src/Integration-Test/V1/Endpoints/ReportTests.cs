@@ -405,6 +405,45 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
         }
 
         [TestMethod]
+        [DataRow("All")]
+        [DataRow("Creator")]
+        public async Task Test_GetReport_Other_User_Expand_Creator_User_Does_Not_Exists_Success(string expandType)
+        {
+            // Arrange
+            FirebaseRegisterResponseDto otherUser = await _firebaseLib.RegisterUserAsync("test2@gmail.com", "stringG.1212"); //NOT A REAL SECRET
+            string userId2 = otherUser.LocalId;
+            _otherUserIds.Add(userId2);
+            FirebaseLoginResponseDto loginUser2 = await _firebaseLib.SignInUserAsync("test2@gmail.com", "stringG.1212"); //NOT A REAL SECRET
+            string accessToken2 = loginUser2.IdToken;
+
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            string secret = device["secret"].GetValue<string>();
+            _deviceIds.Add(deviceId);
+
+            TimeSpan sitDuration = TimeSpan.FromSeconds(1);
+            await DeviceLogLib.CreateSampleLogs(_webSocketUri, secret, 1, 0, sitDuration);
+
+            DateTime startTime = DateTime.UtcNow.AddSeconds(-10);
+            DateTime endTime = DateTime.UtcNow;
+            JsonObject createdReport = await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "All", startTime, endTime);
+
+            // Act
+            JsonObject getReport = await _reportLib.GetReport(accessToken2, Guid.Parse(createdReport["id"].GetValue<string>()), expandType: expandType);
+
+            // Assert
+            Assert.IsNotNull(getReport);
+            Assert.IsTrue(getReport.ContainsKey("id"));
+            Assert.AreEqual(createdReport["id"].GetValue<string>(), getReport["id"].GetValue<string>());
+            Assert.IsNull(getReport["deviceId"]);
+            Assert.AreEqual(startTime.ToString("f"), getReport["startTime"].GetValue<DateTime>().ToString("f"));
+            Assert.AreEqual(endTime.ToString("f"), getReport["endTime"].GetValue<DateTime>().ToString("f"));
+            Assert.IsNull(getReport["usedLogsIds"]);
+            Assert.AreEqual(_userId, getReport["creatorId"].GetValue<string>());
+            Assert.IsNull(getReport["creator"]);
+        }
+
+        [TestMethod]
         public async Task Test_GetReport_Other_User_VisibilityType_Followers_Failed()
         {
             // Arrange
