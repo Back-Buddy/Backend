@@ -96,6 +96,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             Assert.IsFalse(hasMoreEntries);
             Assert.AreEqual(1, reports.Count);
             Assert.AreEqual(report["id"].GetValue<string>(), reports[0]["id"].GetValue<string>());
+            Assert.AreEqual(_userId, reports[0]["creatorId"].GetValue<string>());
         }
 
         [TestMethod]
@@ -332,7 +333,9 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
         }
 
         [TestMethod]
-        public async Task Test_Feed_Expand_Type_Device_Logs()
+        [DataRow("All")]
+        [DataRow("DeviceLogs")]
+        public async Task Test_Feed_Expand_Type_Device_Logs(string expandType)
         {
             // Arrange
             JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
@@ -342,12 +345,33 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "All", DateTime.UtcNow.AddSeconds(-10), DateTime.UtcNow);
 
             // Act
-            (JsonArray reports, bool hasMoreEntries) = await _reportLib.GetFeed(_accessToken, expandType: "DeviceLogs");
+            (JsonArray reports, bool hasMoreEntries) = await _reportLib.GetFeed(_accessToken, expandType: expandType);
 
             // Assert
             Assert.IsFalse(hasMoreEntries);
             Assert.AreEqual(1, reports.Count);
             Assert.AreEqual(0, reports[0]["usedLogs"].AsArray().Count);
+        }
+
+        [TestMethod]
+        [DataRow("All")]
+        [DataRow("Creator")]
+        public async Task Test_Feed_Expand_Type_Creator(string expandType)
+        {
+            // Arrange
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            _deviceIds.Add((deviceId, _accessToken));
+
+            await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "All", DateTime.UtcNow.AddSeconds(-10), DateTime.UtcNow);
+
+            // Act
+            (JsonArray reports, bool hasMoreEntries) = await _reportLib.GetFeed(_accessToken, expandType: expandType);
+
+            // Assert
+            Assert.IsFalse(hasMoreEntries);
+            Assert.AreEqual(1, reports.Count);
+            Assert.AreEqual(_userId, reports[0]["creator"].AsObject()["userId"]);
         }
 
         [TestMethod]

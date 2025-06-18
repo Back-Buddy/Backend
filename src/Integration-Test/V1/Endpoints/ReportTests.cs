@@ -286,6 +286,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             Assert.AreEqual(1, getReport["usedLogsIds"].AsArray().Count);
             Assert.AreEqual(0, getReport["likeCount"].GetValue<long>());
             Assert.IsNull(getReport["usedLogs"]);
+            Assert.AreEqual(_userId, getReport["creatorId"].GetValue<string>());
         }
 
         [TestMethod]
@@ -325,7 +326,9 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
         }
 
         [TestMethod]
-        public async Task Test_GetReport_Other_User_Expand_Success()
+        [DataRow("All")]
+        [DataRow("DeviceLogs")]
+        public async Task Test_GetReport_Other_User_Expand_Device_Logs_Success(string expandType)
         {
             // Arrange
             FirebaseRegisterResponseDto otherUser = await _firebaseLib.RegisterUserAsync("test2@gmail.com", "stringG.1212"); //NOT A REAL SECRET
@@ -344,7 +347,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
 
             DateTime startTime = DateTime.UtcNow.AddSeconds(-10);
             DateTime endTime = DateTime.UtcNow;
-            JsonObject createdReport = await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "All", startTime, endTime);
+            JsonObject createdReport = await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", expandType, startTime, endTime);
 
             // Act
             JsonObject getReport = await _reportLib.GetReport(accessToken2, Guid.Parse(createdReport["id"].GetValue<string>()), expandType: "DeviceLogs");
@@ -358,6 +361,45 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             Assert.AreEqual(endTime.ToString("f"), getReport["endTime"].GetValue<DateTime>().ToString("f"));
             Assert.IsNull(getReport["usedLogsIds"]);
             Assert.AreEqual(1, getReport["usedLogs"].AsArray().Count);
+        }
+
+        [TestMethod]
+        [DataRow("All")]
+        [DataRow("Creator")]
+        public async Task Test_GetReport_Other_User_Expand_Creator_Success(string expandType)
+        {
+            // Arrange
+            FirebaseRegisterResponseDto otherUser = await _firebaseLib.RegisterUserAsync("test2@gmail.com", "stringG.1212"); //NOT A REAL SECRET
+            string userId2 = otherUser.LocalId;
+            _otherUserIds.Add(userId2);
+            FirebaseLoginResponseDto loginUser2 = await _firebaseLib.SignInUserAsync("test2@gmail.com", "stringG.1212"); //NOT A REAL SECRET
+            string accessToken2 = loginUser2.IdToken;
+
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            string secret = device["secret"].GetValue<string>();
+            _deviceIds.Add(deviceId);
+
+            TimeSpan sitDuration = TimeSpan.FromSeconds(1);
+            await DeviceLogLib.CreateSampleLogs(_webSocketUri, secret, 1, 0, sitDuration);
+
+            DateTime startTime = DateTime.UtcNow.AddSeconds(-10);
+            DateTime endTime = DateTime.UtcNow;
+            JsonObject createdReport = await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", expandType, startTime, endTime);
+
+            // Act
+            JsonObject getReport = await _reportLib.GetReport(accessToken2, Guid.Parse(createdReport["id"].GetValue<string>()), expandType: "DeviceLogs");
+
+            // Assert
+            Assert.IsNotNull(getReport);
+            Assert.IsTrue(getReport.ContainsKey("id"));
+            Assert.AreEqual(createdReport["id"].GetValue<string>(), getReport["id"].GetValue<string>());
+            Assert.IsNull(getReport["deviceId"]);
+            Assert.AreEqual(startTime.ToString("f"), getReport["startTime"].GetValue<DateTime>().ToString("f"));
+            Assert.AreEqual(endTime.ToString("f"), getReport["endTime"].GetValue<DateTime>().ToString("f"));
+            Assert.IsNull(getReport["usedLogsIds"]);
+            Assert.AreEqual(_userId, getReport["creatorId"].GetValue<string>());
+            Assert.AreEqual(_userId, getReport["creator"]["userId"].GetValue<string>());
         }
 
         [TestMethod]
@@ -734,7 +776,9 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
         }
 
         [TestMethod]
-        public async Task Test_GetReports_Other_User_Expand_Type_DeviceLogs()
+        [DataRow("DeviceLogs")]
+        [DataRow("All")]
+        public async Task Test_GetReports_Other_User_Expand_Type_DeviceLogs(string expandType)
         {
             // Arrange 
             FirebaseRegisterResponseDto otherUser = await _firebaseLib.RegisterUserAsync("test2@gmail.com", "stringG.1212"); //NOT A REAL SECRET
@@ -752,7 +796,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "All", DateTime.UtcNow.AddMinutes(-5), DateTime.UtcNow);
 
             // Act
-            (JsonArray filteredResult, _) = await _reportLib.GetReports(accessToken2, [], descending: false, pageSize: 5, page: 1, userId: _userId, expandType: "DeviceLogs");
+            (JsonArray filteredResult, _) = await _reportLib.GetReports(accessToken2, [], descending: false, pageSize: 5, page: 1, userId: _userId, expandType: expandType);
 
             // Assert
             Assert.AreEqual(3, filteredResult.Count);
@@ -765,6 +809,43 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             Assert.IsNull(report["deviceId"]);
             Assert.IsNull(report["usedLogsIds"]);
             Assert.AreEqual(0, report["usedLogs"].AsArray().Count);
+        }
+
+        [TestMethod]
+        [DataRow("Creator")]
+        [DataRow("All")]
+        public async Task Test_GetReports_Other_User_Expand_Type_Creator(string expandType)
+        {
+            // Arrange 
+            FirebaseRegisterResponseDto otherUser = await _firebaseLib.RegisterUserAsync("test2@gmail.com", "stringG.1212"); //NOT A REAL SECRET
+            string userId2 = otherUser.LocalId;
+            _otherUserIds.Add(userId2);
+            FirebaseLoginResponseDto loginUser2 = await _firebaseLib.SignInUserAsync("test2@gmail.com", "stringG.1212"); //NOT A REAL SECRET
+            string accessToken2 = loginUser2.IdToken;
+
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            _deviceIds.Add(deviceId);
+
+            await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "All", DateTime.UtcNow.AddMinutes(-5), DateTime.UtcNow);
+            await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "All", DateTime.UtcNow.AddMinutes(-5), DateTime.UtcNow);
+            await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "All", DateTime.UtcNow.AddMinutes(-5), DateTime.UtcNow);
+
+            // Act
+            (JsonArray filteredResult, _) = await _reportLib.GetReports(accessToken2, [], descending: false, pageSize: 5, page: 1, userId: _userId, expandType: expandType);
+
+            // Assert
+            Assert.AreEqual(3, filteredResult.Count);
+
+            JsonObject report = filteredResult[0].AsObject();
+
+            Assert.IsNotNull(report);
+            Assert.IsTrue(report.ContainsKey("id"));
+            Assert.AreEqual(report["id"].GetValue<string>(), report["id"].GetValue<string>());
+            Assert.IsNull(report["deviceId"]);
+            Assert.IsNull(report["usedLogsIds"]);
+            Assert.AreEqual(_userId, report["creatorId"].GetValue<string>());
+            Assert.AreEqual(_userId, report["creator"]["userId"].GetValue<string>());
         }
 
         [TestMethod]

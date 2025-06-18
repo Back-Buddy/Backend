@@ -5,8 +5,13 @@ using BackBuddy.Api.Service.V1.Device.Enums;
 using BackBuddy.Api.Service.V1.Device.Exceptions;
 using BackBuddy.Api.Service.V1.Device.Mapper;
 using BackBuddy.Api.Service.V1.Device.Repositories;
+using BackBuddy.Api.Service.V1.ExceptionHandlers;
+using BackBuddy.Api.Service.V1.Exceptions;
+using BackBuddy.Api.Service.V1.Users.Dtos;
+using BackBuddy.Api.Service.V1.Users.Dtos.Messages;
 using BackBuddy.Api.Service.V1.Users.Services;
 using BackBuddy.Api.Service.V1.Utilities;
+using MassTransit;
 using System.Text.RegularExpressions;
 
 namespace BackBuddy.Api.Service.V1.Device.Services
@@ -31,13 +36,15 @@ namespace BackBuddy.Api.Service.V1.Device.Services
         Task<Page<List<ReportDto>>> GetReportFeed(string userId, ReportFeedQueryDto query, PageRequestDto page, CancellationToken cancellationToken = default);
     }
 
-    public partial class ReportService(IReportLikeService reportLikeService, IUserRelationService relationService, IDeviceLogRepository deviceLogRepository, IDeviceRepository deviceRepository, IReportRepository reportRepository) : IReportService
+    public partial class ReportService(IReportLikeService reportLikeService, IUserRelationService relationService, IDeviceLogRepository deviceLogRepository, IDeviceRepository deviceRepository, IReportRepository reportRepository, IRequestClient<GetUserRequestMessage> getUserRequestClient, ILogger<ReportService> logger) : IReportService
     {
         private readonly IDeviceRepository _deviceRepository = deviceRepository;
         private readonly IDeviceLogRepository _deviceLogRepository = deviceLogRepository;
         private readonly IReportRepository _reportRepository = reportRepository;
         private readonly IUserRelationService _relationService = relationService;
         private readonly IReportLikeService _reportLikeService = reportLikeService;
+        private readonly IRequestClient<GetUserRequestMessage> _getUserRequestClient = getUserRequestClient;
+        private readonly ILogger<ReportService> _logger = logger;
 
         public async Task<ReportDto> CreateReport(string userId, ReportCreateDto request, CancellationToken cancellationToken = default)
         {
@@ -144,13 +151,19 @@ namespace BackBuddy.Api.Service.V1.Device.Services
                 throw new ReportNotFoundException(); // User does not have access to this report (e.g., private report)
 
             List<DeviceLogDto>? logs = null;
-            if (expandType == ReportExpandType.DeviceLogs)
+            if (expandType == ReportExpandType.All || expandType == ReportExpandType.DeviceLogs)
             {
-                logs = await GetDeviceLogDtos(report);
+                logs = await GetDeviceLogDtosFromReport(report);
+            }
+
+            UserDto? creator = null;
+            if (expandType == ReportExpandType.All || expandType == ReportExpandType.Creator)
+            {
+                creator = await GetUserDtoFromReport(report);
             }
 
             long reportLikeCount = await _reportLikeService.CountLikesFromReport(reportId, cancellationToken);
-            return report.ToDto(report.UserId == userId, reportLikeCount, logs);
+            return report.ToDto(report.UserId == userId, reportLikeCount, logs, creator);
         }
 
         public async Task<ReportEntity> GetReportEntity(Guid reportId, CancellationToken cancellationToken = default)
@@ -168,28 +181,54 @@ namespace BackBuddy.Api.Service.V1.Device.Services
                 throw new ReportOnlyCreatorCanFilterDevicesException(); // Only the creator of the report can filter by devices
 
             Page<List<ReportEntity>> reports = await _reportRepository.GetAll(targetUserId, visibilityTypes, query, page, cancellationToken);
+
+            bool exportLogs = expandType == ReportExpandType.All || expandType == ReportExpandType.DeviceLogs;
+            bool exportCreator = expandType == ReportExpandType.All || expandType == ReportExpandType.Creator;
+
             Page<List<ReportDto>> response = new()
             {
-                Items = await reports.Items.ToDto(x => x.UserId == userId, x => _reportLikeService.CountLikesFromReport(x.Id, cancellationToken), expandType == ReportExpandType.DeviceLogs ? GetDeviceLogDtos : null),
+                Items = await reports.Items.ToDto(x => x.UserId == userId, x => _reportLikeService.CountLikesFromReport(x.Id, cancellationToken), getDeviceLogsFunction: exportLogs ? GetDeviceLogDtosFromReport : null, getUserFunction: exportCreator ? GetUserDtoFromReport : null),
                 HasMoreEntries = reports.HasMoreEntries
             };
             return response;
         }
 
-        private async Task<List<DeviceLogDto>> GetDeviceLogDtos(ReportEntity report)
+        private async Task<List<DeviceLogDto>> GetDeviceLogDtosFromReport(ReportEntity report)
         {
             IEnumerable<Task<DeviceLogEntity>> deviceLogTasks = report.UsedLogs.Select(x => _deviceLogRepository.GetLog(x)).OfType<Task<DeviceLogEntity>>();
             DeviceLogEntity[] logs = await Task.WhenAll(deviceLogTasks);
             return logs.ToDto();
         }
 
+        private async Task<UserDto?> GetUserDtoFromReport(ReportEntity report)
+        {
+            try
+            {
+                Response<GetUserResponseMessage> response = await _getUserRequestClient.GetResponse<GetUserResponseMessage>(new GetUserRequestMessage() { UserId = report.UserId });
+                return response.Message.User;
+            }
+            catch (RequestFaultException ex)
+            {
+                AbstractBaseException? abstractBaseException = ex.GetAbstractBaseException();
+                if (abstractBaseException != null)
+                    _logger.LogError(abstractBaseException, "Failed to get user for report {ReportId} with userId {UserId}", report.Id, report.UserId);
+                else
+                    _logger.LogError(ex, "Failed to get user for report {ReportId} with userId {UserId}", report.Id, report.UserId);
+                return null;
+            }
+        }
+
         public async Task<Page<List<ReportDto>>> GetReportFeed(string userId, ReportFeedQueryDto query, PageRequestDto page, CancellationToken cancellationToken = default)
         {
             (IEnumerable<string> strongRelations, IEnumerable<string> following) = await _relationService.GetStrongFollowRelationsAndAllFollowings(userId, cancellationToken);
             Page<List<ReportEntity>> reports = await _reportRepository.GetReportFeed(userId, strongRelations, following, query, page, cancellationToken);
+
+            bool exportLogs = query.ExpandType == ReportExpandType.All || query.ExpandType == ReportExpandType.DeviceLogs;
+            bool exportCreator = query.ExpandType == ReportExpandType.All || query.ExpandType == ReportExpandType.Creator;
+
             Page<List<ReportDto>> response = new()
             {
-                Items = await reports.Items.ToDto(x => x.UserId == userId, x => _reportLikeService.CountLikesFromReport(x.Id, cancellationToken), query.ExpandType == ReportExpandType.DeviceLogs ? GetDeviceLogDtos : null),
+                Items = await reports.Items.ToDto(x => x.UserId == userId, x => _reportLikeService.CountLikesFromReport(x.Id, cancellationToken), exportLogs ? GetDeviceLogDtosFromReport : null, exportCreator ? GetUserDtoFromReport : null),
                 HasMoreEntries = reports.HasMoreEntries
             };
             return response;

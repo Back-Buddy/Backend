@@ -1,10 +1,13 @@
 ﻿using BackBuddy.Api.Service.V1.Device.Enums;
+using BackBuddy.Api.Service.V1.Users.Dtos;
 
 namespace BackBuddy.Api.Service.V1.Device.DTOs
 {
     public record ReportDto
     {
         public required Guid Id { get; init; }
+        public required string CreatorId { get; init; }
+        public required UserDto? Creator { get; init; }
         public required string Name { get; init; }
         public required ReportVisibilityType? VisibilityType { get; init; } // Only set if the report is retrieved by the user who created it
         public required Guid? DeviceId { get; init; } // Only set if the report is retrieved by the user who created it

@@ -4,8 +4,8 @@ using BackBuddy.Api.Service.V1.Users.Entities;
 using BackBuddy.Api.Service.V1.Users.Exceptions;
 using BackBuddy.Api.Service.V1.Users.Repositories;
 using BackBuddy.Api.Service.V1.Utilities;
-using System.Collections.Concurrent;
 using MassTransit;
+using System.Collections.Concurrent;
 
 namespace BackBuddy.Api.Service.V1.Users.Services
 {
@@ -64,7 +64,7 @@ namespace BackBuddy.Api.Service.V1.Users.Services
                 UserId = userId,
                 TargetUserId = targetUserId,
             };
-            await _publishEndpoint.Publish(userFollowedMessage);
+            await _publishEndpoint.Publish(userFollowedMessage, cancellationToken);
         }
 
         public async Task RemoveRelation(string userId, string targetUserId, CancellationToken cancellationToken = default)
