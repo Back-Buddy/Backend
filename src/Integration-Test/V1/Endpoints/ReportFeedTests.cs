@@ -362,6 +362,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
             Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
             _deviceIds.Add((deviceId, _accessToken));
+            await _firestoreLib.CreateUserObject(_userId, "Test User", []);
 
             await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "All", DateTime.UtcNow.AddSeconds(-10), DateTime.UtcNow);
 
@@ -371,7 +372,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             // Assert
             Assert.IsFalse(hasMoreEntries);
             Assert.AreEqual(1, reports.Count);
-            Assert.AreEqual(_userId, reports[0]["creator"].AsObject()["userId"]);
+            Assert.AreEqual(_userId, reports[0]["creator"].AsObject()["userId"].GetValue<string>());
         }
 
         [TestMethod]

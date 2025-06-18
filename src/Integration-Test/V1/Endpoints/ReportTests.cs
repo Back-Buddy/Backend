@@ -369,6 +369,8 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
         public async Task Test_GetReport_Other_User_Expand_Creator_Success(string expandType)
         {
             // Arrange
+            await _firestoreLib.CreateUserObject(_userId, "Test User", []);
+
             FirebaseRegisterResponseDto otherUser = await _firebaseLib.RegisterUserAsync("test2@gmail.com", "stringG.1212"); //NOT A REAL SECRET
             string userId2 = otherUser.LocalId;
             _otherUserIds.Add(userId2);
@@ -817,6 +819,8 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
         public async Task Test_GetReports_Other_User_Expand_Type_Creator(string expandType)
         {
             // Arrange 
+            await _firestoreLib.CreateUserObject(_userId, "Test User", []);
+
             FirebaseRegisterResponseDto otherUser = await _firebaseLib.RegisterUserAsync("test2@gmail.com", "stringG.1212"); //NOT A REAL SECRET
             string userId2 = otherUser.LocalId;
             _otherUserIds.Add(userId2);
