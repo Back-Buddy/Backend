@@ -136,7 +136,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
 
             await _firestoreLib.CreateUserObject(_userId, "Test User", []);
             await _firestoreLib.CreateUserObject(userId2, "Test User 2", []);
-            await _firestoreLib.CreateUserObject(userId2, "Test User 3", []);
+            await _firestoreLib.CreateUserObject(userId3, "Test User 3", []);
 
             JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
             Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
