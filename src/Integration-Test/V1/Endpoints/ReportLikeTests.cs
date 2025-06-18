@@ -14,6 +14,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
         private static string _userId;
         private static FirebaseLib _firebaseLib;
         private static FirestoreLib _firestoreLib;
+        private static NotificationLib _notificationLib;
 
         private readonly static List<Guid> _deviceIds = [];
         private readonly static List<string> _otherUserIds = [];
@@ -24,9 +25,11 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             _accessToken = Environment.GetEnvironmentVariable("E2E_ACCESS_TOKEN");
             _userId = Environment.GetEnvironmentVariable("E2E_USER_ID");
             Uri baseUri = new(Environment.GetEnvironmentVariable("E2E_BASE_URI") ?? "http://localhost:8080/");
+            Uri notificationUri = new(Environment.GetEnvironmentVariable("E2E_NOTIFICATION_URI") ?? "http://localhost:8083/");
 
             _deviceLib = new DeviceLib(baseUri.ToString());
             _reportLib = new ReportLib(baseUri.ToString());
+            _notificationLib = new NotificationLib(notificationUri.ToString());
 
             if (_accessToken == null)
             {
@@ -64,6 +67,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
                 await _firebaseLib.DeleteUserAsync(otherUserId);
             }
             _otherUserIds.Clear();
+            await _notificationLib.ClearNotifications();
         }
 
         private static async Task CleanUpDevices()
@@ -318,6 +322,36 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             (JsonArray likes3, bool hasMoreEntries3) = await _reportLib.GetLikes(accessToken2, reportId, page: 3, pageSize: 2);
             Assert.IsFalse(hasMoreEntries3);
             Assert.AreEqual(1, likes3.Count);
+        }
+
+        [TestMethod]
+        public async Task Test_Like_Notification()
+        {
+            // Arrange
+            (string userId2, string accessToken2) = await CreateDefaultUser("test2@gmail.com");
+
+            await _firestoreLib.CreateUserObject(_userId, "Test User", ["token1"]);
+            await _firestoreLib.CreateUserObject(userId2, "Test User 2", []);
+
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            _deviceIds.Add(deviceId);
+
+            JsonObject report = await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "All", DateTime.UtcNow.AddSeconds(-10), DateTime.UtcNow);
+            Guid reportId = Guid.Parse(report["id"].GetValue<string>());
+
+            // Act
+            await _reportLib.LikeReport(accessToken2, reportId);
+
+            await Task.Delay(2000); // Wait for notification to be processed
+
+            // Assert
+            JsonArray notifications = await _notificationLib.GetNotifications();
+            Assert.AreEqual(1, notifications.Count);
+            JsonObject notification = notifications[0].AsObject();
+            JsonArray tokens = notification["tokens"].AsArray();
+            Assert.AreEqual(1, tokens.Count);
+            Assert.AreEqual("token1", tokens[0].GetValue<string>());
         }
 
         private static async Task<(string, string)> CreateDefaultUser(string email)
