@@ -57,7 +57,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
         {
             try
             {
-                Response<UserDto> userResponse = await _userRequestClient.GetResponse<UserDto>(new GetUserRequestMessage { UserId = likerId });
+                Response<GetUserResponseMessage> userResponse = await _userRequestClient.GetResponse<GetUserResponseMessage>(new GetUserRequestMessage { UserId = reportEntity.UserId });
 
                 GetFcmTokensRequestMessage request = new()
                 {
@@ -65,7 +65,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
                 };
                 Response<GetFcmTokensResponseMessage> response = await _fcmRequestClient.GetResponse<GetFcmTokensResponseMessage>(request);
 
-                UserDto user = userResponse.Message;
+                UserDto user = userResponse.Message.User;
                 IEnumerable<string> tokens = response.Message.Tokens;
 
                 (string title, string body) = GetReportBuddyNotification(reportEntity, user);
@@ -133,22 +133,24 @@ namespace BackBuddy.Api.Service.V1.Device.Services
             return await _repository.HasLikedReport(userId, reportId, cancellationToken);
         }
 
+        private static readonly List<(string Title, string Body)> _reportBuddyMessages =
+        [
+            ("👏 Buddy für deinen Report!", "{0} hat deinem Report \"{1}\" einen Buddy gegeben."),
+            ("💪 Starke Leistung!", "{0} feiert deinen Report \"{1}\" – weiter so!"),
+            ("🎉 Buddy-Time!", "{0} hat deinen Report \"{1}\" gebuddyt."),
+            ("🌟 Anerkennung für Haltung!", "{0} zeigt Respekt für deinen Report \"{1}\"."),
+            ("🔥 Rückenstark!", "{0} findet deinen Sitz-Report \"{1}\" richtig gut."),
+            ("💺 Haltung zählt!", "{0} gibt dir einen Buddy für \"{1}\"."),
+            ("🚀 Boost für dich!", "{0} hat deinen Report \"{1}\" gewürdigt."),
+            ("🙌 BackBuddy!", "{0} steht hinter deinem Report \"{1}\"."),
+            ("✨ Buddy-Power!", "{0} hat \"{1}\" gefeiert – stark!"),
+            ("📈 Gesehen & gebuddyt!", "{0} hat deinen Fortschritt in \"{1}\" anerkannt.")
+        ];
+
         private static (string Title, string Body) GetReportBuddyNotification(ReportEntity reportEntity, UserDto user)
         {
-            List<(string Title, string Body)> messages =
-            [
-                ("👏 Buddy für deinen Report!", $"{user.Username} hat deinem Report \"{reportEntity.Name}\" einen Buddy gegeben."),
-                ("💪 Starke Leistung!", $"{user.Username} feiert deinen Report \"{reportEntity.Name}\" – weiter so!"),
-                ("🎉 Buddy-Time!", $"{user.Username} hat deinen Report \"{reportEntity.Name}\" gebuddyt."),
-                ("🌟 Anerkennung für Haltung!", $"{user.Username} zeigt Respekt für deinen Report \"{reportEntity.Name}\"."),
-                ("🔥 Rückenstark!", $"{user.Username} findet deinen Sitz-Report \"{reportEntity.Name}\" richtig gut."),
-                ("💺 Haltung zählt!", $"{user.Username} gibt dir einen Buddy für \"{reportEntity.Name}\"."),
-                ("🚀 Boost für dich!", $"{user.Username} hat deinen Report \"{reportEntity.Name}\" gewürdigt."),
-                ("🙌 BackBuddy!", $"{user.Username} steht hinter deinem Report \"{reportEntity.Name}\"."),
-                ("✨ Buddy-Power!", $"{user.Username} hat \"{reportEntity.Name}\" gefeiert – stark!"),
-                ("📈 Gesehen & gebuddyt!", $"{user.Username} hat deinen Fortschritt in \"{reportEntity.Name}\" anerkannt.")
-            ];
-            return messages[ThreadSafeRandom.Global.Next(messages.Count)];
+            (string body, string title) = _reportBuddyMessages[ThreadSafeRandom.Global.Next(_reportBuddyMessages.Count)];
+            return (title, string.Format(body, user.Username, reportEntity.Name));
         }
     }
 }
