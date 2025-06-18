@@ -3,6 +3,8 @@
     public enum ReportExpandType
     {
         None = 0,
-        DeviceLogs = 1
+        DeviceLogs = 1,
+        Creator = 2,
+        All = 3
     }
 }

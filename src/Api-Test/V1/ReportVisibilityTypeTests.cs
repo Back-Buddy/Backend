@@ -1,7 +1,10 @@
 ﻿using BackBuddy.Api.Service.V1.Device.Enums;
 using BackBuddy.Api.Service.V1.Device.Repositories;
 using BackBuddy.Api.Service.V1.Device.Services;
+using BackBuddy.Api.Service.V1.Users.Dtos.Messages;
 using BackBuddy.Api.Service.V1.Users.Services;
+using MassTransit;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 
 namespace BackBuddy.Api.Test.V1
@@ -18,8 +21,10 @@ namespace BackBuddy.Api.Test.V1
             IDeviceRepository deviceRepository = Substitute.For<IDeviceRepository>();
             IReportRepository reportRepository = Substitute.For<IReportRepository>();
             IReportLikeService reportLikeService = Substitute.For<IReportLikeService>();
+            IRequestClient<GetUserRequestMessage> requestClient = Substitute.For<IRequestClient<GetUserRequestMessage>>();
+            ILogger<ReportService> logger = Substitute.For<ILogger<ReportService>>();
 
-            ReportService reportService = new(reportLikeService, relationService, deviceLogRepository, deviceRepository, reportRepository);
+            ReportService reportService = new(reportLikeService, relationService, deviceLogRepository, deviceRepository, reportRepository, requestClient, logger);
 
             string creatorId = "user1";
             string userId = "user1";
@@ -45,10 +50,12 @@ namespace BackBuddy.Api.Test.V1
             IDeviceLogRepository deviceLogRepository = Substitute.For<IDeviceLogRepository>();
             IDeviceRepository deviceRepository = Substitute.For<IDeviceRepository>();
             IReportRepository reportRepository = Substitute.For<IReportRepository>();
+            IRequestClient<GetUserRequestMessage> requestClient = Substitute.For<IRequestClient<GetUserRequestMessage>>();
+            ILogger<ReportService> logger = Substitute.For<ILogger<ReportService>>();
 
             relationService.HasStrongRelation("user2", "user1").Returns(Task.FromResult(true));
             IReportLikeService reportLikeService = Substitute.For<IReportLikeService>();
-            ReportService reportService = new(reportLikeService, relationService, deviceLogRepository, deviceRepository, reportRepository);
+            ReportService reportService = new(reportLikeService, relationService, deviceLogRepository, deviceRepository, reportRepository, requestClient, logger);
 
             string creatorId = "user1";
             string userId = "user2";
@@ -74,9 +81,11 @@ namespace BackBuddy.Api.Test.V1
             IDeviceRepository deviceRepository = Substitute.For<IDeviceRepository>();
             IReportRepository reportRepository = Substitute.For<IReportRepository>();
             IReportLikeService reportLikeService = Substitute.For<IReportLikeService>();
+            IRequestClient<GetUserRequestMessage> requestClient = Substitute.For<IRequestClient<GetUserRequestMessage>>();
+            ILogger<ReportService> logger = Substitute.For<ILogger<ReportService>>();
 
             relationService.HasStrongRelation("user3", "user1").Returns(Task.FromResult(false));
-            ReportService reportService = new(reportLikeService, relationService, deviceLogRepository, deviceRepository, reportRepository);
+            ReportService reportService = new(reportLikeService, relationService, deviceLogRepository, deviceRepository, reportRepository, requestClient, logger);
 
             string creatorId = "user1";
             string userId = "user3";
