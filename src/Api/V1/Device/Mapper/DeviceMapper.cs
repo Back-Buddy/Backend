@@ -29,7 +29,7 @@ namespace BackBuddy.Api.Service.V1.Device.Mapper
             };
         }
 
-        public static ReportDto ToDto(this ReportEntity entity, bool isOwner, long likeCount, bool isLikedFromUser, List<DeviceLogDto>? deviceLogDtos = null, UserDto? creator = null)
+        public static ReportDto ToDto(this ReportEntity entity, bool isOwner, long likeCount, bool isLikedByRequester, List<DeviceLogDto>? deviceLogDtos = null, UserDto? creator = null)
         {
             return new ReportDto()
             {
@@ -46,7 +46,7 @@ namespace BackBuddy.Api.Service.V1.Device.Mapper
                 Metadata = entity.Metadata.ToDto(),
                 CreatedAt = entity.CreatedAt,
                 LikeCount = likeCount,
-                IsLikedByRequester = isLikedFromUser
+                IsLikedByRequester = isLikedByRequester
             };
         }
 
