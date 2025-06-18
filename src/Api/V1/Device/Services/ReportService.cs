@@ -97,7 +97,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
             };
 
             await _reportRepository.Add(reportEntity, cancellationToken);
-            return reportEntity.ToDto(true, 0);
+            return reportEntity.ToDto(true, 0, false);
         }
 
         public async Task UpdateReport(string userId, Guid reportId, ReportUpdateDto request, CancellationToken cancellationToken = default)
@@ -163,7 +163,8 @@ namespace BackBuddy.Api.Service.V1.Device.Services
             }
 
             long reportLikeCount = await _reportLikeService.CountLikesFromReport(reportId, cancellationToken);
-            return report.ToDto(report.UserId == userId, reportLikeCount, logs, creator);
+            bool hasLiked = await _reportLikeService.HasLikedReport(userId, reportId, cancellationToken);
+            return report.ToDto(report.UserId == userId, reportLikeCount, hasLiked, logs, creator);
         }
 
         public async Task<ReportEntity> GetReportEntity(Guid reportId, CancellationToken cancellationToken = default)
@@ -187,35 +188,10 @@ namespace BackBuddy.Api.Service.V1.Device.Services
 
             Page<List<ReportDto>> response = new()
             {
-                Items = await reports.Items.ToDto(x => x.UserId == userId, x => _reportLikeService.CountLikesFromReport(x.Id, cancellationToken), getDeviceLogsFunction: exportLogs ? GetDeviceLogDtosFromReport : null, getUserFunction: exportCreator ? GetUserDtoFromReport : null),
+                Items = await reports.Items.ToDto(x => x.UserId == userId, x => _reportLikeService.CountLikesFromReport(x.Id, cancellationToken), HasUserLikedReport, userId, getDeviceLogsFunction: exportLogs ? GetDeviceLogDtosFromReport : null, getUserFunction: exportCreator ? GetUserDtoFromReport : null),
                 HasMoreEntries = reports.HasMoreEntries
             };
             return response;
-        }
-
-        private async Task<List<DeviceLogDto>> GetDeviceLogDtosFromReport(ReportEntity report)
-        {
-            IEnumerable<Task<DeviceLogEntity>> deviceLogTasks = report.UsedLogs.Select(x => _deviceLogRepository.GetLog(x)).OfType<Task<DeviceLogEntity>>();
-            DeviceLogEntity[] logs = await Task.WhenAll(deviceLogTasks);
-            return logs.ToDto();
-        }
-
-        private async Task<UserDto?> GetUserDtoFromReport(ReportEntity report)
-        {
-            try
-            {
-                Response<GetUserResponseMessage> response = await _getUserRequestClient.GetResponse<GetUserResponseMessage>(new GetUserRequestMessage() { UserId = report.UserId });
-                return response.Message.User;
-            }
-            catch (RequestFaultException ex)
-            {
-                AbstractBaseException? abstractBaseException = ex.GetAbstractBaseException();
-                if (abstractBaseException != null)
-                    _logger.LogError(abstractBaseException, "Failed to get user for report {ReportId} with userId {UserId}", report.Id, report.UserId);
-                else
-                    _logger.LogError(ex, "Failed to get user for report {ReportId} with userId {UserId}", report.Id, report.UserId);
-                return null;
-            }
         }
 
         public async Task<Page<List<ReportDto>>> GetReportFeed(string userId, ReportFeedQueryDto query, PageRequestDto page, CancellationToken cancellationToken = default)
@@ -228,7 +204,7 @@ namespace BackBuddy.Api.Service.V1.Device.Services
 
             Page<List<ReportDto>> response = new()
             {
-                Items = await reports.Items.ToDto(x => x.UserId == userId, x => _reportLikeService.CountLikesFromReport(x.Id, cancellationToken), exportLogs ? GetDeviceLogDtosFromReport : null, exportCreator ? GetUserDtoFromReport : null),
+                Items = await reports.Items.ToDto(x => x.UserId == userId, x => _reportLikeService.CountLikesFromReport(x.Id, cancellationToken), HasUserLikedReport, userId, exportLogs ? GetDeviceLogDtosFromReport : null, exportCreator ? GetUserDtoFromReport : null),
                 HasMoreEntries = reports.HasMoreEntries
             };
             return response;
@@ -287,6 +263,38 @@ namespace BackBuddy.Api.Service.V1.Device.Services
         {
             ReportEntity report = await _reportRepository.Get(targetReport, cancellationToken) ?? throw new ReportNotFoundException();
             return await GetReportVisibilityTypeForUser(report.UserId, userId);
+        }
+
+        private async Task<List<DeviceLogDto>> GetDeviceLogDtosFromReport(ReportEntity report)
+        {
+            IEnumerable<Task<DeviceLogEntity>> deviceLogTasks = report.UsedLogs.Select(x => _deviceLogRepository.GetLog(x)).OfType<Task<DeviceLogEntity>>();
+            DeviceLogEntity[] logs = await Task.WhenAll(deviceLogTasks);
+            return logs.ToDto();
+        }
+
+        private async Task<bool> HasUserLikedReport(ReportEntity reportEntity, string userId)
+        {
+            if (reportEntity.UserId == userId)
+                return false; // User cannot like their own report
+            return await _reportLikeService.HasLikedReport(userId, reportEntity.Id);
+        }
+
+        private async Task<UserDto?> GetUserDtoFromReport(ReportEntity report)
+        {
+            try
+            {
+                Response<GetUserResponseMessage> response = await _getUserRequestClient.GetResponse<GetUserResponseMessage>(new GetUserRequestMessage() { UserId = report.UserId });
+                return response.Message.User;
+            }
+            catch (RequestFaultException ex)
+            {
+                AbstractBaseException? abstractBaseException = ex.GetAbstractBaseException();
+                if (abstractBaseException != null)
+                    _logger.LogError(abstractBaseException, "Failed to get user for report {ReportId} with userId {UserId}", report.Id, report.UserId);
+                else
+                    _logger.LogError(ex, "Failed to get user for report {ReportId} with userId {UserId}", report.Id, report.UserId);
+                return null;
+            }
         }
 
         internal async Task<IEnumerable<ReportVisibilityType>> GetReportVisibilityTypeForUser(string creatorId, string userId)
