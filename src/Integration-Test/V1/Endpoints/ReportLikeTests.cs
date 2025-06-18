@@ -98,6 +98,61 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             JsonObject likedReport = await _reportLib.GetReport(accessToken2, reportId, "None");
             Assert.IsNotNull(likedReport);
             Assert.AreEqual(1, likedReport["likeCount"].GetValue<long>());
+            Assert.IsTrue(likedReport["isLikedByRequester"].GetValue<bool>());
+        }
+
+        [TestMethod]
+        public async Task Test_Like_Owner_Get_IsLikedByRequester_False()
+        {
+            // Arrange
+            (string userId2, string accessToken2) = await CreateDefaultUser("test2@gmail.com");
+
+            await _firestoreLib.CreateUserObject(_userId, "Test User", []);
+            await _firestoreLib.CreateUserObject(userId2, "Test User 2", []);
+
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            _deviceIds.Add(deviceId);
+
+            JsonObject report = await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "All", DateTime.UtcNow.AddSeconds(-10), DateTime.UtcNow);
+            Guid reportId = Guid.Parse(report["id"].GetValue<string>());
+
+            // Act
+            await _reportLib.LikeReport(accessToken2, reportId);
+
+            // Assert
+            JsonObject likedReport = await _reportLib.GetReport(_accessToken, reportId, "None");
+            Assert.IsNotNull(likedReport);
+            Assert.AreEqual(1, likedReport["likeCount"].GetValue<long>());
+            Assert.IsFalse(likedReport["isLikedByRequester"].GetValue<bool>());
+        }
+
+        [TestMethod]
+        public async Task Test_Like_Not_Liked_Get_IsLikedByRequester_False()
+        {
+            // Arrange
+            (string userId2, string accessToken2) = await CreateDefaultUser("test2@gmail.com");
+            (string userId3, string accessToken3) = await CreateDefaultUser("test3@gmail.com");
+
+            await _firestoreLib.CreateUserObject(_userId, "Test User", []);
+            await _firestoreLib.CreateUserObject(userId2, "Test User 2", []);
+            await _firestoreLib.CreateUserObject(userId2, "Test User 3", []);
+
+            JsonObject device = await _deviceLib.CreateDevice(_accessToken, "TestDevice");
+            Guid deviceId = Guid.Parse(device["deviceId"].GetValue<string>());
+            _deviceIds.Add(deviceId);
+
+            JsonObject report = await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "All", DateTime.UtcNow.AddSeconds(-10), DateTime.UtcNow);
+            Guid reportId = Guid.Parse(report["id"].GetValue<string>());
+
+            // Act
+            await _reportLib.LikeReport(accessToken2, reportId);
+
+            // Assert
+            JsonObject likedReport = await _reportLib.GetReport(accessToken3, reportId, "None");
+            Assert.IsNotNull(likedReport);
+            Assert.AreEqual(1, likedReport["likeCount"].GetValue<long>());
+            Assert.IsFalse(likedReport["isLikedByRequester"].GetValue<bool>());
         }
 
         [TestMethod]

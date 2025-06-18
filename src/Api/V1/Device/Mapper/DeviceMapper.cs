@@ -29,7 +29,7 @@ namespace BackBuddy.Api.Service.V1.Device.Mapper
             };
         }
 
-        public static ReportDto ToDto(this ReportEntity entity, bool isOwner, long likeCount, List<DeviceLogDto>? deviceLogDtos = null, UserDto? creator = null)
+        public static ReportDto ToDto(this ReportEntity entity, bool isOwner, long likeCount, bool isLikedFromUser, List<DeviceLogDto>? deviceLogDtos = null, UserDto? creator = null)
         {
             return new ReportDto()
             {
@@ -46,6 +46,7 @@ namespace BackBuddy.Api.Service.V1.Device.Mapper
                 Metadata = entity.Metadata.ToDto(),
                 CreatedAt = entity.CreatedAt,
                 LikeCount = likeCount,
+                IsLikedByRequester = isLikedFromUser
             };
         }
 
@@ -77,9 +78,9 @@ namespace BackBuddy.Api.Service.V1.Device.Mapper
             return [.. dtos];
         }
 
-        public async static Task<List<ReportDto>> ToDto(this IEnumerable<ReportEntity> entities, Func<ReportEntity, bool> isOwnerFunction, Func<ReportEntity, Task<long>> likeCountFunc, Func<ReportEntity, Task<List<DeviceLogDto>>>? getDeviceLogsFunction = null, Func<ReportEntity, Task<UserDto?>>? getUserFunction = null)
+        public async static Task<List<ReportDto>> ToDto(this IEnumerable<ReportEntity> entities, Func<ReportEntity, bool> isOwnerFunction, Func<ReportEntity, Task<long>> likeCountFunc, Func<ReportEntity, string, Task<bool>> isLikedFromUserFunc, string userId, Func<ReportEntity, Task<List<DeviceLogDto>>>? getDeviceLogsFunction = null, Func<ReportEntity, Task<UserDto?>>? getUserFunction = null)
         {
-            IEnumerable<Task<ReportDto>> tasks = entities.Select(async e => e.ToDto(isOwnerFunction.Invoke(e), await likeCountFunc.Invoke(e), getDeviceLogsFunction != null ? await getDeviceLogsFunction.Invoke(e) : null, getUserFunction != null ? await getUserFunction.Invoke(e) : null));
+            IEnumerable<Task<ReportDto>> tasks = entities.Select(async e => e.ToDto(isOwnerFunction.Invoke(e), await likeCountFunc.Invoke(e), await isLikedFromUserFunc.Invoke(e, userId), getDeviceLogsFunction != null ? await getDeviceLogsFunction.Invoke(e) : null, getUserFunction != null ? await getUserFunction.Invoke(e) : null));
             ReportDto[] dtos = await Task.WhenAll(tasks);
             return [.. dtos];
         }

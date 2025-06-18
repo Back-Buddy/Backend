@@ -18,5 +18,6 @@ namespace BackBuddy.Api.Service.V1.Device.DTOs
         public required ReportMetadataDto Metadata { get; init; }
         public required DateTime CreatedAt { get; init; }
         public required long LikeCount { get; init; } = 0;
+        public required bool IsLikedByRequester { get; init; }
     }
 }
