@@ -2,7 +2,11 @@
 using BackBuddy.Api.Service.V1.Device.Enums;
 using BackBuddy.Api.Service.V1.Device.Exceptions;
 using BackBuddy.Api.Service.V1.Device.Repositories;
+using BackBuddy.Api.Service.V1.Notifications.Dtos;
+using BackBuddy.Api.Service.V1.Users.Dtos;
+using BackBuddy.Api.Service.V1.Users.Dtos.Messages;
 using BackBuddy.Api.Service.V1.Utilities;
+using MassTransit;
 
 namespace BackBuddy.Api.Service.V1.Device.Services
 {
@@ -18,9 +22,13 @@ namespace BackBuddy.Api.Service.V1.Device.Services
         Task<long> CountLikesFromUser(string userId, CancellationToken cancellationToken = default);
         Task<long> CountLikesFromReport(Guid reportId, CancellationToken cancellationToken = default);
     }
-    public class ReportLikeService(IReportLikeRepository repository) : IReportLikeService
+    public class ReportLikeService(IReportLikeRepository repository, IRequestClient<GetUserRequestMessage> userRequestClient, IRequestClient<GetFcmTokensRequestMessage> fcmRequestClient, IPublishEndpoint publishEndpoint, ILogger<ReportLikeService> logger) : IReportLikeService
     {
         private readonly IReportLikeRepository _repository = repository;
+        private readonly IRequestClient<GetUserRequestMessage> _userRequestClient = userRequestClient;
+        private readonly IRequestClient<GetFcmTokensRequestMessage> _fcmRequestClient = fcmRequestClient;
+        private readonly IPublishEndpoint _publishEndpoint = publishEndpoint;
+        private readonly ILogger<ReportLikeService> _logger = logger;
 
         public async Task AddLike(string userId, ReportEntity report, IEnumerable<ReportVisibilityType> visibilityTypes, CancellationToken cancellationToken = default)
         {
@@ -41,6 +49,36 @@ namespace BackBuddy.Api.Service.V1.Device.Services
             };
 
             await _repository.AddLike(reportLikeEntity, cancellationToken);
+
+            await NotifyReportLike(report, userId);
+        }
+
+        private async Task NotifyReportLike(ReportEntity reportEntity, string likerId)
+        {
+            try
+            {
+                Response<GetUserResponseMessage> userResponse = await _userRequestClient.GetResponse<GetUserResponseMessage>(new GetUserRequestMessage { UserId = reportEntity.UserId });
+
+                GetFcmTokensRequestMessage request = new()
+                {
+                    UserId = reportEntity.UserId
+                };
+                Response<GetFcmTokensResponseMessage> response = await _fcmRequestClient.GetResponse<GetFcmTokensResponseMessage>(request);
+
+                UserDto user = userResponse.Message.User;
+                IEnumerable<string> tokens = response.Message.Tokens;
+
+                (string title, string body) = GetReportBuddyNotification(reportEntity, user);
+                await _publishEndpoint.Publish(new SendNotificationRequestMessage
+                {
+                    Notification = new NotificationBuilder().SetTitle(title).SetBody(body).Build(),
+                    Tokens = tokens
+                });
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Failed to notify report like for report {ReportId} by user {LikerId}", reportEntity.Id, likerId);
+            }
         }
 
         public async Task<long> CountLikesFromReport(Guid reportId, CancellationToken cancellationToken = default)
@@ -93,6 +131,24 @@ namespace BackBuddy.Api.Service.V1.Device.Services
         public async Task<bool> HasLikedReport(string userId, Guid reportId, CancellationToken cancellationToken = default)
         {
             return await _repository.HasLikedReport(userId, reportId, cancellationToken);
+        }
+
+        private static (string Title, string Body) GetReportBuddyNotification(ReportEntity reportEntity, UserDto user)
+        {
+            List<(string Title, string Body)> messages =
+            [
+                ("👏 Buddy für deinen Report!", $"{user.Username} hat deinem Report \"{reportEntity.Name}\" einen Buddy gegeben."),
+                ("💪 Starke Leistung!", $"{user.Username} feiert deinen Report \"{reportEntity.Name}\" – weiter so!"),
+                ("🎉 Buddy-Time!", $"{user.Username} hat deinen Report \"{reportEntity.Name}\" gebuddyt."),
+                ("🌟 Anerkennung für Haltung!", $"{user.Username} zeigt Respekt für deinen Report \"{reportEntity.Name}\"."),
+                ("🔥 Rückenstark!", $"{user.Username} findet deinen Sitz-Report \"{reportEntity.Name}\" richtig gut."),
+                ("💺 Haltung zählt!", $"{user.Username} gibt dir einen Buddy für \"{reportEntity.Name}\"."),
+                ("🚀 Boost für dich!", $"{user.Username} hat deinen Report \"{reportEntity.Name}\" gewürdigt."),
+                ("🙌 BackBuddy!", $"{user.Username} steht hinter deinem Report \"{reportEntity.Name}\"."),
+                ("✨ Buddy-Power!", $"{user.Username} hat \"{reportEntity.Name}\" gefeiert – stark!"),
+                ("📈 Gesehen & gebuddyt!", $"{user.Username} hat deinen Fortschritt in \"{reportEntity.Name}\" anerkannt.")
+            ];
+            return messages[ThreadSafeRandom.Global.Next(messages.Count)];
         }
     }
 }
