@@ -7,7 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Api", "Api\Api.csproj", "{B
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Integration-Test", "Integration-Test\Integration-Test.csproj", "{E8523D27-1E2C-4395-8247-888599E85CA4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Api-Test", "Api-Test\Api-Test.csproj", "{66AFA9EB-97C0-4D88-AFA2-A7E60862116C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core-Test", "Core-Test\Core-Test.csproj", "{66AFA9EB-97C0-4D88-AFA2-A7E60862116C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeviceOrchestrator", "DeviceOrchestrator\DeviceOrchestrator.csproj", "{0FF9C6DC-A1F3-FEF6-9758-C3454EDA0C3B}"
 EndProject
@@ -20,6 +20,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NotificationService", "NotificationService\NotificationService.csproj", "{CF9FD0F0-B9C2-54C6-189B-77AA3D46F4C2}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeviceService", "DeviceService\DeviceService.csproj", "{173C4B3D-361D-6D81-AFA0-D7E846048B7B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeviceService-Test", "DeviceService-Test\DeviceService-Test.csproj", "{72C3A44C-E794-4A34-B2F9-E4DC3077543B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -139,6 +141,18 @@ Global
 		{173C4B3D-361D-6D81-AFA0-D7E846048B7B}.Release|x64.Build.0 = Release|Any CPU
 		{173C4B3D-361D-6D81-AFA0-D7E846048B7B}.Release|x86.ActiveCfg = Release|Any CPU
 		{173C4B3D-361D-6D81-AFA0-D7E846048B7B}.Release|x86.Build.0 = Release|Any CPU
+		{72C3A44C-E794-4A34-B2F9-E4DC3077543B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{72C3A44C-E794-4A34-B2F9-E4DC3077543B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{72C3A44C-E794-4A34-B2F9-E4DC3077543B}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{72C3A44C-E794-4A34-B2F9-E4DC3077543B}.Debug|x64.Build.0 = Debug|Any CPU
+		{72C3A44C-E794-4A34-B2F9-E4DC3077543B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{72C3A44C-E794-4A34-B2F9-E4DC3077543B}.Debug|x86.Build.0 = Debug|Any CPU
+		{72C3A44C-E794-4A34-B2F9-E4DC3077543B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{72C3A44C-E794-4A34-B2F9-E4DC3077543B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{72C3A44C-E794-4A34-B2F9-E4DC3077543B}.Release|x64.ActiveCfg = Release|Any CPU
+		{72C3A44C-E794-4A34-B2F9-E4DC3077543B}.Release|x64.Build.0 = Release|Any CPU
+		{72C3A44C-E794-4A34-B2F9-E4DC3077543B}.Release|x86.ActiveCfg = Release|Any CPU
+		{72C3A44C-E794-4A34-B2F9-E4DC3077543B}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

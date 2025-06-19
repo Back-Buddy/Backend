@@ -306,11 +306,16 @@ namespace BackBuddy.Device.Service.Services
             if (creatorId == userId)
                 return [ReportVisibilityType.All, ReportVisibilityType.Followers, ReportVisibilityType.Private];
 
-            Response<HasUserStrongRelationResponseMessage> response = await _relationService.GetResponse<HasUserStrongRelationResponseMessage>(new HasUserStrongRelationRequestMessage { UserId = userId, TargetUserId = creatorId });
-            bool hasStrongRelation = response.Message.HasStrongRelation;
+            bool hasStrongRelation = await HasStrongRelation(userId, creatorId);
             if (hasStrongRelation)
                 return [ReportVisibilityType.All, ReportVisibilityType.Followers];
             return [ReportVisibilityType.All];
+        }
+
+        internal async Task<bool> HasStrongRelation(string userId, string targetUserId)
+        {
+            Response<HasUserStrongRelationResponseMessage> response = await _relationService.GetResponse<HasUserStrongRelationResponseMessage>(new HasUserStrongRelationRequestMessage { UserId = userId, TargetUserId = targetUserId });
+            return response.Message.HasStrongRelation;
         }
 
         [GeneratedRegex(@"^[a-zA-Z0-9 \-]{3,128}$")]
