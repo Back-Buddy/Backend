@@ -6,6 +6,15 @@ namespace BackBuddy.Core.Library.ExceptionHandlers
 {
     public static class MasstransitExceptionHandler
     {
+        private static readonly List<Assembly> AssembliesToCheck = [..AppDomain.CurrentDomain.GetAssemblies().Where(x =>
+        {
+            AssemblyName name = x.GetName();
+            if (name.Name == null)
+                return false;
+            Console.WriteLine($"Checking assembly: {name.Name}");
+            return name.Name.StartsWith("Core");
+        })];
+
         public static AbstractBaseException? GetAbstractBaseException(this RequestFaultException ex)
         {
             if (ex.Fault == null)
@@ -15,21 +24,22 @@ namespace BackBuddy.Core.Library.ExceptionHandlers
 
             foreach (ExceptionInfo e in ex.Fault.Exceptions)
             {
-                //foreach (Assembly assembly in AssembliesToCheck)
-                //{
-                Type? type = Assembly.GetCallingAssembly().GetType(e.ExceptionType);
-                if (type == null || type.BaseType == null)
-                    continue;
-                if (type.BaseType != typeof(AbstractBaseException))
-                    continue;
-                if (e.Data == null) continue;
-                selectedData = new(e, type);
-                break;
-                //}
-                //if (selectedData != null)
-                //    break;
+                foreach (Assembly assembly in AssembliesToCheck)
+                {
+                    Type? type = assembly.GetType(e.ExceptionType);
+                    if (type == null || type.BaseType == null)
+                        continue;
+                    if (type.BaseType != typeof(AbstractBaseException))
+                        continue;
+                    if (e.Data == null) continue;
+                    selectedData = new(e, type);
+                    break;
+                }
+                if (selectedData != null)
+                    break;
             }
 
+            Console.WriteLine($"Is SelectedData Null? {selectedData == null}");
             if (selectedData == null)
                 return null;
 
