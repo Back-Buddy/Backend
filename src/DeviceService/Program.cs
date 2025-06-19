@@ -6,6 +6,8 @@ using BackBuddy.Core.Library;
 using BackBuddy.Core.Library.Database.KeyVault;
 using BackBuddy.Core.Library.Device.Entities;
 using BackBuddy.Device.Service.Consumer;
+using BackBuddy.Device.Service.Consumer.Device;
+using BackBuddy.Device.Service.Consumer.Report;
 using BackBuddy.Device.Service.Entities;
 using BackBuddy.Device.Service.Repositories;
 using BackBuddy.Device.Service.Services;
@@ -107,6 +109,30 @@ builder.Services.AddMassTransit(x =>
     x.AddConsumer<GetDeviceStatusesConsumer>();
     x.AddConsumer<UserDeletedConsumer>();
     x.AddConsumer<ValidateDeviceStatusConsumer>();
+
+    //Report Consumers
+    x.AddConsumer<ReportAddLikeConsumer>();
+    x.AddConsumer<ReportCreateConsumer>();
+    x.AddConsumer<ReportDeleteConsumer>();
+    x.AddConsumer<ReportGetConsumer>();
+    x.AddConsumer<ReportGetEntityConsumer>();
+    x.AddConsumer<ReportGetFeedConsumer>();
+    x.AddConsumer<ReportGetLikesFromReportConsumer>();
+    x.AddConsumer<ReportGetReportsConsumer>();
+    x.AddConsumer<ReportGetVisibilityTypeForUserConsumer>();
+    x.AddConsumer<ReportUpdateConsumer>();
+
+    //Device CRUD
+    x.AddConsumer<DeviceCreateConsumer>();
+    x.AddConsumer<DeviceUpdateConsumer>();
+    x.AddConsumer<DeviceDeleteConsumer>();
+    x.AddConsumer<DeviceGetAllConsumer>();
+    x.AddConsumer<DeviceGetConsumer>();
+
+    //Device Log
+    x.AddConsumer<DeviceGetDeviceLogConsumer>();
+    x.AddConsumer<DeviceGetDeviceLogsConsumer>();
+    
 
     string connection = builder.Configuration.GetValue<string>($"MESSAGE_QUEUE_CONNECTION") ?? throw new InvalidOperationException("MESSAGE_QUEUE_CONNECTION is not set!");
     if (builder.Environment.IsDevelopment())

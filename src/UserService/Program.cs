@@ -109,6 +109,18 @@ builder.Services.AddMassTransit(x =>
     x.AddConsumer<HasUserStrongRelationConsumer>();
     x.AddConsumer<UserFollowedConsumer>();
 
+    x.AddConsumer<UserAddRelationConsumer>();
+    x.AddConsumer<UserDeleteConsumer>();
+    x.AddConsumer<UserGetByIdConsumer>();
+    x.AddConsumer<UserGetIncomingRelationsConsumer>();
+    x.AddConsumer<UserGetOutgoingRelationsConsumer>();
+    x.AddConsumer<UserGetUserRelationConsumer>();
+    x.AddConsumer<UserGetUsersConsumer>();
+    x.AddConsumer<UserIsUserIdValidConsumer>();
+    x.AddConsumer<UserRemoveRelationConsumer>();
+    x.AddConsumer<UserSearchConsumer>();
+
+
     string connection = builder.Configuration.GetValue<string>($"MESSAGE_QUEUE_CONNECTION") ?? throw new InvalidOperationException("MESSAGE_QUEUE_CONNECTION is not set!");
     if (builder.Environment.IsDevelopment())
     {
