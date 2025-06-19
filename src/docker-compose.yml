@@ -12,3 +12,21 @@ services:
     build:
       context: .
       dockerfile: DeviceOrchestrator/Dockerfile
+
+  userservice:
+    image: ${DOCKER_REGISTRY-}backbuddy/userservice:${TAG:-latest}
+    build:
+      context: .
+      dockerfile: UserService/Dockerfile
+
+  deviceservice:
+    image: ${DOCKER_REGISTRY-}backbuddy/deviceservice:${TAG:-latest}
+    build:
+      context: .
+      dockerfile: DeviceService/Dockerfile
+
+  notificationservice:
+    image: ${DOCKER_REGISTRY-}backbuddy/notificationservice:${TAG:-latest}
+    build:
+      context: .
+      dockerfile: NotificationService/Dockerfile
