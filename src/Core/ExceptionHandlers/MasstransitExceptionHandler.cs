@@ -11,7 +11,6 @@ namespace BackBuddy.Core.Library.ExceptionHandlers
             AssemblyName name = x.GetName();
             if (name.Name == null)
                 return false;
-            Console.WriteLine($"Checking assembly: {name.Name}");
             return name.Name.StartsWith("Core");
         })];
 
@@ -39,7 +38,6 @@ namespace BackBuddy.Core.Library.ExceptionHandlers
                     break;
             }
 
-            Console.WriteLine($"Is SelectedData Null? {selectedData == null}");
             if (selectedData == null)
                 return null;
 
