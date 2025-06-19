@@ -25,10 +25,13 @@ jobs:
         run: dotnet restore src/Backend.sln
 
       - name: Build Api
-        run: dotnet build src/Api/Api.csproj -c Release
+        run: dotnet build src/Backend.sln -c Release
 
-      - name: Exceute Unit Tests
-        run: dotnet test src/Api-Test/Api-Test.csproj -v n
+      - name: Execute Unit Tests - Core-Test
+        run: dotnet test src/Core-Test/Core-Test.csproj -v n
+
+      - name: Execute Unit Tests - DeviceService-Test
+        run: dotnet test src/DeviceService-Test/DeviceService-Test.csproj -v n
 
   build_docker_artifacts:
     name: Build Docker Artifacts
@@ -55,18 +58,31 @@ jobs:
         run: |
           API_IMAGE=${{ vars.ACR_URL }}/backbuddy/api
           DEVICE_ORCHESTRATOR_IMAGE=${{ vars.ACR_URL }}/backbuddy/deviceorchestrator
+          DEVICE_SERVICE_IMAGE=${{ vars.ACR_URL }}/backbuddy/deviceservice
+          USER_SERVICE_IMAGE=${{ vars.ACR_URL }}/backbuddy/userservice
+          NOTIFICATION_SERVICE_IMAGE=${{ vars.ACR_URL }}/backbuddy/notificationservice
+
           VERSION=${{ vars.MAJOR_VERSION }}.${{ vars.MINOR_VERSION }}.${{ github.run_number }}
 
           docker tag $API_IMAGE:latest $API_IMAGE:$VERSION
           docker tag $DEVICE_ORCHESTRATOR_IMAGE:latest $DEVICE_ORCHESTRATOR_IMAGE:$VERSION
+          docker tag $DEVICE_SERVICE_IMAGE:latest $DEVICE_SERVICE_IMAGE:$VERSION
+          docker tag $USER_SERVICE_IMAGE:latest $USER_SERVICE_IMAGE:$VERSION
+          docker tag $NOTIFICATION_SERVICE_IMAGE:latest $NOTIFICATION_SERVICE_IMAGE:$VERSION
 
       - name: Save Docker Images
         run: |
           API_IMAGE=${{ vars.ACR_URL }}/backbuddy/api
           DEVICE_ORCHESTRATOR_IMAGE=${{ vars.ACR_URL }}/backbuddy/deviceorchestrator
+          DEVICE_SERVICE_IMAGE=${{ vars.ACR_URL }}/backbuddy/deviceservice
+          USER_SERVICE_IMAGE=${{ vars.ACR_URL }}/backbuddy/userservice
+          NOTIFICATION_SERVICE_IMAGE=${{ vars.ACR_URL }}/backbuddy/notificationservice
 
           docker save -o backbuddy_api.tar $API_IMAGE
           docker save -o backbuddy_deviceorchestrator.tar $DEVICE_ORCHESTRATOR_IMAGE
+          docker save -o backbuddy_deviceservice.tar $DEVICE_SERVICE_IMAGE
+          docker save -o backbuddy_userservice.tar $USER_SERVICE_IMAGE
+          docker save -o backbuddy_notificationservice.tar $NOTIFICATION_SERVICE_IMAGE
 
       - name: Upload Api Docker Image
         if: github.event_name != 'pull_request'
@@ -82,6 +98,30 @@ jobs:
         with:
           name: backbuddy_deviceorchestrator
           path: backbuddy_deviceorchestrator.tar
+          retention-days: 1
+      
+      - name: Upload Device Service Docker Image
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: backbuddy_deviceservice
+          path: backbuddy_deviceservice.tar
+          retention-days: 1
+
+      - name: Upload User Service Docker Image
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: backbuddy_userservice 
+          path: backbuddy_userservice.tar
+          retention-days: 1
+
+      - name: Upload Notification Service Docker Image
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: backbuddy_notificationservice
+          path: backbuddy_notificationservice.tar
           retention-days: 1
 
   integration:
@@ -106,11 +146,32 @@ jobs:
         with:
           name: backbuddy_deviceorchestrator
 
+      - name: Download Device Service Docker Image
+        if: github.event_name != 'pull_request'
+        uses: actions/download-artifact@v4
+        with:
+          name: backbuddy_deviceservice
+
+      - name: Download User Service Docker Image
+        if: github.event_name != 'pull_request'
+        uses: actions/download-artifact@v4
+        with:
+          name: backbuddy_userservice
+      
+      - name: Download Notification Service Docker Image
+        if: github.event_name != 'pull_request'
+        uses: actions/download-artifact@v4
+        with:
+          name: backbuddy_notificationservice
+
       - name: Load Docker Image
         if: github.event_name != 'pull_request'
         run: |
           docker load -i backbuddy_api.tar
           docker load -i backbuddy_deviceorchestrator.tar
+          docker load -i backbuddy_deviceservice.tar
+          docker load -i backbuddy_userservice.tar
+          docker load -i backbuddy_notificationservice.tar
 
       - name: Run Services
         uses: hoverkraft-tech/compose-action@v2.0.2
@@ -128,7 +189,7 @@ jobs:
       - name: Install dependencies
         run: dotnet restore src/Backend.sln
 
-      - name: Exceute Integration Tests
+      - name: Execute Integration Tests
         run: dotnet test src/Integration-Test/Integration-Test.csproj -v n
 
   deploy_docker_artifacts:
@@ -162,10 +223,28 @@ jobs:
         with:
           name: backbuddy_deviceorchestrator
 
+      - name: Download Device Service Docker Image
+        uses: actions/download-artifact@v4
+        with:
+          name: backbuddy_deviceservice
+
+      - name: Download User Service Docker Image
+        uses: actions/download-artifact@v4
+        with:
+          name: backbuddy_userservice
+
+      - name: Download Notification Service Docker Image
+        uses: actions/download-artifact@v4
+        with:
+          name: backbuddy_notificationservice
+
       - name: Load Docker Image
         run: |
           docker load -i backbuddy_api.tar
           docker load -i backbuddy_deviceorchestrator.tar
+          docker load -i backbuddy_deviceservice.tar
+          docker load -i backbuddy_userservice.tar
+          docker load -i backbuddy_notificationservice.tar
 
       - name: Push latest Docker Images
         working-directory: "${{ github.workspace }}/src/"
