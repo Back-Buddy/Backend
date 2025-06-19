@@ -1,6 +1,7 @@
-﻿using BackBuddy.Api.Service.V1.ExceptionHandlers;
-using BackBuddy.Api.Service.V1.Exceptions;
+﻿using BackBuddy.Api.Service.V1.Exceptions;
 using BackBuddy.Api.Service.V1.WebSockets.Services;
+using BackBuddy.Core.Library.ExceptionHandlers;
+using BackBuddy.Core.Library.Exceptions;
 using MassTransit;
 using Microsoft.Extensions.Primitives;
 using System.Net.WebSockets;

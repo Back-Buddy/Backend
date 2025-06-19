@@ -1,5 +1,4 @@
-﻿using BackBuddy.Api.Service.V1.Device.Entities;
-using BackBuddy.Core.Library.Device.Dtos;
+﻿using BackBuddy.Core.Library.Device.Dtos;
 
 namespace BackBuddy.Api.Test.V1
 {

@@ -1,8 +1,4 @@
-﻿using BackBuddy.Api.Service.V1.Device.Enums;
-using BackBuddy.Api.Service.V1.Device.Repositories;
-using BackBuddy.Api.Service.V1.Device.Services;
-using BackBuddy.Api.Service.V1.Users.Dtos.Messages;
-using BackBuddy.Api.Service.V1.Users.Services;
+﻿using BackBuddy.Core.Library.Users.Dtos.Messages;
 using MassTransit;
 using Microsoft.Extensions.Logging;
 using NSubstitute;

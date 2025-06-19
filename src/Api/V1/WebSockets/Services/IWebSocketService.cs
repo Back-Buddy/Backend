@@ -1,4 +1,4 @@
-﻿using BackBuddy.Api.Service.V1.WebSockets.DTOs;
+﻿using BackBuddy.Core.Library.WebSockets.Dtos;
 using System.Net.WebSockets;
 
 namespace BackBuddy.Api.Service.V1.WebSockets.Services

@@ -1,7 +1,6 @@
-﻿
-using BackBuddy.Api.Service.V1.Utilities;
-using BackBuddy.Api.Service.V1.WebSockets.Dtos;
+﻿using BackBuddy.Api.Service.V1.WebSockets.Dtos;
 using BackBuddy.Api.Service.V1.WebSockets.Repositories;
+using BackBuddy.Core.Library.Utilities;
 using Microsoft.Extensions.Options;
 
 namespace BackBuddy.Api.Service.V1.WebSockets.BackgroundServices

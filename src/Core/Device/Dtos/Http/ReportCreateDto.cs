@@ -1,0 +1,19 @@
+﻿using BackBuddy.Core.Library.Device.Enums;
+using System.ComponentModel.DataAnnotations;
+
+namespace BackBuddy.Core.Library.Device.Dtos.Http
+{
+    public class ReportCreateDto
+    {
+        [Required]
+        public required string Name { get; init; }
+        [Required]
+        public required ReportVisibilityType VisibilityType { get; init; }
+        [Required]
+        public required Guid DeviceId { get; init; }
+        [Required]
+        public required DateTime StartTime { get; init; }
+        [Required]
+        public required DateTime EndTime { get; init; }
+    }
+}

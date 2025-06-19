@@ -1,6 +1,4 @@
-﻿using BackBuddy.Api.Service.V1.Device.Entities;
-using BackBuddy.Api.Service.V1.Device.Exceptions;
-using BackBuddy.Api.Service.V1.Device.Services;
+﻿using BackBuddy.Core.Library.Device.Exceptions;
 
 namespace BackBuddy.Api.Test.V1
 {

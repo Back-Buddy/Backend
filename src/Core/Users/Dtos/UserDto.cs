@@ -1,0 +1,11 @@
+﻿namespace BackBuddy.Core.Library.Users.Dtos
+{
+    public record UserDto
+    {
+        public required string UserId { get; init; }
+        public required string Username { get; init; }
+        public string? Avatar { get; init; } = null;
+        public long? Followers { get; set; } = null;
+        public long? Following { get; set; } = null;
+    }
+}

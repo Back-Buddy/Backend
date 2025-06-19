@@ -1,4 +1,4 @@
-﻿using BackBuddy.Api.Service.V1.Utilities;
+﻿using BackBuddy.Core.Library.Utilities;
 using System.Collections.Concurrent;
 
 namespace BackBuddy.Api.Test.V1
