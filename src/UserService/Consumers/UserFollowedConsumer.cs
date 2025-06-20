@@ -36,16 +36,16 @@ namespace BackBuddy.User.Service.Consumers
         {
             List<(string Title, string Body)> messages =
             [
-                ("👋 Neue Verbindung!", $"{user.Username} folgt dir jetzt. Sag Hallo!"),
-                ("🌟 Du bist im Trend!", $"{user.Username} hat dich gerade abonniert."),
-                ("✨ Ein neuer Fan!", $"{user.Username} ist dir jetzt gefolgt – nice!"),
-                ("📣 Aufmerksamkeit!", $"{user.Username} hat dich entdeckt und folgt dir."),
-                ("🙌 Willkommen!", $"{user.Username} ist jetzt Teil deiner Follower."),
-                ("🧭 Neuer Follower!", $"{user.Username} hat den Weg zu dir gefunden."),
-                ("🎉 Frisch dabei!", $"{user.Username} folgt dir ab sofort."),
-                ("🔥 Es wird heiß!", $"{user.Username} folgt dir jetzt – läuft bei dir!"),
-                ("🤝 Neue Unterstützung!", $"{user.Username} steht jetzt hinter dir."),
-                ("🚀 Wachstum!", $"{user.Username} boostet deine Follower-Zahl.")
+                ("👋 New Connection!", $"{user.Username} just followed you. Say hi!"),
+                ("🌟 You're Trending!", $"{user.Username} hit that follow button. Big vibes!"),
+                ("✨ New Fan Alert!", $"{user.Username} just became a fan – nice!"),
+                ("📣 Heads Up!", $"{user.Username} found you and hit follow."),
+                ("🙌 Welcome Aboard!", $"{user.Username} just joined your follower crew."),
+                ("🧭 Fresh Follower!", $"{user.Username} found their way to your profile."),
+                ("🎉 Just Joined!", $"{user.Username} is now following you. Woohoo!"),
+                ("🔥 It's Heating Up!", $"{user.Username} just followed – you're on fire!"),
+                ("🤝 New Supporter!", $"{user.Username} has your back now."),
+                ("🚀 Boost Incoming!", $"{user.Username} just leveled up your follower count.")
             ];
             return messages[ThreadSafeRandom.Global.Next(messages.Count)];
         }

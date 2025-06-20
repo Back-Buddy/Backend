@@ -138,16 +138,16 @@ namespace BackBuddy.Device.Service.Services
         {
             List<(string Title, string Body)> messages =
             [
-                ("👏 Buddy für deinen Report!", $"{user.Username} hat deinem Report \"{reportEntity.Name}\" einen Buddy gegeben."),
-                ("💪 Starke Leistung!", $"{user.Username} feiert deinen Report \"{reportEntity.Name}\" – weiter so!"),
-                ("🎉 Buddy-Time!", $"{user.Username} hat deinen Report \"{reportEntity.Name}\" gebuddyt."),
-                ("🌟 Anerkennung für Haltung!", $"{user.Username} zeigt Respekt für deinen Report \"{reportEntity.Name}\"."),
-                ("🔥 Rückenstark!", $"{user.Username} findet deinen Sitz-Report \"{reportEntity.Name}\" richtig gut."),
-                ("💺 Haltung zählt!", $"{user.Username} gibt dir einen Buddy für \"{reportEntity.Name}\"."),
-                ("🚀 Boost für dich!", $"{user.Username} hat deinen Report \"{reportEntity.Name}\" gewürdigt."),
-                ("🙌 BackBuddy!", $"{user.Username} steht hinter deinem Report \"{reportEntity.Name}\"."),
-                ("✨ Buddy-Power!", $"{user.Username} hat \"{reportEntity.Name}\" gefeiert – stark!"),
-                ("📈 Gesehen & gebuddyt!", $"{user.Username} hat deinen Fortschritt in \"{reportEntity.Name}\" anerkannt.")
+                ("👏 Buddy on Your Report!", $"{user.Username} just gave your report \"{reportEntity.Name}\" a buddy!"),
+                ("💪 Solid Work!", $"{user.Username} is loving your report \"{reportEntity.Name}\" – keep it up!"),
+                ("🎉 Buddy Time!", $"{user.Username} just buddy’d your report \"{reportEntity.Name}\"."),
+                ("🌟 Respect!", $"{user.Username} is showing some love for your report \"{reportEntity.Name}\"."),
+                ("🔥 Got Your Back!", $"{user.Username} thinks your report \"{reportEntity.Name}\" is fire."),
+                ("💺 Posture Matters!", $"{user.Username} buddy-approved \"{reportEntity.Name}\"."),
+                ("🚀 You Got a Boost!", $"{user.Username} just gave props to your report \"{reportEntity.Name}\"."),
+                ("🙌 BackBuddy!", $"{user.Username} is backing your report \"{reportEntity.Name}\" all the way."),
+                ("✨ Buddy Power!", $"{user.Username} just hyped up \"{reportEntity.Name}\" – nice one!"),
+                ("📈 Seen & Buddy’d!", $"{user.Username} noticed your progress in \"{reportEntity.Name}\" and gave it a thumbs up.")
             ];
             return messages[ThreadSafeRandom.Global.Next(messages.Count)];
         }

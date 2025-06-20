@@ -359,20 +359,21 @@ namespace BackBuddy.Device.Service.Services
             };
             await _deviceLogRepository.AddLog(deviceLogEntity, cancellationToken);
         }
+
         private static (string Title, string Body) GetRandomNotificationMessage(DeviceEntity deviceEntity)
         {
             List<(string Title, string Body)> messages =
             [
-                ("🧘 Kleine Pause gefällig?", $"Du sitzt schon eine Weile auf {deviceEntity.Name}. Zeit für einen kurzen Stretch!"),
-                ("🚶 Bewegung tut gut!", $"{deviceEntity.Name} meldet: Ein paar Schritte würden dir jetzt gut tun."),
-                ("🌟 Power-Up Zeit!", $"Du hast lange gesessen. Steh auf, beweg dich kurz – dein Körper wird’s dir danken!"),
-                ("⏰ Aufstehen, bitte!", $"{deviceEntity.Name} erinnert dich freundlich: Ein bisschen Bewegung wäre jetzt ideal."),
-                ("😄 Rückenfreundlicher Hinweis", $"Langes Sitzen auf {deviceEntity.Name} erkannt. Wie wär’s mit Dehnen oder Aufstehen?"),
-                ("💡 Gesundheitstipp:", $"Schon länger auf {deviceEntity.Name}? Kurz aufstehen, tief durchatmen, weiter geht's!"),
-                ("🤸 Zeit für eine Mini-Bewegungspause", $"{deviceEntity.Name} schlägt vor: Beine strecken, Schultern kreisen, durchstarten!"),
-                ("📣 Dein Körper ruft!", $"Schon über {deviceEntity.Threshold.TotalMinutes:N0} Minuten auf {deviceEntity.Name}? Zeit für Bewegung."),
-                ("💺 Dein Stuhl vermisst dich nicht", $"Vertrau uns – {deviceEntity.Name} kommt auch mal kurz ohne dich klar. Beweg dich!"),
-                ("🎯 Mikro-Pause, große Wirkung", $"Kleine Unterbrechung, große Wirkung für deine Gesundheit. Jetzt aufstehen!")
+                ("🧘 Time for a Quick Break?", $"You've been on {deviceEntity.Name} for a while. Time to stretch it out!"),
+                ("🚶 Move It, Move It!", $"{deviceEntity.Name} says: A few steps would do you good right now."),
+                ("🌟 Power-Up Time!", $"You've been sitting for a long time. Stand up, move a bit – your body will thank you!"),
+                ("⏰ Time to Get Up!", $"{deviceEntity.Name} is gently reminding you: A little movement would be perfect now."),
+                ("😄 Friendly Back Reminder", $"Been sitting on {deviceEntity.Name} too long? Maybe try some stretching or a quick walk?"),
+                ("💡 Health Tip:", $"Still on {deviceEntity.Name}? Stand up, take a deep breath, and keep going strong!"),
+                ("🤸 Mini Movement Break!", $"{deviceEntity.Name} suggests: Stretch your legs, roll your shoulders, get back at it!"),
+                ("📣 Your Body Is Calling!", $"More than {deviceEntity.Threshold.TotalMinutes:N0} minutes on {deviceEntity.Name}? Time to move."),
+                ("💺 Your Chair Can Cope Without You", $"Trust us – {deviceEntity.Name} is fine on its own. Go get some movement!"),
+                ("🎯 Micro Break, Big Impact", $"Tiny pause, huge health win. Stand up now!")
             ];
             return messages[ThreadSafeRandom.Global.Next(messages.Count)];
         }

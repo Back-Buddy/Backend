@@ -21,7 +21,7 @@ namespace BackBuddy.Api.Service.V1.Devices
         [ProducesResponseType(typeof(DeviceLogDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetLog([FromRoute] Guid deviceId, [FromRoute] Guid logId)
         {
-            DeviceGetDeviceLogRequestMessage requestMessage = new DeviceGetDeviceLogRequestMessage
+            DeviceGetDeviceLogRequestMessage requestMessage = new()
             {
                 UserId = this.GetUserId(),
                 DeviceId = deviceId,
@@ -36,7 +36,7 @@ namespace BackBuddy.Api.Service.V1.Devices
         [ProducesResponseType(typeof(List<DeviceLogDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetLogs([FromRoute] Guid deviceId, [FromQuery] DeviceLogQueryDto queryParams, [FromQuery] PageRequestDto pageQuery)
         {
-            DeviceGetDeviceLogsRequestMessage requestMessage = new DeviceGetDeviceLogsRequestMessage
+            DeviceGetDeviceLogsRequestMessage requestMessage = new()
             {
                 UserId = this.GetUserId(),
                 DeviceId = deviceId,
