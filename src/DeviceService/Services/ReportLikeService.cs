@@ -58,11 +58,11 @@ namespace BackBuddy.Device.Service.Services
         {
             try
             {
-                Response<GetUserResponseMessage> userResponse = await _userRequestClient.GetResponse<GetUserResponseMessage>(new GetUserRequestMessage { UserId = reportEntity.UserId });
+                Response<GetUserResponseMessage> userResponse = await _userRequestClient.GetResponse<GetUserResponseMessage>(new GetUserRequestMessage { UserId = likerId });
 
                 GetFcmTokensRequestMessage request = new()
                 {
-                    UserId = likerId
+                    UserId = reportEntity.UserId
                 };
                 Response<GetFcmTokensResponseMessage> response = await _fcmRequestClient.GetResponse<GetFcmTokensResponseMessage>(request);
 
