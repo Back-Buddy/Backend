@@ -62,7 +62,7 @@ namespace BackBuddy.Device.Service.Services
 
                 GetFcmTokensRequestMessage request = new()
                 {
-                    UserId = reportEntity.UserId
+                    UserId = likerId
                 };
                 Response<GetFcmTokensResponseMessage> response = await _fcmRequestClient.GetResponse<GetFcmTokensResponseMessage>(request);
 
