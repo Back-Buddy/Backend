@@ -274,16 +274,37 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # - name: Deploy Api image to Container App
-      #   uses: azure/container-apps-deploy-action@v1
-      #   with:
-      #     imageToDeploy: ${{ vars.ACR_URL }}/backbuddy/api:${{ vars.MAJOR_VERSION }}.${{ vars.MINOR_VERSION }}.${{ github.run_number }}
-      #     resourceGroup: ${{ vars.RESOURCE_GROUP }}
-      #     containerAppName: ${{ vars.CONTAINER_APP_NAME }}
+      - name: Deploy Api Image to Container App
+        uses: azure/container-apps-deploy-action@v1
+        with:
+          imageToDeploy: ${{ vars.ACR_URL }}/backbuddy/api:${{ vars.MAJOR_VERSION }}.${{ vars.MINOR_VERSION }}.${{ github.run_number }}
+          resourceGroup: ${{ vars.RESOURCE_GROUP }}
+          containerAppName: ${{ vars.CONTAINER_APP_NAME }}
 
-      # - name: Deploy Device Orchestrator image to Container App
-      #   uses: azure/container-apps-deploy-action@v1
-      #   with:
-      #     imageToDeploy: ${{ vars.ACR_URL }}/backbuddy/deviceorchestrator:${{ vars.MAJOR_VERSION }}.${{ vars.MINOR_VERSION }}.${{ github.run_number }}
-      #     resourceGroup: ${{ vars.RESOURCE_GROUP }}
-      #     containerAppName: ${{ vars.CONTAINER_DEVICE_ORCHESTRATOR_APP_NAME }}
+      - name: Deploy Device Orchestrator Image to Container App
+        uses: azure/container-apps-deploy-action@v1
+        with:
+          imageToDeploy: ${{ vars.ACR_URL }}/backbuddy/deviceorchestrator:${{ vars.MAJOR_VERSION }}.${{ vars.MINOR_VERSION }}.${{ github.run_number }}
+          resourceGroup: ${{ vars.RESOURCE_GROUP }}
+          containerAppName: ${{ vars.CONTAINER_DEVICE_ORCHESTRATOR_APP_NAME }}
+
+      - name: Deploy Device Service Image to Container App
+        uses: azure/container-apps-deploy-action@v1
+        with:
+          imageToDeploy: ${{ vars.ACR_URL }}/backbuddy/deviceservice:${{ vars.MAJOR_VERSION }}.${{ vars.MINOR_VERSION }}.${{ github.run_number }}
+          resourceGroup: ${{ vars.RESOURCE_GROUP }}
+          containerAppName: ${{ vars.CONTAINER_DEVICE_SERVICE_APP_NAME }}
+
+      - name: Deploy User Service Image to Container App
+        uses: azure/container-apps-deploy-action@v1
+        with:
+          imageToDeploy: ${{ vars.ACR_URL }}/backbuddy/userservice:${{ vars.MAJOR_VERSION }}.${{ vars.MINOR_VERSION }}.${{ github.run_number }}
+          resourceGroup: ${{ vars.RESOURCE_GROUP }}
+          containerAppName: ${{ vars.CONTAINER_USER_SERVICE_APP_NAME }}
+
+      - name: Deploy Notification Service Image to Container App
+        uses: azure/container-apps-deploy-action@v1
+        with:
+          imageToDeploy: ${{ vars.ACR_URL }}/backbuddy/notificationservice:${{ vars.MAJOR_VERSION }}.${{ vars.MINOR_VERSION }}.${{ github.run_number }}
+          resourceGroup: ${{ vars.RESOURCE_GROUP }}
+          containerAppName: ${{ vars.CONTAINER_NOTIFICATION_SERVICE_APP_NAME }}
