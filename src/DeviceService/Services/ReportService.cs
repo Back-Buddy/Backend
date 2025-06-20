@@ -42,7 +42,7 @@ namespace BackBuddy.Device.Service.Services
         private readonly IDeviceLogRepository _deviceLogRepository = deviceLogRepository;
         private readonly IReportRepository _reportRepository = reportRepository;
         private readonly IRequestClient<GetStrongFollowRelationsAndAllFollowingsRequestMessage> _relationRequestClient = relationRequestClient;
-        private readonly IRequestClient<HasUserStrongRelationRequestMessage> _relationService = strongRelationRequestClient;
+        private readonly IRequestClient<HasUserStrongRelationRequestMessage> _strongRelationRequestClient = strongRelationRequestClient;
         private readonly IReportLikeService _reportLikeService = reportLikeService;
         private readonly IRequestClient<GetUserRequestMessage> _getUserRequestClient = getUserRequestClient;
         private readonly ILogger<ReportService> _logger = logger;
@@ -197,9 +197,9 @@ namespace BackBuddy.Device.Service.Services
 
         public async Task<Page<List<ReportDto>>> GetReportFeed(string userId, ReportFeedQueryDto query, PageRequestDto page, CancellationToken cancellationToken = default)
         {
-            Response<GetStrongFollowRelationsAndAllFollowingsResponseMessage> releationsAndFollowing = await _relationRequestClient.GetResponse<GetStrongFollowRelationsAndAllFollowingsResponseMessage>(new GetStrongFollowRelationsAndAllFollowingsRequestMessage { UserId = userId }, cancellationToken: cancellationToken); // Wait for the response to ensure we have the relations before proceeding
-            IEnumerable<string> strongRelations = releationsAndFollowing.Message.StrongRelations;
-            IEnumerable<string> following = releationsAndFollowing.Message.Following;
+            Response<GetStrongFollowRelationsAndAllFollowingsResponseMessage> relationsAndFollowing = await _relationRequestClient.GetResponse<GetStrongFollowRelationsAndAllFollowingsResponseMessage>(new GetStrongFollowRelationsAndAllFollowingsRequestMessage { UserId = userId }, cancellationToken: cancellationToken); // Wait for the response to ensure we have the relations before proceeding
+            IEnumerable<string> strongRelations = relationsAndFollowing.Message.StrongRelations;
+            IEnumerable<string> following = relationsAndFollowing.Message.Following;
 
             Page<List<ReportEntity>> reports = await _reportRepository.GetReportFeed(userId, strongRelations, following, query, page, cancellationToken);
 
@@ -314,7 +314,7 @@ namespace BackBuddy.Device.Service.Services
 
         internal async Task<bool> HasStrongRelation(string userId, string targetUserId)
         {
-            Response<HasUserStrongRelationResponseMessage> response = await _relationService.GetResponse<HasUserStrongRelationResponseMessage>(new HasUserStrongRelationRequestMessage { UserId = userId, TargetUserId = targetUserId });
+            Response<HasUserStrongRelationResponseMessage> response = await _strongRelationRequestClient.GetResponse<HasUserStrongRelationResponseMessage>(new HasUserStrongRelationRequestMessage { UserId = userId, TargetUserId = targetUserId });
             return response.Message.HasStrongRelation;
         }
 
