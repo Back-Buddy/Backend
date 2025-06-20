@@ -87,7 +87,7 @@ namespace BackBuddy.Api.Test.V1
         [TestMethod]
         public void Next_ShouldBeThreadSafe_AndProduceDifferentValues()
         {
-             // Arrange
+            // Arrange
             ThreadSafeRandom random = ThreadSafeRandom.Global;
             int threadCount = 10;
             int iterations = 1000;

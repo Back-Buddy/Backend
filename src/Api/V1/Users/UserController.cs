@@ -1,9 +1,9 @@
 ﻿using BackBuddy.Api.Service.V1.Auth.Extensions;
-using BackBuddy.Api.Service.V1.Users.Exceptions;
 using BackBuddy.Core.Library.Users.Dtos;
 using BackBuddy.Core.Library.Users.Dtos.Http;
 using BackBuddy.Core.Library.Users.Dtos.Messages;
 using BackBuddy.Core.Library.Users.Enums;
+using BackBuddy.Core.Library.Users.Exceptions;
 using BackBuddy.Core.Library.Utilities;
 using MassTransit;
 using Microsoft.AspNetCore.Mvc;
@@ -134,7 +134,7 @@ namespace BackBuddy.Api.Service.V1.Users
             };
 
             Response<UserGetUsersResponseMessage> usersResponse = await _userGetUsersRequestClient.GetResponse<UserGetUsersResponseMessage>(usersRequestMessage);
-            
+
             Response.AddPageHeader(followers.HasMoreEntries);
             return Ok(usersResponse.Message.Users);
         }
@@ -171,7 +171,7 @@ namespace BackBuddy.Api.Service.V1.Users
             };
 
             Response<UserGetUsersResponseMessage> usersResponse = await _userGetUsersRequestClient.GetResponse<UserGetUsersResponseMessage>(usersRequestMessage);
-            
+
             Response.AddPageHeader(following.HasMoreEntries);
             return Ok(usersResponse.Message.Users);
         }

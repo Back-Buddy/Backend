@@ -12,22 +12,14 @@ namespace BackBuddy.User.Service.Consumers
 
         public async Task Consume(ConsumeContext<UserSearchRequestMessage> context)
         {
-            try
-            {
-                _logger.LogDebug("Processing UserSearchRequestMessage with query: {Query}", context.Message.Query.SearchTerm);
+            _logger.LogDebug("Processing UserSearchRequestMessage with query: {Query}", context.Message.Query.SearchTerm);
 
-                IEnumerable<UserDto> users = await _userService.SearchUser(context.Message.Query, context.Message.UserExpandType);
+            IEnumerable<UserDto> users = await _userService.SearchUser(context.Message.Query, context.Message.UserExpandType);
 
-                await context.RespondAsync(new UserSearchResponseMessage
-                {
-                    Users = users
-                });
-            }
-            catch (Exception ex)
+            await context.RespondAsync(new UserSearchResponseMessage
             {
-                _logger.LogError(ex, "Failed to process UserSearchRequestMessage");
-                throw;
-            }
+                Users = users
+            });
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿namespace BackBuddy.Api.Service.V1.Database.Redis
+﻿namespace BackBuddy.Core.Library.Database.Redis
 {
     public record RedisConnectionConfig
     {

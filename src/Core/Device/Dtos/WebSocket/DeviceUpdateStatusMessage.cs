@@ -1,6 +1,6 @@
-﻿using BackBuddy.Api.Service.V1.WebSockets.Enums;
-using BackBuddy.Core.Library.Device.Enums;
+﻿using BackBuddy.Core.Library.Device.Enums;
 using BackBuddy.Core.Library.WebSockets.Dtos;
+using BackBuddy.Core.Library.WebSockets.Enums;
 
 namespace BackBuddy.Core.Library.Device.Dtos.WebSocket
 {

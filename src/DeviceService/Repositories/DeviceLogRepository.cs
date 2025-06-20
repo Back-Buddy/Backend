@@ -49,7 +49,7 @@ namespace BackBuddy.Device.Service.Repositories
                 filters.Add(Builders<DeviceLogEntity>.Filter.Gte(x => x.StartTime, query.StartTime));
             if (query.EndTime != null)
                 filters.Add(Builders<DeviceLogEntity>.Filter.Lte(x => x.EndTime, query.EndTime));
-            
+
             FilterDefinition<DeviceLogEntity> finalFilter = Builders<DeviceLogEntity>.Filter.And(filters);
 
             FindOptions<DeviceLogEntity> findOptions = new()

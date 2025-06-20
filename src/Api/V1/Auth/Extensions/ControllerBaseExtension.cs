@@ -1,4 +1,4 @@
-﻿using BackBuddy.Api.Service.V1.Exceptions;
+﻿using BackBuddy.Core.Library.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 

@@ -1,9 +1,9 @@
-﻿using MongoDB.Bson;
-using MongoDB.Driver;
-using System.Text.RegularExpressions;
+﻿using BackBuddy.Core.Library.Device.Dtos.Http;
 using BackBuddy.Core.Library.Utilities;
 using BackBuddy.Device.Service.Entities;
-using BackBuddy.Core.Library.Device.Dtos.Http;
+using MongoDB.Bson;
+using MongoDB.Driver;
+using System.Text.RegularExpressions;
 
 namespace BackBuddy.Device.Service.Repositories
 {
@@ -42,7 +42,7 @@ namespace BackBuddy.Device.Service.Repositories
         {
             List<FilterDefinition<DeviceEntity>> filters = [];
             filters.Add(Builders<DeviceEntity>.Filter.Eq(x => x.UserId, userId));
-            
+
             if (query.Active.HasValue)
                 filters.Add(Builders<DeviceEntity>.Filter.Eq(x => x.Active, query.Active.Value));
 
@@ -104,18 +104,18 @@ namespace BackBuddy.Device.Service.Repositories
         {
             List<DeviceEntity> activeDevices = await GetActiveDevices(userId, excludeDeviceId, cancellationToken);
 
-            IEnumerable<Task<ReplaceOneResult>> tasks = activeDevices.Select(device => 
+            IEnumerable<Task<ReplaceOneResult>> tasks = activeDevices.Select(device =>
             {
                 device.Active = false;
                 return _collection.ReplaceOneAsync(
-                    d => d.Id == device.Id, 
-                    device, 
+                    d => d.Id == device.Id,
+                    device,
                     cancellationToken: cancellationToken);
             });
 
             await Task.WhenAll(tasks);
         }
-        
+
         private async Task<List<DeviceEntity>> GetActiveDevices(string userId, Guid excludeDeviceId, CancellationToken cancellationToken = default)
         {
             FilterDefinition<DeviceEntity> filter = Builders<DeviceEntity>.Filter
@@ -124,7 +124,7 @@ namespace BackBuddy.Device.Service.Repositories
                     Builders<DeviceEntity>.Filter.Ne(x => x.Id, excludeDeviceId),
                     Builders<DeviceEntity>.Filter.Eq(x => x.Active, true)
                 );
-            
+
             return await _collection.Find(filter).ToListAsync(cancellationToken);
         }
     }

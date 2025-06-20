@@ -1,7 +1,7 @@
-﻿using BackBuddy.Api.Service.V1.WebSockets.Enums;
-using BackBuddy.Api.Service.V1.WebSockets.Mapper;
-using BackBuddy.Core.Library.WebSockets.Dtos;
+﻿using BackBuddy.Core.Library.WebSockets.Dtos;
+using BackBuddy.Core.Library.WebSockets.Enums;
 using BackBuddy.Core.Library.WebSockets.Exceptions;
+using BackBuddy.Core.Library.WebSockets.Mapper;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 

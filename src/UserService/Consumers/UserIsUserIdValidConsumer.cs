@@ -11,22 +11,14 @@ namespace BackBuddy.User.Service.Consumers
 
         public async Task Consume(ConsumeContext<UserIsUserIdValidRequestMessage> context)
         {
-            try
-            {
-                _logger.LogDebug("Processing UserIsUserIdValidRequestMessage for user: {UserId}", context.Message.UserId);
+            _logger.LogDebug("Processing UserIsUserIdValidRequestMessage for user: {UserId}", context.Message.UserId);
 
-                bool isValid = await _userService.IsUserIdValid(context.Message.UserId);
+            bool isValid = await _userService.IsUserIdValid(context.Message.UserId);
 
-                await context.RespondAsync(new UserIsUserIdValidResponseMessage
-                {
-                    IsValid = isValid
-                });
-            }
-            catch (Exception ex)
+            await context.RespondAsync(new UserIsUserIdValidResponseMessage
             {
-                _logger.LogError(ex, "Failed to process UserIsUserIdValidRequestMessage");
-                throw;
-            }
+                IsValid = isValid
+            });
         }
     }
 }

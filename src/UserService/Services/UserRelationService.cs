@@ -137,10 +137,12 @@ namespace BackBuddy.User.Service.Services
 
         public async Task<UserRelationDto> GetUserRelation(string userId, string targetUserId, CancellationToken cancellationToken = default)
         {
+#pragma warning disable S2234
             List<Task<bool>> tasks = [
                 HasRelation(userId, targetUserId, cancellationToken),
                 HasRelation(targetUserId, userId, cancellationToken)
             ];
+#pragma warning restore S2234
 
             bool[] hasRelations = await Task.WhenAll(tasks);
             return new UserRelationDto

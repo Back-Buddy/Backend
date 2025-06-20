@@ -1,4 +1,3 @@
-using System.Text;
 using BackBuddy.Core.Library.Database.Firebase;
 using BackBuddy.Notification.Service.Consumers;
 using BackBuddy.Notification.Service.Services;
@@ -8,6 +7,7 @@ using Google.Api.Gax;
 using Google.Apis.Auth.OAuth2;
 using Google.Cloud.Firestore;
 using MassTransit;
+using System.Text;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 

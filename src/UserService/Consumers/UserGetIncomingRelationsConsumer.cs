@@ -12,24 +12,16 @@ namespace BackBuddy.User.Service.Consumers
 
         public async Task Consume(ConsumeContext<UserGetIncomingRelationsRequestMessage> context)
         {
-            try
-            {
-                _logger.LogDebug("Processing UserGetIncomingRelationsRequestMessage for user: {UserId}", 
-                    context.Message.UserId);
+            _logger.LogDebug("Processing UserGetIncomingRelationsRequestMessage for user: {UserId}",
+                context.Message.UserId);
 
-                Page<List<string>> relations = await _userRelationService.GetIncomingRelations(
-                    context.Message.UserId, context.Message.Page);
+            Page<List<string>> relations = await _userRelationService.GetIncomingRelations(
+                context.Message.UserId, context.Message.Page);
 
-                await context.RespondAsync(new UserGetIncomingRelationsResponseMessage
-                {
-                    Relations = relations
-                });
-            }
-            catch (Exception ex)
+            await context.RespondAsync(new UserGetIncomingRelationsResponseMessage
             {
-                _logger.LogError(ex, "Failed to process UserGetIncomingRelationsRequestMessage");
-                throw;
-            }
+                Relations = relations
+            });
         }
     }
 }

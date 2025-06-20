@@ -10,25 +10,17 @@ namespace BackBuddy.Device.Service.Consumer.Report
     {
         private readonly IReportService _reportService = reportService;
         private readonly ILogger<ReportGetFeedConsumer> _logger = logger;
-        
+
         public async Task Consume(ConsumeContext<ReportGetFeedRequestMessage> context)
         {
-            try
-            {
-                _logger.LogDebug("Processing ReportGetFeedRequestMessage for user: {UserId}", context.Message.UserId);
+            _logger.LogDebug("Processing ReportGetFeedRequestMessage for user: {UserId}", context.Message.UserId);
 
-                Page<List<ReportDto>> reports = await _reportService.GetReportFeed(context.Message.UserId, context.Message.Query, context.Message.Page);
+            Page<List<ReportDto>> reports = await _reportService.GetReportFeed(context.Message.UserId, context.Message.Query, context.Message.Page);
 
-                await context.RespondAsync(new ReportGetFeedResponseMessage
-                {
-                    Reports = reports
-                });
-            }
-            catch (Exception ex)
+            await context.RespondAsync(new ReportGetFeedResponseMessage
             {
-                _logger.LogError(ex, "Failed to process ReportGetFeedRequestMessage");
-                throw;
-            }
+                Reports = reports
+            });
         }
     }
 }

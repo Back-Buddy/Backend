@@ -1,7 +1,6 @@
-using BackBuddy.Core.Library.Exceptions;
 using Microsoft.AspNetCore.Http;
 
-namespace BackBuddy.Api.Service.V1.Exceptions
+namespace BackBuddy.Core.Library.Exceptions
 {
     public class DeviceActiveConflictException : AbstractBaseException
     {

@@ -350,7 +350,7 @@ namespace BackBuddy.Integration_Test.V1.Endpoints
             JsonObject createdReport = await _reportLib.CreateReport(_accessToken, deviceId, "Test Report", "All", startTime, endTime);
 
             // Act
-            JsonObject getReport = await _reportLib.GetReport(accessToken2, Guid.Parse(createdReport["id"].GetValue<string>()), expandType: "DeviceLogs");
+            JsonObject getReport = await _reportLib.GetReport(accessToken2, Guid.Parse(createdReport["id"].GetValue<string>()), expandType: expandType);
 
             // Assert
             Assert.IsNotNull(getReport);

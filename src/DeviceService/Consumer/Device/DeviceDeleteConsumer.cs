@@ -11,20 +11,12 @@ namespace BackBuddy.Device.Service.Consumer.Device
 
         public async Task Consume(ConsumeContext<DeviceDeleteRequestMessage> context)
         {
-            try
-            {
-                _logger.LogDebug("Processing DeviceDeleteRequestMessage for user: {UserId}, device: {DeviceId}",
-                    context.Message.UserId, context.Message.DeviceId);
+            _logger.LogDebug("Processing DeviceDeleteRequestMessage for user: {UserId}, device: {DeviceId}",
+                context.Message.UserId, context.Message.DeviceId);
 
-                await _deviceService.Delete(context.Message.UserId, context.Message.DeviceId);
+            await _deviceService.Delete(context.Message.UserId, context.Message.DeviceId);
 
-                await context.RespondAsync(new DeviceDeleteResponseMessage());
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to process DeviceDeleteRequestMessage");
-                throw;
-            }
+            await context.RespondAsync(new DeviceDeleteResponseMessage());
         }
     }
 }

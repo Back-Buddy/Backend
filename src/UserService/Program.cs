@@ -1,6 +1,5 @@
-using System.Text;
-using BackBuddy.Api.Service.V1.Database.MongoDB;
 using BackBuddy.Core.Library.Database.Firebase;
+using BackBuddy.Core.Library.Database.MongoDB;
 using BackBuddy.User.Service.Consumers;
 using BackBuddy.User.Service.Entities;
 using BackBuddy.User.Service.Repositories;
@@ -12,6 +11,7 @@ using Google.Apis.Auth.OAuth2;
 using Google.Cloud.Firestore;
 using MassTransit;
 using MongoDB.Driver;
+using System.Text;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 

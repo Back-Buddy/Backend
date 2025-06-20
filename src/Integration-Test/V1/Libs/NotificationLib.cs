@@ -1,25 +1,28 @@
 using System.Net.Http.Json;
 using System.Text.Json.Nodes;
 
-internal class NotificationLib
+namespace BackBuddy.Integration_Test.V1.Libs
 {
-    private readonly HttpClient _httpClient;
-
-    public NotificationLib(string baseUri)
+    internal class NotificationLib
     {
-        _httpClient = new()
+        private readonly HttpClient _httpClient;
+
+        public NotificationLib(string baseUri)
         {
-            BaseAddress = new Uri(baseUri),
-        };
-    }
+            _httpClient = new()
+            {
+                BaseAddress = new Uri(baseUri),
+            };
+        }
 
-    public async Task<JsonArray> GetNotifications()
-    {
-        return await _httpClient.GetFromJsonAsync<JsonArray>("/cache");
-    }
+        public async Task<JsonArray> GetNotifications()
+        {
+            return await _httpClient.GetFromJsonAsync<JsonArray>("/cache");
+        }
 
-    public async Task ClearNotifications()
-    {
-        await _httpClient.DeleteAsync("/clear");
+        public async Task ClearNotifications()
+        {
+            await _httpClient.DeleteAsync("/clear");
+        }
     }
 }

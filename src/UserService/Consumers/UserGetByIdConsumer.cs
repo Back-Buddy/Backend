@@ -12,22 +12,14 @@ namespace BackBuddy.User.Service.Consumers
 
         public async Task Consume(ConsumeContext<UserGetByIdRequestMessage> context)
         {
-            try
-            {
-                _logger.LogDebug("Processing UserGetByIdRequestMessage for user: {UserId}", context.Message.UserId);
+            _logger.LogDebug("Processing UserGetByIdRequestMessage for user: {UserId}", context.Message.UserId);
 
-                UserDto user = await _userService.GetUserByIdAsync(context.Message.UserId, context.Message.UserExpandType);
+            UserDto user = await _userService.GetUserByIdAsync(context.Message.UserId, context.Message.UserExpandType);
 
-                await context.RespondAsync(new UserGetByIdResponseMessage
-                {
-                    User = user
-                });
-            }
-            catch (Exception ex)
+            await context.RespondAsync(new UserGetByIdResponseMessage
             {
-                _logger.LogError(ex, "Failed to process UserGetByIdRequestMessage");
-                throw;
-            }
+                User = user
+            });
         }
     }
 }

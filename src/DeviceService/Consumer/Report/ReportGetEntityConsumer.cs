@@ -12,22 +12,14 @@ namespace BackBuddy.Device.Service.Consumer.Report
 
         public async Task Consume(ConsumeContext<ReportGetEntityRequestMessage> context)
         {
-            try
-            {
-                _logger.LogDebug("Processing ReportGetEntityRequestMessage for report: {ReportId}", context.Message.ReportId);
+            _logger.LogDebug("Processing ReportGetEntityRequestMessage for report: {ReportId}", context.Message.ReportId);
 
-                ReportEntity reportEntity = await _reportService.GetReportEntity(context.Message.ReportId);
+            ReportEntity reportEntity = await _reportService.GetReportEntity(context.Message.ReportId);
 
-                await context.RespondAsync(new ReportGetEntityResponseMessage
-                {
-                    Report = reportEntity
-                });
-            }
-            catch (Exception ex)
+            await context.RespondAsync(new ReportGetEntityResponseMessage
             {
-                _logger.LogError(ex, "Failed to process ReportGetEntityRequestMessage");
-                throw;
-            }
+                Report = reportEntity
+            });
         }
     }
 }

@@ -9,26 +9,18 @@ namespace BackBuddy.Device.Service.Consumer.Report
     {
         private readonly IReportService _reportService = reportService;
         private readonly ILogger<ReportCreateConsumer> _logger = logger;
-        
+
 
         public async Task Consume(ConsumeContext<ReportCreateRequestMessage> context)
         {
-            try
-            {
-                _logger.LogDebug("Processing ReportCreateRequestMessage for user: {UserId}", context.Message.UserId);
+            _logger.LogDebug("Processing ReportCreateRequestMessage for user: {UserId}", context.Message.UserId);
 
-                ReportDto report = await _reportService.CreateReport(context.Message.UserId, context.Message.Request);
+            ReportDto report = await _reportService.CreateReport(context.Message.UserId, context.Message.Request);
 
-                await context.RespondAsync(new ReportCreateResponseMessage
-                {
-                    Report = report
-                });
-            }
-            catch (Exception ex)
+            await context.RespondAsync(new ReportCreateResponseMessage
             {
-                _logger.LogError(ex, "Failed to process ReportCreateRequestMessage");
-                throw;
-            }
+                Report = report
+            });
         }
     }
 }

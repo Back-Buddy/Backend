@@ -11,20 +11,12 @@ namespace BackBuddy.Device.Service.Consumer.Report
 
         public async Task Consume(ConsumeContext<ReportDeleteRequestMessage> context)
         {
-            try
-            {
-                _logger.LogDebug("Processing ReportDeleteRequestMessage for user: {UserId}, report: {ReportId}",
-                    context.Message.UserId, context.Message.ReportId);
+            _logger.LogDebug("Processing ReportDeleteRequestMessage for user: {UserId}, report: {ReportId}",
+                context.Message.UserId, context.Message.ReportId);
 
-                await _reportService.DeleteReport(context.Message.UserId, context.Message.ReportId);
+            await _reportService.DeleteReport(context.Message.UserId, context.Message.ReportId);
 
-                await context.RespondAsync(new ReportDeleteResponseMessage());
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to process ReportDeleteRequestMessage");
-                throw;
-            }
+            await context.RespondAsync(new ReportDeleteResponseMessage());
         }
     }
 }

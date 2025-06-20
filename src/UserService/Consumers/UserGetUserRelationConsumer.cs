@@ -12,23 +12,15 @@ namespace BackBuddy.User.Service.Consumers
 
         public async Task Consume(ConsumeContext<UserGetUserRelationRequestMessage> context)
         {
-            try
-            {
-                _logger.LogDebug("Processing UserGetUserRelationRequestMessage for user: {UserId}, target: {TargetUserId}", 
-                    context.Message.UserId, context.Message.TargetUserId);
+            _logger.LogDebug("Processing UserGetUserRelationRequestMessage for user: {UserId}, target: {TargetUserId}",
+                context.Message.UserId, context.Message.TargetUserId);
 
-                UserRelationDto relation = await _userRelationService.GetUserRelation(context.Message.UserId, context.Message.TargetUserId);
+            UserRelationDto relation = await _userRelationService.GetUserRelation(context.Message.UserId, context.Message.TargetUserId);
 
-                await context.RespondAsync(new UserGetUserRelationResponseMessage
-                {
-                    Relation = relation
-                });
-            }
-            catch (Exception ex)
+            await context.RespondAsync(new UserGetUserRelationResponseMessage
             {
-                _logger.LogError(ex, "Failed to process UserGetUserRelationRequestMessage");
-                throw;
-            }
+                Relation = relation
+            });
         }
     }
 }

@@ -36,7 +36,7 @@ namespace BackBuddy.Device.Service.Services
         Task<Page<List<ReportDto>>> GetReportFeed(string userId, ReportFeedQueryDto query, PageRequestDto page, CancellationToken cancellationToken = default);
     }
 
-    public partial class ReportService(IReportLikeService reportLikeService, IDeviceLogRepository deviceLogRepository, IDeviceRepository deviceRepository, IReportRepository reportRepository, IRequestClient<GetUserRequestMessage> getUserRequestClient, IRequestClient<GetStrongFollowRelationsAndAllFollowingsRequestMessage> relationRequestClient, IRequestClient<HasUserStrongRelationRequestMessage> strongRelationRequestClient,ILogger<ReportService> logger) : IReportService
+    public partial class ReportService(IReportLikeService reportLikeService, IDeviceLogRepository deviceLogRepository, IDeviceRepository deviceRepository, IReportRepository reportRepository, IRequestClient<GetUserRequestMessage> getUserRequestClient, IRequestClient<GetStrongFollowRelationsAndAllFollowingsRequestMessage> relationRequestClient, IRequestClient<HasUserStrongRelationRequestMessage> strongRelationRequestClient, ILogger<ReportService> logger) : IReportService
     {
         private readonly IDeviceRepository _deviceRepository = deviceRepository;
         private readonly IDeviceLogRepository _deviceLogRepository = deviceLogRepository;

@@ -11,7 +11,7 @@ namespace BackBuddy.Api.Service.V1.Auth.Extensions
 
         public static void ConfigureAuthentification(this WebApplicationBuilder builder)
         {
-            if(!builder.Environment.IsDevelopment())
+            if (!builder.Environment.IsDevelopment())
             {
                 Setup(builder);
             }

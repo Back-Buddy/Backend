@@ -12,22 +12,14 @@ namespace BackBuddy.Device.Service.Consumer.Report
 
         public async Task Consume(ConsumeContext<ReportGetLikesFromReportRequestMessage> context)
         {
-            try
-            {
-                _logger.LogDebug("Processing ReportGetLikesFromReportRequestMessage for report: {ReportId}", context.Message.Report.Id);
+            _logger.LogDebug("Processing ReportGetLikesFromReportRequestMessage for report: {ReportId}", context.Message.Report.Id);
 
-                Page<List<string>> likes = await _reportLikeService.GetReportLikesFromReport(context.Message.Report, context.Message.VisibilityTypes, context.Message.Page);
+            Page<List<string>> likes = await _reportLikeService.GetReportLikesFromReport(context.Message.Report, context.Message.VisibilityTypes, context.Message.Page);
 
-                await context.RespondAsync(new ReportGetLikesFromReportResponseMessage
-                {
-                    Likes = likes
-                });
-            }
-            catch (Exception ex)
+            await context.RespondAsync(new ReportGetLikesFromReportResponseMessage
             {
-                _logger.LogError(ex, "Failed to process ReportGetLikesFromReportRequestMessage");
-                throw;
-            }
+                Likes = likes
+            });
         }
     }
 }

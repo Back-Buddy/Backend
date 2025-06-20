@@ -1,6 +1,5 @@
 using BackBuddy.Api.Service.Swagger;
 using BackBuddy.Api.Service.V1.Auth.Extensions;
-using BackBuddy.Api.Service.V1.Database.Redis;
 using BackBuddy.Api.Service.V1.ExceptionHandlers;
 using BackBuddy.Api.Service.V1.WebSockets.BackgroundServices;
 using BackBuddy.Api.Service.V1.WebSockets.Consumer;
@@ -8,6 +7,7 @@ using BackBuddy.Api.Service.V1.WebSockets.Dtos;
 using BackBuddy.Api.Service.V1.WebSockets.Middleware;
 using BackBuddy.Api.Service.V1.WebSockets.Repositories;
 using BackBuddy.Api.Service.V1.WebSockets.Services;
+using BackBuddy.Core.Library.Database.Redis;
 using BackBuddy.Core.Library.WebSockets.Dtos;
 using MassTransit;
 using Microsoft.Extensions.Caching.Distributed;

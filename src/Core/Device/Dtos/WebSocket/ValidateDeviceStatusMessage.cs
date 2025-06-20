@@ -4,7 +4,7 @@
     {
         public required IEnumerable<DeviceStatusDto> StatusEntities { get; init; }
     }
-    
+
     public record ValidateDeviceStatusResponseMessage
     {
     }

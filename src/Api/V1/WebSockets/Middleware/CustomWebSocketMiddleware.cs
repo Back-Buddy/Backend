@@ -1,5 +1,4 @@
-﻿using BackBuddy.Api.Service.V1.Exceptions;
-using BackBuddy.Api.Service.V1.WebSockets.Services;
+﻿using BackBuddy.Api.Service.V1.WebSockets.Services;
 using BackBuddy.Core.Library.ExceptionHandlers;
 using BackBuddy.Core.Library.Exceptions;
 using MassTransit;

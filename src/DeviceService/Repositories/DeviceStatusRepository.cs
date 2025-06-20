@@ -1,4 +1,4 @@
-﻿using BackBuddy.Api.Service.V1.Database.Redis;
+﻿using BackBuddy.Core.Library.Database.Redis;
 using BackBuddy.Core.Library.Device.Dtos;
 using BackBuddy.Core.Library.Device.Entities;
 using BackBuddy.Core.Library.Device.Mapper;

@@ -3,7 +3,7 @@ using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Conventions;
 using MongoDB.Bson.Serialization.Serializers;
 
-namespace BackBuddy.Api.Service.V1.Database.MongoDB
+namespace BackBuddy.Core.Library.Database.MongoDB
 {
     public class GuidRepresentationConvention : ConventionBase, IMemberMapConvention
     {

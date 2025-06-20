@@ -11,19 +11,11 @@ namespace BackBuddy.User.Service.Consumers
 
         public async Task Consume(ConsumeContext<UserDeleteRequestMessage> context)
         {
-            try
-            {
-                _logger.LogDebug("Processing UserDeleteRequestMessage for user: {UserId}", context.Message.UserId);
+            _logger.LogDebug("Processing UserDeleteRequestMessage for user: {UserId}", context.Message.UserId);
 
-                await _userService.DeleteUser(context.Message.UserId);
+            await _userService.DeleteUser(context.Message.UserId);
 
-                await context.RespondAsync(new UserDeleteResponseMessage());
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to process UserDeleteRequestMessage");
-                throw;
-            }
+            await context.RespondAsync(new UserDeleteResponseMessage());
         }
     }
 }

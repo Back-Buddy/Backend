@@ -9,26 +9,18 @@ namespace BackBuddy.Device.Service.Consumer.Report
     {
         private readonly IReportService _reportService = reportService;
         private readonly ILogger<ReportGetVisibilityTypeForUserConsumer> _logger = logger;
-        
+
         public async Task Consume(ConsumeContext<ReportGetVisibilityTypeForUserRequestMessage> context)
         {
-            try
-            {
-                _logger.LogDebug("Processing ReportGetVisibilityTypeForUserRequestMessage for user: {UserId}, report: {ReportId}",
-                    context.Message.UserId, context.Message.TargetReport.Id);
+            _logger.LogDebug("Processing ReportGetVisibilityTypeForUserRequestMessage for user: {UserId}, report: {ReportId}",
+                context.Message.UserId, context.Message.TargetReport.Id);
 
-                IEnumerable<ReportVisibilityType> visibilityTypes = await _reportService.GetVisibilityTypeForUser(context.Message.UserId, context.Message.TargetReport);
+            IEnumerable<ReportVisibilityType> visibilityTypes = await _reportService.GetVisibilityTypeForUser(context.Message.UserId, context.Message.TargetReport);
 
-                await context.RespondAsync(new ReportGetVisibilityTypeForUserResponseMessage
-                {
-                    VisibilityTypes = visibilityTypes
-                });
-            }
-            catch (Exception ex)
+            await context.RespondAsync(new ReportGetVisibilityTypeForUserResponseMessage
             {
-                _logger.LogError(ex, "Failed to process ReportGetVisibilityTypeForUserRequestMessage");
-                throw;
-            }
+                VisibilityTypes = visibilityTypes
+            });
         }
     }
 }

@@ -12,23 +12,15 @@ namespace BackBuddy.Device.Service.Consumer.Device
 
         public async Task Consume(ConsumeContext<DeviceGetRequestMessage> context)
         {
-            try
-            {
-                _logger.LogDebug("Processing DeviceGetRequestMessage for user: {UserId}, device: {DeviceId}", 
-                    context.Message.UserId, context.Message.DeviceId);
+            _logger.LogDebug("Processing DeviceGetRequestMessage for user: {UserId}, device: {DeviceId}",
+                context.Message.UserId, context.Message.DeviceId);
 
-                DeviceDto device = await _deviceService.Get(context.Message.UserId, context.Message.DeviceId);
+            DeviceDto device = await _deviceService.Get(context.Message.UserId, context.Message.DeviceId);
 
-                await context.RespondAsync(new DeviceGetResponseMessage
-                {
-                    Device = device
-                });
-            }
-            catch (Exception ex)
+            await context.RespondAsync(new DeviceGetResponseMessage
             {
-                _logger.LogError(ex, "Failed to process DeviceGetRequestMessage");
-                throw;
-            }
+                Device = device
+            });
         }
     }
 }

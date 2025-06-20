@@ -1,5 +1,4 @@
-﻿using BackBuddy.Api.Service.V1.Exceptions;
-using BackBuddy.Core.Library.ExceptionHandlers;
+﻿using BackBuddy.Core.Library.ExceptionHandlers;
 using BackBuddy.Core.Library.Exceptions;
 using MassTransit;
 using Microsoft.AspNetCore.Diagnostics;
@@ -10,7 +9,7 @@ namespace BackBuddy.Api.Service.V1.ExceptionHandlers
     {
         public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
         {
-            if(exception is RequestFaultException requestFaultException)
+            if (exception is RequestFaultException requestFaultException)
             {
                 AbstractBaseException? innerException = requestFaultException.GetAbstractBaseException();
                 if (innerException != null)

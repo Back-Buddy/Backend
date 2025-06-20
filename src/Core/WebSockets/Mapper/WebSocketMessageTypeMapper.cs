@@ -1,7 +1,7 @@
-﻿using BackBuddy.Api.Service.V1.WebSockets.Enums;
-using BackBuddy.Core.Library.Device.Dtos.WebSocket;
+﻿using BackBuddy.Core.Library.Device.Dtos.WebSocket;
+using BackBuddy.Core.Library.WebSockets.Enums;
 
-namespace BackBuddy.Api.Service.V1.WebSockets.Mapper
+namespace BackBuddy.Core.Library.WebSockets.Mapper
 {
     public static class WebSocketMessageTypeMapper
     {

@@ -1,5 +1,5 @@
-﻿using BackBuddy.Api.Service.V1.WebSockets.Enums;
-using BackBuddy.Api.Service.V1.WebSockets.Mapper;
+﻿using BackBuddy.Core.Library.WebSockets.Enums;
+using BackBuddy.Core.Library.WebSockets.Mapper;
 using System.Text.Json;
 
 namespace BackBuddy.Core.Library.WebSockets.Dtos

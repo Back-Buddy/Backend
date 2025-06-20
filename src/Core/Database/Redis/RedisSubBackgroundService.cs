@@ -1,5 +1,4 @@
-﻿
-using BackBuddy.Core.Library.WebSockets;
+﻿using BackBuddy.Core.Library.WebSockets;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -7,7 +6,7 @@ using StackExchange.Redis;
 using System.Reflection;
 using System.Text.Json;
 
-namespace BackBuddy.Api.Service.V1.Database.Redis
+namespace BackBuddy.Core.Library.Database.Redis
 {
     public class RedisSubBackgroundService(IConnectionMultiplexer connectionMultiplexer, RedisSubBuilder redisSubBuilder, IServiceScopeFactory serviceScopeFactory, ILogger<RedisSubBackgroundService> logger) : BackgroundService
     {

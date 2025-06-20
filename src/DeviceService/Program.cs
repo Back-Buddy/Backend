@@ -1,9 +1,9 @@
 using Azure.Identity;
 using Azure.Security.KeyVault.Secrets;
-using BackBuddy.Api.Service.V1.Database.MongoDB;
-using BackBuddy.Api.Service.V1.Database.Redis;
 using BackBuddy.Core.Library;
 using BackBuddy.Core.Library.Database.KeyVault;
+using BackBuddy.Core.Library.Database.MongoDB;
+using BackBuddy.Core.Library.Database.Redis;
 using BackBuddy.Core.Library.Device.Entities;
 using BackBuddy.Device.Service.Consumer;
 using BackBuddy.Device.Service.Consumer.Device;
@@ -132,7 +132,7 @@ builder.Services.AddMassTransit(x =>
     //Device Log
     x.AddConsumer<DeviceGetDeviceLogConsumer>();
     x.AddConsumer<DeviceGetDeviceLogsConsumer>();
-    
+
 
     string connection = builder.Configuration.GetValue<string>($"MESSAGE_QUEUE_CONNECTION") ?? throw new InvalidOperationException("MESSAGE_QUEUE_CONNECTION is not set!");
     if (builder.Environment.IsDevelopment())

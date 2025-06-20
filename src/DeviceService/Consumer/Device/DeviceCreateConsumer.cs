@@ -12,22 +12,14 @@ namespace BackBuddy.Device.Service.Consumer.Device
 
         public async Task Consume(ConsumeContext<DeviceCreateRequestMessage> context)
         {
-            try
-            {
-                _logger.LogDebug("Processing DeviceCreateRequestMessage for user: {UserId}", context.Message.UserId);
+            _logger.LogDebug("Processing DeviceCreateRequestMessage for user: {UserId}", context.Message.UserId);
 
-                DeviceSecretDto deviceSecret = await _deviceService.Create(context.Message.UserId, context.Message.Request);
+            DeviceSecretDto deviceSecret = await _deviceService.Create(context.Message.UserId, context.Message.Request);
 
-                await context.RespondAsync(new DeviceCreateResponseMessage
-                {
-                    DeviceSecret = deviceSecret
-                });
-            }
-            catch (Exception ex)
+            await context.RespondAsync(new DeviceCreateResponseMessage
             {
-                _logger.LogError(ex, "Failed to process DeviceCreateRequestMessage");
-                throw;
-            }
+                DeviceSecret = deviceSecret
+            });
         }
     }
 }

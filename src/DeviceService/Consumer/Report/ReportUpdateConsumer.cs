@@ -10,20 +10,12 @@ namespace BackBuddy.Device.Service.Consumer.Report
 
         public async Task Consume(ConsumeContext<ReportUpdateRequestMessage> context)
         {
-            try
-            {
-                _logger.LogDebug("Processing ReportUpdateRequestMessage for user: {UserId}, report: {ReportId}",
-                    context.Message.UserId, context.Message.ReportId);
+            _logger.LogDebug("Processing ReportUpdateRequestMessage for user: {UserId}, report: {ReportId}",
+                context.Message.UserId, context.Message.ReportId);
 
-                await _reportService.UpdateReport(context.Message.UserId, context.Message.ReportId, context.Message.Request);
+            await _reportService.UpdateReport(context.Message.UserId, context.Message.ReportId, context.Message.Request);
 
-                await context.RespondAsync(new ReportUpdateResponseMessage());
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to process ReportUpdateRequestMessage");
-                throw;
-            }
+            await context.RespondAsync(new ReportUpdateResponseMessage());
         }
     }
 }

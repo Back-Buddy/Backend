@@ -1,5 +1,4 @@
-﻿using BackBuddy.Api.Service.V1.Users.Exceptions;
-using BackBuddy.Core.Library.Database.Firebase;
+﻿using BackBuddy.Core.Library.Database.Firebase;
 using BackBuddy.Core.Library.Users.Dtos;
 using BackBuddy.Core.Library.Users.Dtos.Http;
 using BackBuddy.Core.Library.Users.Dtos.Messages;

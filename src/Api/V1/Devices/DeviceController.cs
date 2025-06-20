@@ -27,7 +27,7 @@ namespace BackBuddy.Api.Service.V1.Devices
         [ProducesResponseType(typeof(DeviceDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetDevice(Guid id)
         {
-            DeviceGetRequestMessage requestMessage = new DeviceGetRequestMessage
+            DeviceGetRequestMessage requestMessage = new()
             {
                 DeviceId = id,
                 UserId = this.GetUserId()
@@ -41,7 +41,7 @@ namespace BackBuddy.Api.Service.V1.Devices
         [ProducesResponseType(typeof(List<DeviceDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetDevices([FromQuery] PageRequestDto pageQuery, [FromQuery] DeviceQueryDto queryParams)
         {
-            DeviceGetAllRequestMessage requestMessage = new DeviceGetAllRequestMessage
+            DeviceGetAllRequestMessage requestMessage = new()
             {
                 UserId = this.GetUserId(),
                 Page = pageQuery,
@@ -57,7 +57,7 @@ namespace BackBuddy.Api.Service.V1.Devices
         [ProducesResponseType(typeof(DeviceSecretDto), StatusCodes.Status201Created)]
         public async Task<IActionResult> CreateDevice([FromBody] DeviceCreateRequestDto request)
         {
-            DeviceCreateRequestMessage requestMessage = new DeviceCreateRequestMessage
+            DeviceCreateRequestMessage requestMessage = new()
             {
                 UserId = this.GetUserId(),
                 Request = request
@@ -71,7 +71,7 @@ namespace BackBuddy.Api.Service.V1.Devices
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> UpdateDevice(Guid id, [FromBody] DeviceUpdateRequestDto request)
         {
-            DeviceUpdateRequestMessage requestMessage = new DeviceUpdateRequestMessage
+            DeviceUpdateRequestMessage requestMessage = new()
             {
                 UserId = this.GetUserId(),
                 DeviceId = id,
@@ -86,7 +86,7 @@ namespace BackBuddy.Api.Service.V1.Devices
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> DeleteDevice(Guid id)
         {
-            DeviceDeleteRequestMessage requestMessage = new DeviceDeleteRequestMessage
+            DeviceDeleteRequestMessage requestMessage = new()
             {
                 UserId = this.GetUserId(),
                 DeviceId = id

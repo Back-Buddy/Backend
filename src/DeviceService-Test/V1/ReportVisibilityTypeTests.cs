@@ -26,11 +26,11 @@ namespace BackBuddy.Device.Test.V1
 
             ReportService reportService = new(reportLikeService, deviceLogRepository, deviceRepository, reportRepository, requestClient, getStrongFollowRelationsAndAllFollowingsClient, hasUserStrongRelationClient, logger);
 
-            string creatorId = "user1";
-            string userId = "user1";
+            string creatorIdTest = "user1";
+            string userIdTest = "user1";
 
             // Act: Call the method under test
-            IEnumerable<ReportVisibilityType> result = await reportService.GetReportVisibilityTypeForUser(userId, creatorId);
+            IEnumerable<ReportVisibilityType> result = await reportService.GetReportVisibilityTypeForUser(userIdTest, creatorIdTest);
 
             // Assert: Check that all types are returned for the creator
             List<ReportVisibilityType> expected =
@@ -63,11 +63,11 @@ namespace BackBuddy.Device.Test.V1
 
             ReportService reportService = new(reportLikeService, deviceLogRepository, deviceRepository, reportRepository, requestClient, getStrongFollowRelationsAndAllFollowingsClient, hasUserStrongRelationClient, logger);
 
-            string creatorId = "user1";
-            string userId = "user2";
+            string creatorIdTest = "user1";
+            string userIdTest = "user2";
 
             // Act: Call the method under test
-            IEnumerable<ReportVisibilityType> result = await reportService.GetReportVisibilityTypeForUser(userId, creatorId);
+            IEnumerable<ReportVisibilityType> result = await reportService.GetReportVisibilityTypeForUser(userIdTest, creatorIdTest);
 
             // Assert: Check that All and Followers are returned for strong relation
             List<ReportVisibilityType> expected =
@@ -100,11 +100,11 @@ namespace BackBuddy.Device.Test.V1
 
             ReportService reportService = new(reportLikeService, deviceLogRepository, deviceRepository, reportRepository, requestClient, getStrongFollowRelationsAndAllFollowingsClient, hasUserStrongRelationClient, logger);
 
-            string creatorId = "user1";
-            string userId = "user3";
+            string creatorIdTest = "user1";
+            string userIdTest = "user3";
 
             // Act: Call the method under test
-            IEnumerable<ReportVisibilityType> result = await reportService.GetReportVisibilityTypeForUser(userId, creatorId);
+            IEnumerable<ReportVisibilityType> result = await reportService.GetReportVisibilityTypeForUser(userIdTest, creatorIdTest);
 
             // Assert: Check that only All is returned for no relation
             List<ReportVisibilityType> expected =

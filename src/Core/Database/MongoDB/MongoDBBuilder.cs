@@ -2,7 +2,7 @@
 using MongoDB.Bson.Serialization.Conventions;
 using MongoDB.Driver;
 
-namespace BackBuddy.Api.Service.V1.Database.MongoDB
+namespace BackBuddy.Core.Library.Database.MongoDB
 {
     public class MongoDBBuilder(IServiceCollection serviceCollection, string connection, string databaseName)
     {

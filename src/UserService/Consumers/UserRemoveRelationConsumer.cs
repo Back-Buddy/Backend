@@ -11,20 +11,12 @@ namespace BackBuddy.User.Service.Consumers
 
         public async Task Consume(ConsumeContext<UserRemoveRelationRequestMessage> context)
         {
-            try
-            {
-                _logger.LogDebug("Processing UserRemoveRelationRequestMessage for user: {UserId}, target: {TargetUserId}", 
-                    context.Message.UserId, context.Message.TargetUserId);
+            _logger.LogDebug("Processing UserRemoveRelationRequestMessage for user: {UserId}, target: {TargetUserId}",
+                context.Message.UserId, context.Message.TargetUserId);
 
-                await _userRelationService.RemoveRelation(context.Message.UserId, context.Message.TargetUserId);
+            await _userRelationService.RemoveRelation(context.Message.UserId, context.Message.TargetUserId);
 
-                await context.RespondAsync(new UserRemoveRelationResponseMessage());
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to process UserRemoveRelationRequestMessage");
-                throw;
-            }
+            await context.RespondAsync(new UserRemoveRelationResponseMessage());
         }
     }
 }

@@ -1,6 +1,6 @@
 ﻿namespace BackBuddy.Integration_Test.Exceptions
 {
-    internal class PollFailedException : Exception
+    public class PollFailedException : Exception
     {
     }
 }

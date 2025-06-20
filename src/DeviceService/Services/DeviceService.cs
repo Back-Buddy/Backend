@@ -1,5 +1,5 @@
-﻿using BackBuddy.Api.Service.V1.Database.Redis;
-using BackBuddy.Core.Library.Database.KeyVault;
+﻿using BackBuddy.Core.Library.Database.KeyVault;
+using BackBuddy.Core.Library.Database.Redis;
 using BackBuddy.Core.Library.Device.Dtos;
 using BackBuddy.Core.Library.Device.Dtos.Http;
 using BackBuddy.Core.Library.Device.Dtos.WebSocket;
@@ -256,7 +256,6 @@ namespace BackBuddy.Device.Service.Services
 
                     DeviceStatusEntity deviceStatus = new()
                     {
-                        PushSent = false,
                         StartTime = DateTime.UtcNow
                     };
                     await _deviceStatusRepository.SetCurrentStatus(deviceEntity.Id, deviceStatus, cancellationToken);

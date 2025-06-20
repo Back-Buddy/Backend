@@ -1,4 +1,4 @@
-﻿namespace BackBuddy.Api.Service.V1.Database.MongoDB
+﻿namespace BackBuddy.Core.Library.Database.MongoDB
 {
     public record MongoDBConnectionConfig
     {

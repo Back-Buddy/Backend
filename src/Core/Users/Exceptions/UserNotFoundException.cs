@@ -1,7 +1,7 @@
 ﻿using BackBuddy.Core.Library.Exceptions;
 using Microsoft.AspNetCore.Http;
 
-namespace BackBuddy.Api.Service.V1.Users.Exceptions
+namespace BackBuddy.Core.Library.Users.Exceptions
 {
     public class UserNotFoundException : AbstractBaseException
     {
