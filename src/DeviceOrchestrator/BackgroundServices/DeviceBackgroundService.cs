@@ -1,4 +1,5 @@
 ﻿using BackBuddy.Core.Library.Device.Dtos;
+using BackBuddy.Core.Library.Device.Dtos.WebSocket;
 using MassTransit;
 
 namespace BackBuddy.DeviceOrchestrator.Service.BackgroundServices

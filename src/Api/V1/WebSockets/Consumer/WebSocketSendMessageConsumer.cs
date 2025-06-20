@@ -1,8 +1,8 @@
-﻿using BackBuddy.Api.Service.V1.Database.Redis;
-using BackBuddy.Api.Service.V1.WebSockets.Dtos;
-using BackBuddy.Api.Service.V1.WebSockets.DTOs;
-using BackBuddy.Api.Service.V1.WebSockets.Mapper;
-using BackBuddy.Api.Service.V1.WebSockets.Services;
+﻿using BackBuddy.Api.Service.V1.WebSockets.Services;
+using BackBuddy.Core.Library.Database.Redis;
+using BackBuddy.Core.Library.WebSockets;
+using BackBuddy.Core.Library.WebSockets.Dtos;
+using BackBuddy.Core.Library.WebSockets.Mapper;
 using System.Text.Json;
 
 namespace BackBuddy.Api.Service.V1.WebSockets.Consumer
@@ -15,7 +15,7 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Consumer
         public async Task Consume(WebSocketSendMessage message)
         {
             _logger.LogDebug("Received WebSocket message for target {Target} with type {MessageType}", message.Target, message.WebSocketMessageType);
-            object rawWebSocketMessage = JsonSerializer.Deserialize(message.Payload, message.WebSocketMessageType.GetMessageType(), WebSocketService.JsonOptions) ?? throw new JsonException();
+            object rawWebSocketMessage = JsonSerializer.Deserialize(message.Payload, message.WebSocketMessageType.GetMessageType(), WebSocketConstants.JsonOptions) ?? throw new JsonException();
 
             await _webSocketService.SendMessage(message.Target, (IWebSocketMessageDto)rawWebSocketMessage);
         }

@@ -37,6 +37,57 @@ services:
     env_file:
       - Development.env
 
+  userservice:
+    image: ${DOCKER_REGISTRY-}backbuddy/userservice:${TAG:-latest}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    build:
+      context: .
+      dockerfile: UserService/Dockerfile
+      args:
+        BUILD_ENV: dev
+    env_file:
+      - Development.env
+
+  deviceservice:
+    image: ${DOCKER_REGISTRY-}backbuddy/deviceservice:${TAG:-latest}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    build:
+      context: .
+      dockerfile: DeviceService/Dockerfile
+      args:
+        BUILD_ENV: dev
+    env_file:
+      - Development.env
+
+  notificationservice:
+    image: ${DOCKER_REGISTRY-}backbuddy/notificationservice:${TAG:-latest}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    build:
+      context: .
+      dockerfile: NotificationService/Dockerfile
+      args:
+        BUILD_ENV: dev
+    env_file:
+      - Development.env
+
   notificationemulator:
     depends_on:
       mongodb:

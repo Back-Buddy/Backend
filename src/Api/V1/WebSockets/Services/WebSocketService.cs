@@ -1,14 +1,13 @@
-﻿using BackBuddy.Api.Service.V1.Device.DTOs;
-using BackBuddy.Api.Service.V1.Device.DTOs.Queue;
-using BackBuddy.Api.Service.V1.Exceptions;
-using BackBuddy.Api.Service.V1.WebSockets.BackgroundServices;
-using BackBuddy.Api.Service.V1.WebSockets.Converter;
-using BackBuddy.Api.Service.V1.WebSockets.Dtos;
-using BackBuddy.Api.Service.V1.WebSockets.DTOs;
+﻿using BackBuddy.Api.Service.V1.WebSockets.BackgroundServices;
 using BackBuddy.Api.Service.V1.WebSockets.Entities;
-using BackBuddy.Api.Service.V1.WebSockets.Exceptions;
-using BackBuddy.Api.Service.V1.WebSockets.Mapper;
 using BackBuddy.Api.Service.V1.WebSockets.Repositories;
+using BackBuddy.Core.Library.Device.Dtos;
+using BackBuddy.Core.Library.Device.Dtos.Queue;
+using BackBuddy.Core.Library.Exceptions;
+using BackBuddy.Core.Library.WebSockets;
+using BackBuddy.Core.Library.WebSockets.Dtos;
+using BackBuddy.Core.Library.WebSockets.Exceptions;
+using BackBuddy.Core.Library.WebSockets.Mapper;
 using MassTransit;
 using System.Collections.Concurrent;
 using System.Linq.Expressions;
@@ -16,19 +15,12 @@ using System.Net.WebSockets;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace BackBuddy.Api.Service.V1.WebSockets.Services
 {
     public class WebSocketService(IConnectionService connectionService, IConnectedDeviceRepository connectedDeviceRepository, IRequestClient<DeviceAuthorizeRequestMessage> deviceAuthRequestClient, IPublishEndpoint publishEndpoint, ConnectedDeviceHeartbeatService connectedDeviceHeartbeatService) : IWebSocketService
     {
-        private static readonly ConcurrentDictionary<Enums.WebSocketMessageType, (Type GenericType, Func<Guid, IWebSocketMessageDto, object> Factory)> _messageFactoryCache = [];
-
-        internal readonly static JsonSerializerOptions JsonOptions = new()
-        {
-            PropertyNameCaseInsensitive = true,
-            Converters = { new WebSocketMessageConverter(), new JsonStringEnumConverter() }
-        };
+        private static readonly ConcurrentDictionary<Core.Library.WebSockets.Enums.WebSocketMessageType, (Type GenericType, Func<Guid, IWebSocketMessageDto, object> Factory)> _messageFactoryCache = [];
 
         private readonly ConnectedDeviceHeartbeatService _connectedDeviceHeartbeatService = connectedDeviceHeartbeatService;
         private readonly IConnectedDeviceRepository _connectedDeviceRepository = connectedDeviceRepository;
@@ -86,7 +78,7 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Services
 
         public async Task OnReceive(WebSocket webSocket, string payload)
         {
-            IWebSocketMessageDto message = JsonSerializer.Deserialize<IWebSocketMessageDto>(payload, JsonOptions) ?? throw new InvalidWebSocketMessageException();
+            IWebSocketMessageDto message = JsonSerializer.Deserialize<IWebSocketMessageDto>(payload, WebSocketConstants.JsonOptions) ?? throw new InvalidWebSocketMessageException();
             if (message.IsToSend)
                 throw new UnsupportedActionWebSocketMessageException();
 
@@ -113,7 +105,7 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Services
             if (webSocket == null)
                 return false;
 
-            string payload = JsonSerializer.Serialize(message, message.MessageType.GetMessageType(), JsonOptions);
+            string payload = JsonSerializer.Serialize(message, message.MessageType.GetMessageType(), WebSocketConstants.JsonOptions);
 
 
             byte[] buffer = Encoding.UTF8.GetBytes(payload);

@@ -1,6 +1,6 @@
-﻿using BackBuddy.Api.Service.V1.Database.Redis;
-using BackBuddy.Api.Service.V1.WebSockets.Dtos;
+﻿using BackBuddy.Api.Service.V1.WebSockets.Dtos;
 using BackBuddy.Api.Service.V1.WebSockets.Entities;
+using BackBuddy.Core.Library.Database.Redis;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Options;
 
