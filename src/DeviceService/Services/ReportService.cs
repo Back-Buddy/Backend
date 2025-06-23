@@ -52,17 +52,20 @@ namespace BackBuddy.Device.Service.Services
             if (!NameRegex().IsMatch(request.Name))
                 throw new ReportInvalidNameException();
 
+            DateTime startTime = request.StartTime.ToUniversalTime();
+            DateTime endTime = request.EndTime.ToUniversalTime();
+
             DeviceEntity device = await _deviceRepository.Get(request.DeviceId, cancellationToken) ?? throw new DeviceNotFoundException();
             if (device.UserId != userId)
                 throw new DeviceUserForbiddenException();
-            if (request.StartTime > request.EndTime)
+            if (startTime > endTime)
                 throw new ReportInvalidTimeFilterException();
 
             // Get Logs in Time-Range
             DeviceLogQueryDto queryDto = new()
             {
-                StartTime = request.StartTime,
-                EndTime = request.EndTime,
+                StartTime = startTime,
+                EndTime = endTime,
                 LogType = DeviceLogType.Sit,
                 Descending = false
             };
@@ -80,7 +83,7 @@ namespace BackBuddy.Device.Service.Services
             } while (result.HasMoreEntries && !cancellationToken.IsCancellationRequested);
 
             // Analayze the logs
-            (ReportMetadataEntity reportMetadata, IEnumerable<DeviceLogEntity> usedLogs) = AnalyzeLogs(logs, request.StartTime, request.EndTime);
+            (ReportMetadataEntity reportMetadata, IEnumerable<DeviceLogEntity> usedLogs) = AnalyzeLogs(logs, startTime, endTime);
 
             // Create Report
             ReportEntity reportEntity = new()
@@ -90,8 +93,8 @@ namespace BackBuddy.Device.Service.Services
                 VisibilityType = request.VisibilityType,
                 UserId = userId,
                 DeviceId = request.DeviceId,
-                StartTime = request.StartTime,
-                EndTime = request.EndTime,
+                StartTime = startTime,
+                EndTime = endTime,
                 Metadata = reportMetadata,
                 UsedLogs = [.. usedLogs.Select(log => log.Id)],
                 CreatedAt = DateTime.UtcNow
@@ -249,8 +252,8 @@ namespace BackBuddy.Device.Service.Services
                 TotalTime = totalTime,
                 SitTime = allSitTime,
                 StandTime = standTime,
-                SitPercentage = Math.Round(allSitTime.TotalMicroseconds / totalTime.TotalMicroseconds, 4) * 100,
-                StandPercentage = Math.Round(standTime.TotalMicroseconds / totalTime.TotalMicroseconds, 4) * 100,
+                SitPercentage = Math.Round(Math.Round(allSitTime.TotalMicroseconds / totalTime.TotalMicroseconds, 4) * 100, 2),
+                StandPercentage = Math.Round(Math.Round(standTime.TotalMicroseconds / totalTime.TotalMicroseconds, 4) * 100, 2),
                 PostureChanges = sitLogs.Count(),
                 LongestSitPeriod = longestSitPeriod,
                 ShortestSitPeriod = shortestSitPeriod,
