@@ -8,14 +8,14 @@
     <PackageVersion Include="Azure.Security.KeyVault.Secrets" Version="4.8.0" />
     <PackageVersion Include="FirebaseAdmin" Version="3.2.0" />
     <PackageVersion Include="Google.Cloud.Firestore" Version="3.10.0" />
-    <PackageVersion Include="MassTransit" Version="8.4.1" />
+    <PackageVersion Include="MassTransit" Version="8.5.0" />
     <PackageVersion Include="MassTransit.AspNetCore" Version="7.3.1" />
-    <PackageVersion Include="MassTransit.Azure.ServiceBus.Core" Version="8.4.1" />
+    <PackageVersion Include="MassTransit.Azure.ServiceBus.Core" Version="8.5.0" />
     <PackageVersion Include="MassTransit.Extensions.DependencyInjection" Version="7.3.1" />
-    <PackageVersion Include="MassTransit.RabbitMQ" Version="8.4.1" />
+    <PackageVersion Include="MassTransit.RabbitMQ" Version="8.5.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.6" />
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="9.0.6" />
-    <PackageVersion Include="Scalar.AspNetCore" Version="2.4.22" />
+    <PackageVersion Include="Scalar.AspNetCore" Version="2.5.0" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
     <PackageVersion Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="9.0.6" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
