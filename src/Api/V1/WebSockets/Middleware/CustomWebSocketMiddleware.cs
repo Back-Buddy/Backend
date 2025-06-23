@@ -21,6 +21,11 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Middleware
                 await _next(context);
                 return;
             }
+
+            using var scope = _serviceScopeFactory.CreateScope();
+            IWebSocketService webSocketService = scope.ServiceProvider.GetRequiredService<IWebSocketService>();
+            ILogger<CustomWebSocketMiddleware> logger = scope.ServiceProvider.GetRequiredService<ILogger<CustomWebSocketMiddleware>>();
+
             WebSocket? webSocket = null;
             try
             {
@@ -42,9 +47,7 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Middleware
                     await new UnauthorizedException().WriteToResponse(context.Response);
                     return;
                 }
-                using var scope = _serviceScopeFactory.CreateScope();
-                IWebSocketService webSocketService = scope.ServiceProvider.GetRequiredService<IWebSocketService>();
-                ILogger<CustomWebSocketMiddleware> logger = scope.ServiceProvider.GetRequiredService<ILogger<CustomWebSocketMiddleware>>();
+
 
                 Guid deviceId = await webSocketService.OnAuthorization(authorization);
                 webSocket = await context.WebSockets.AcceptWebSocketAsync(new WebSocketAcceptContext
@@ -61,7 +64,8 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Middleware
             catch (AbstractBaseException ex)
             {
                 await ex.WriteToResponse(context.Response);
-                await CloseConnection(webSocket, ex);
+                if(webSocket != null)
+                    await HandleDisconnect(webSocket, webSocketService, WebSocketCloseStatus.InvalidPayloadData);
             }
             catch (RequestFaultException ex)
             {
@@ -69,13 +73,15 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Middleware
                 if (baseException == null) throw;
                 await baseException.WriteToResponse(context.Response);
 
-                await CloseConnection(webSocket, baseException);
+                if(webSocket != null)
+                    await HandleDisconnect(webSocket, webSocketService, WebSocketCloseStatus.InvalidPayloadData);
             }
             catch (Exception)
             {
                 InternalServerErrorException ex = new();
                 await ex.WriteToResponse(context.Response);
-                await CloseConnection(webSocket, ex);
+                if(webSocket != null)
+                    await HandleDisconnect(webSocket, webSocketService, WebSocketCloseStatus.InternalServerError);
             }
             finally
             {
@@ -97,21 +103,6 @@ namespace BackBuddy.Api.Service.V1.WebSockets.Middleware
         private static async Task HandleDisconnect(WebSocket socket, IWebSocketService webSocketService, WebSocketCloseStatus closeStatus)
         {
             await webSocketService.OnDisconnect(socket, closeStatus);
-        }
-
-        private static async Task CloseConnection(WebSocket? webSocket, AbstractBaseException ex)
-        {
-            if (webSocket != null && !_states.Contains(webSocket.State))
-            {
-                try
-                {
-                    await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, JsonSerializer.Serialize(ex.GetErrors()), CancellationToken.None);
-                }
-                catch
-                {
-                    // Ignore any exceptions that occur while closing the WebSocket
-                }
-            }
         }
 
         private static async Task Receive(WebSocket socket, IWebSocketService webSocketService, ILogger<CustomWebSocketMiddleware> logger)
