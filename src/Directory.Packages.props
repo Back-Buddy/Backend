@@ -4,7 +4,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="Asp.Versioning.Mvc.ApiExplorer" Version="8.1.0" />
-    <PackageVersion Include="Azure.Identity" Version="1.14.0" />
+    <PackageVersion Include="Azure.Identity" Version="1.14.1" />
     <PackageVersion Include="Azure.Security.KeyVault.Secrets" Version="4.8.0" />
     <PackageVersion Include="FirebaseAdmin" Version="3.2.0" />
     <PackageVersion Include="Google.Cloud.Firestore" Version="3.10.0" />
