@@ -362,9 +362,9 @@ docker-compose down -v
 graph LR
     A[Push to main] --> B[Build & Test]
     B --> C[Build Docker Images]
-    C --> D[Push to ACR]
-    D --> E[Deploy to Container Apps]
-    E --> F[Validation Tests]
+    C --> D[Integration Tests]
+    D --> E[Push to ACR]
+    E --> F[Deploy to Container Apps]
 ```
 
 ### Deployment Environments
@@ -601,7 +601,7 @@ docker stats
 
 <div align="center">
 
-**BackBuddy Backend** - Revolutionizing posture health through technology
+**BackBuddy Backend**
 
 [![GitHub Stars](https://img.shields.io/github/stars/Back-Buddy/Backend?style=social)](https://github.com/Back-Buddy/Backend)
 [![GitHub Forks](https://img.shields.io/github/forks/Back-Buddy/Backend?style=social)](https://github.com/Back-Buddy/Backend/fork)
