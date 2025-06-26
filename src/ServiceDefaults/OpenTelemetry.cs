@@ -26,8 +26,7 @@ public static class OpenTelemetry
                     .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(serviceName))
                     .AddAspNetCoreInstrumentation()
                     .AddHttpClientInstrumentation()
-                    .AddSource(serviceName)
-                    .AddAzureMonitorTraceExporter();
+                    .AddSource(serviceName);
 
             })
             .WithMetrics(builder =>
@@ -35,8 +34,7 @@ public static class OpenTelemetry
                 builder
                     .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(serviceName))
                     .AddAspNetCoreInstrumentation()
-                    .AddHttpClientInstrumentation()
-                    .AddAzureMonitorMetricExporter();
+                    .AddHttpClientInstrumentation();
             })
             .UseAzureMonitor();
 
