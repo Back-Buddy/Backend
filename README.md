@@ -325,11 +325,30 @@ notifications:queue:{userId} → Pending Notifications
 
 ## 🧪 Testing & Quality Assurance
 
+The BackBuddy Backend features a comprehensive test suite with **213 Integration Tests** and **30 Unit Tests**, ensuring robust quality assurance.
+
+### Test Overview
+
+| Test Type | Count | Coverage |
+|-----------|-------|----------|
+| **Integration Tests** | 213 | End-to-End API Testing |
+| **Unit Tests** | 30 | Core Business Logic |
+| **Total** | **243** | Comprehensive Coverage |
+
+### Integration Test Scaling
+
+The integration tests are executed under realistic conditions where the **API is automatically scaled to 2 containers**. This enables:
+
+- **Realistic Test Conditions**: Simulation of production-like environments
+- **Container-to-Container Communication**: Validation of microservice communication
+- **Load Balancing Testing**: Verification of load distribution between containers
+- **Service Discovery**: Testing of cross-container service discovery
+
 ### Running Tests
 
 #### Unit Tests
 ```powershell
-# All Unit Tests
+# All Unit Tests (30 Tests)
 dotnet test --collect:"XPlat Code Coverage"
 
 # Specific Test Suite
@@ -344,14 +363,23 @@ dotnet test --collect:"XPlat Code Coverage" --results-directory ./TestResults
 
 #### Integration Tests
 ```powershell
-# Start infrastructure
-docker-compose up -d
+# Start infrastructure with API scaling (213 Integration Tests)
+docker-compose -f docker-compose.test.yml up -d
 
-# Run integration tests
+# Run integration tests with 2 API containers
 dotnet test src/Integration-Test/Integration-Test.csproj -v detailed
 
 # Test cleanup
-docker-compose down -v
+docker-compose -f docker-compose.test.yml down -v
+```
+
+#### All Tests
+```powershell
+# Run complete test suite (243 Tests total)
+dotnet test --collect:"XPlat Code Coverage" --results-directory ./TestResults
+
+# Run with detailed output and coverage
+dotnet test --logger:"console;verbosity=detailed" --collect:"XPlat Code Coverage"
 ```
 
 ## 🚀 Deployment & DevOps
