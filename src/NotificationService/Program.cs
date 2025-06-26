@@ -7,9 +7,11 @@ using Google.Api.Gax;
 using Google.Apis.Auth.OAuth2;
 using Google.Cloud.Firestore;
 using MassTransit;
+using ServiceDefaults;
 using System.Text;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+builder.AddServiceDefaults();
 
 #region Firebase
 IConfigurationSection firebaseSection = builder.Configuration.GetSection("Firebase");
@@ -95,4 +97,5 @@ builder.Services.AddMassTransit(x =>
 });
 
 WebApplication app = builder.Build();
+app.MapDefaultHealthCheckEndpoints();
 await app.RunAsync();

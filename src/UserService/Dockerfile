@@ -25,6 +25,7 @@ WORKDIR /src
 # copy csproj and restore as distinct layers
 COPY Directory.Packages.props ./Directory.Packages.props
 COPY Core/*.csproj ./Core/
+COPY ServiceDefaults/*.csproj ./ServiceDefaults/
 COPY UserService/*.csproj ./UserService/
 
 # Restore dependencies
@@ -32,6 +33,7 @@ RUN dotnet restore UserService/UserService.csproj
 
 # Copy all source code
 COPY Core/ Core/
+COPY ServiceDefaults/ ServiceDefaults/
 COPY UserService/ UserService/
 
 # Publish the app

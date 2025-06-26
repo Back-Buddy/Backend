@@ -15,9 +15,11 @@ using MassTransit;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.StackExchangeRedis;
 using MongoDB.Driver;
+using ServiceDefaults;
 using StackExchange.Redis;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+builder.AddServiceDefaults();
 
 #region KeyVault
 if (!builder.Environment.IsDevelopment())
@@ -154,4 +156,5 @@ builder.Services.AddMassTransit(x =>
 });
 
 WebApplication app = builder.Build();
+app.MapDefaultHealthCheckEndpoints();
 await app.RunAsync();

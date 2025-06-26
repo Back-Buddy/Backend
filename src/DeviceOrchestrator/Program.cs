@@ -1,7 +1,9 @@
 using BackBuddy.DeviceOrchestrator.Service.BackgroundServices;
 using MassTransit;
+using ServiceDefaults;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+builder.AddServiceDefaults();
 
 builder.Services.AddHostedService<DeviceBackgroundService>();
 
@@ -29,4 +31,5 @@ builder.Services.AddMassTransit(x =>
 });
 
 WebApplication app = builder.Build();
+app.MapDefaultHealthCheckEndpoints();
 await app.RunAsync();

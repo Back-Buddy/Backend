@@ -12,10 +12,12 @@ using BackBuddy.Core.Library.WebSockets.Dtos;
 using MassTransit;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.StackExchangeRedis;
+using ServiceDefaults;
 using StackExchange.Redis;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.AddServiceDefaults();
 
 builder.Services.AddControllers().AddJsonOptions(x =>
 {
@@ -108,6 +110,8 @@ app.UseWebSockets(new WebSocketOptions
 });
 
 app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+
+app.MapDefaultHealthCheckEndpoints();
 
 app.MapControllers()
     .RequireAuthorization();
