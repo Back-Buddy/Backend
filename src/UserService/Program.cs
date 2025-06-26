@@ -11,9 +11,11 @@ using Google.Apis.Auth.OAuth2;
 using Google.Cloud.Firestore;
 using MassTransit;
 using MongoDB.Driver;
+using ServiceDefaults;
 using System.Text;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+builder.AddServiceDefaults();
 
 #region MongoDB
 IConfigurationSection mongoDBSection = builder.Configuration.GetSection("MongoDB");
@@ -141,4 +143,5 @@ builder.Services.AddMassTransit(x =>
 });
 
 WebApplication app = builder.Build();
+app.MapDefaultHealthCheckEndpoints();
 await app.RunAsync();
