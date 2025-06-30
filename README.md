@@ -131,7 +131,7 @@ graph TB
 #### Monitoring & Observability
 
 - **Swagger/OpenAPI** - API Documentation
-- **Scalar UI** - Modern API Explorer Alternative
+- **Scalar UI** - Modern API Explorer Alternative (for Emulator)
 - **Structured Logging** - Comprehensive Application Logging
 - **Health Checks** - Service health monitoring with readiness and liveness probes
 - **Azure Application Insights** - Production monitoring, telemetry, and performance analytics
@@ -553,19 +553,15 @@ JWT_AUDIENCE=BackBuddy.Client
 
 #### Authentication & Authorization
 
-- **Multi-Factor Authentication**: SMS/Email/TOTP Support
 - **JWT Token Rotation**: Short lifespan with refresh tokens
-- **Role-Based Access Control**: Granular permissions
-- **API Rate Limiting**: Protection against DDoS and abuse
+- **Roating Secret**: Short lifespan for sensor secret
 
 #### Data Protection
 
-- **Encryption at Rest**: AES-256 for sensitive data
 - **Encryption in Transit**: TLS 1.3 for all connections
 - **Key Management**:
   - **Development**: Local configuration and environment variables
   - **Production**: Azure KeyVault integration
-- **Personal Data**: GDPR-compliant data processing
 
 #### Security Scanning
 
@@ -605,7 +601,7 @@ dotnet run --project Api/Api.csproj
 
 - **Code Style**: EditorConfig + .NET Coding Conventions
 - **Commit Messages**: Conventional Commits Format
-- **Branch Strategy**: GitFlow (main, develop, feature/_, hotfix/_)
+- **Branch Strategy**: GitFlow (main, develop, feature_x)
 - **Code Reviews**: Minimum 2 approvals for production
 
 #### Debugging
