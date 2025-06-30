@@ -718,9 +718,6 @@ docker stats
 
 **BackBuddy Backend**
 
-[![GitHub Stars](https://img.shields.io/github/stars/Back-Buddy/Backend?style=social)](https://github.com/Back-Buddy/Backend)
-[![GitHub Forks](https://img.shields.io/github/forks/Back-Buddy/Backend?style=social)](https://github.com/Back-Buddy/Backend/fork)
-[![GitHub Issues](https://img.shields.io/github/issues/Back-Buddy/Backend)](https://github.com/Back-Buddy/Backend/issues)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 </div>
