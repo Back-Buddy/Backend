@@ -226,7 +226,7 @@ graph TB
 | ------------------------- | ------------------------------------------------------------------------------------ | ------------------------------- |
 | **API Gateway**           | [http://localhost:8080](http://localhost:8080)                                       | Main API Endpoint               |
 | **Swagger UI**            | [http://localhost:8080/swagger](http://localhost:8080/swagger)                       | API Documentation               |
-| **Scalar API Explorer**   | [http://localhost:8080/scalar/v1](http://localhost:8080/scalar/v1)                   | Modern API UI                   |
+| **Scalar API Explorer**   | [http://localhost:8080/scalar/v1](http://localhost:8080/scalar/v1)                   | Modern API UI (for Emulator)    |
 | **Health Checks**         | [http://localhost:8080/api/health/isalive](http://localhost:8080/api/health/isalive) | Service Health Status           |
 | **Health Checks**         | [http://localhost:8080/api/health/isready](http://localhost:8080/api/health/isready) | Service Readiness Status        |
 | **MongoDB Express**       | [http://localhost:8081](http://localhost:8081)                                       | Database Admin UI               |
@@ -432,7 +432,6 @@ The integration tests are executed under realistic conditions where the **API is
 - **Realistic Test Conditions**: Simulation of production-like environments
 - **Container-to-Container Communication**: Validation of microservice communication
 - **Load Balancing Testing**: Verification of load distribution between containers
-- **Service Discovery**: Testing of cross-container service discovery
 
 ### Running Tests
 
@@ -512,31 +511,41 @@ docker-compose -f docker-compose.yml -f docker-compose.override.yml up -d
 
 ```env
 # Database Configuration
-MONGODB_CONNECTION_STRING=mongodb://mongodb:27017/backbuddy
-REDIS_CONNECTION_STRING=redis:6379
+MongoDB__Connection=mongodb://mongodb:27017/
+MongoDB__DatabaseName=BackBuddy
+Redis__Connection=redis
+Redis__DatabaseName=Device
 
 # Message Broker Configuration
 # Development (RabbitMQ)
-RABBITMQ_CONNECTION_STRING=amqp://guest:guest@rabbitmq:5672
+MESSAGE_QUEUE_CONNECTION=rabbitmq
 # Production (Azure Service Bus)
-AZURE_SERVICEBUS_CONNECTION_STRING=Endpoint=sb://your-namespace.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=your-key
+MESSAGE_QUEUE_CONNECTION=<Connection String>
 
 # Firebase Configuration
-FIREBASE_PROJECT_ID=your-project-id
-FIREBASE_PRIVATE_KEY_ID=your-key-id
-FIREBASE_CLIENT_EMAIL=firebase-adminsdk@your-project.iam.gserviceaccount.com
+Firebase__ProjectId=change-me
+Firebase__Secret=<Secret-File as Base64 (only Prod)>
+Firebase__FireStoreEmulatorHost=firebase:8080 (only Dev)
+Firebase__FireAuthEmulatorHost=firebase:9099 (only Dev)
+Firebase__NotificationEmulatorHost=http://notificationemulator:8080/send (only Dev)
 
 # Azure Services (Production Only)
-AZURE_KEYVAULT_URL=https://your-keyvault.vault.azure.net/
-AZURE_CLIENT_ID=your-client-id
-AZURE_TENANT_ID=your-tenant-id
-AZURE_CONTAINER_REGISTRY_URL=your-registry.azurecr.io
+KEY_VAULT_URI=https://kv-backbuddy.vault.azure.net/
+AZURE_CLIENT_ID=
+AZURE_CLIENT_SECRET=
+AZURE_TENANT_ID=
 
 # Application Settings
 ASPNETCORE_ENVIRONMENT=Development
-ASPNETCORE_URLS=http://+:8080
-JWT_ISSUER=BackBuddy.Api
-JWT_AUDIENCE=BackBuddy.Client
+ASPNETCORE_HTTP_PORTS=8080
+Auth__Authority=
+Auth__ValidIssuer=
+Auth__ValidAudience=
+
+# Config
+ConnectedDeviceConfig__PRESENCETIMEOUT=00:00:30
+ConnectedDeviceConfig__METATIMEOUT=00:01:00:00
+ConnectedDeviceConfig__HEARTBEATINTERVAL=00:00:05
 
 # Development: Secrets stored directly in environment variables or appsettings
 # Production: Secrets retrieved from Azure KeyVault
@@ -612,7 +621,7 @@ dotnet run --project Api/Api.csproj
 - **Code Style**: EditorConfig + .NET Coding Conventions
 - **Commit Messages**: Conventional Commits Format
 - **Branch Strategy**: GitFlow (main, develop, feature_x)
-- **Code Reviews**: Minimum 2 approvals for production
+- **Code Reviews**: Minimum 2 approvals for production (Static Code Review Sonar Cloud)
 
 #### Debugging
 
