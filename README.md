@@ -296,9 +296,9 @@ erDiagram
         double sitPercentage
         double standPercentage
         int postureChanges
-        TimeSpan? averageSitPeriod
-        TimeSpan? shortestSitPeriod
-        TimeSpan? longestSitPeriod
+        TimeSpan averageSitPeriod
+        TimeSpan shortestSitPeriod
+        TimeSpan longestSitPeriod
     }
 
     REPORT_LIKE {
