@@ -253,7 +253,6 @@ erDiagram
         string email
         string avatar_url
         datetime created_at
-        datetime last_active
     }
 
     DEVICE {
@@ -270,32 +269,42 @@ erDiagram
         Guid deviceId_FK
         datetime startTime
         datetime endTime
-        enum logType "SIT|ERROR"
+        enum logType "Sit|Error"
     }
 
     DEVICE_STATUS_REDIS {
-        Guid deviceId_PK
         datetime startTime
     }
 
     REPORT {
         Guid id_PK
         string name
-        enum visibilityType "PUBLIC|PRIVATE|FRIENDS"
+        enum visibilityType "All|Followers|Private"
         string userId_FK
         Guid deviceId_FK
         datetime startTime
         datetime endTime
-        ReportMetadata_JSON metadata
+        report_metadata metadata
         List_Guid usedLogs
         datetime createdAt
+    }
+
+    REPORT_METADATA {
+        TimeSpan totalTime
+        TimeSpan sitTime
+        TimeSpan standTime
+        double sitPercentage
+        double standPercentage
+        int postureChanges
+        TimeSpan? averageSitPeriod
+        TimeSpan? shortestSitPeriod
+        TimeSpan? longestSitPeriod
     }
 
     REPORT_LIKE {
         Guid id_PK
         Guid reportId_FK
         string userId_FK
-        datetime createdAt
     }
 
     USER_FOLLOW {
@@ -314,6 +323,7 @@ erDiagram
     USER ||--o{ USER_FOLLOW : "follows_users"
     USER ||--o{ REPORT_LIKE : "likes_reports"
     REPORT ||--o{ REPORT_LIKE : "receives_likes"
+    REPORT ||--o{ REPORT_METADATA: "owns"
 ```
 
 ### 📊 Database Collections
@@ -328,25 +338,25 @@ erDiagram
 
 - **Primary Key**: GUID
 - **Purpose**: Device registration and configuration
-- **Indexes**: `userId`, `active`
+- **Indexes**: `userId`
 
 #### **DeviceLogs Collection (MongoDB)**
 
 - **Primary Key**: GUID
 - **Purpose**: Historical session data (sitting/standing periods)
-- **Indexes**: `deviceId + startTime`, `endTime`
+- **Indexes**: `deviceId`
 
 #### **Reports Collection (MongoDB)**
 
 - **Primary Key**: GUID
 - **Purpose**: User-generated reports with analytics metadata
-- **Indexes**: `userId`, `deviceId`, `createdAt`, `visibilityType`
+- **Indexes**: `reportId`
 
 #### **UserFollow Collection (MongoDB)**
 
 - **Primary Key**: GUID
 - **Purpose**: User relationship management (following system)
-- **Indexes**: `userId`, `targetId`, `createdAt`
+- **Indexes**: `id`, `userId`, `targetId`
 
 #### **ReportLike Collection (MongoDB)**
 
@@ -357,9 +367,10 @@ erDiagram
 #### **Redis Cache Structure**
 
 ```
-device:status:{deviceId} → Current Device Status JSON
-user:session:{userId} → Active Session Data
-notifications:queue:{userId} → Pending Notifications
+DeviceStatus:{deviceId} -> Current Device Status JSON
+device_status_keys -> List of all DeviceIds where the status exists
+DeviceConnected:{deviceId}:presence -> Device is Connected
+DeviceConnected:{deviceId}:meta -> Device Connection Meta Data (e.g ConnectedAt)
 ```
 
 ## 📊 Monitoring & Observability
