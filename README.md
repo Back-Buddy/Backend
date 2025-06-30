@@ -38,19 +38,19 @@ graph TB
         WEB[Web Dashboard]
         ESP[ESP32 Devices]
     end
-    
+
     subgraph "API Gateway"
         API[API Service]
         WS[WebSocket Handler]
     end
-    
+
     subgraph "Core Services"
         DS[Device Service]
         US[User Service]
         NS[Notification Service]
         DO[Device Orchestrator]
     end
-    
+
     subgraph "Infrastructure"
         MONGO[(MongoDB)]
         REDIS[(Redis Cache)]
@@ -61,7 +61,7 @@ graph TB
         ACR[Azure Container Registry]
         ACA[Azure Container Apps]
     end
-    
+
     APP --> API
     WEB --> API
     ESP --> API
@@ -76,7 +76,7 @@ graph TB
     NS --> MSG_PROD
     DS --> REDIS
     US --> KEYVAULT_PROD
-    
+
     %% Deployment
     ACR --> ACA
     API -.-> ACA
@@ -89,27 +89,32 @@ graph TB
 ### 📚 Tech Stack Details
 
 #### Backend Framework
+
 - **.NET 9.0** - Latest LTS version with improved performance
 - **ASP.NET Core** - Web API framework with integrated DI
 - **C# 13** - Latest language features and performance optimizations
 
 #### Databases & Caching
+
 - **MongoDB 7.x** - NoSQL database for flexible document storage
 - **Redis** - In-memory cache for session management and real-time data
 - **Azure KeyVault** - Production: Secure management of secrets and certificates
 
 #### Message Broker & Communication
+
 - **RabbitMQ** - Development: Local message broker for async communication
 - **Azure Service Bus** - Production: Enterprise messaging service for reliable communication
 - **MassTransit 8.x** - .NET Service Bus Framework for Enterprise Messaging
 - **WebSockets** - Bidirectional real-time communication
 
 #### Authentication & Authorization
+
 - **Firebase Authentication** - Secure user authentication
 - **JWT Bearer Tokens** - Stateless authentication
 - **Firebase Admin SDK** - Server-side Firebase integration
 
 #### DevOps & Infrastructure
+
 - **Azure Container Apps** - Serverless container hosting platform
 - **Azure Container Registry** - Private Docker registry
 - **Docker & Docker Compose** - Containerization of all services
@@ -117,43 +122,54 @@ graph TB
 - **Multi-stage Dockerfile** - Optimized container builds
 
 #### Testing & Quality Assurance
+
 - **MSTest Framework** - Unit Testing
 - **NSubstitute** - Mocking Framework
 - **Integration Tests** - End-to-End Testing
 - **Test Containers** - Isolated Test Environments
 
 #### Monitoring & Observability
+
 - **Swagger/OpenAPI** - API Documentation
 - **Scalar UI** - Modern API Explorer Alternative
 - **Structured Logging** - Comprehensive Application Logging
+- **Health Checks** - Service health monitoring with readiness and liveness probes
+- **Azure Application Insights** - Production monitoring, telemetry, and performance analytics
+- **OpenTelemetry** - Distributed tracing and metrics collection
 
 ### 🏢 Service Details
 
 #### **API Service** (Port: 8080)
+
 - **Purpose**: Main entry point for all client requests
 - **Technologies**: ASP.NET Core, JWT Authentication, Swagger
 - **Functions**: REST API, WebSocket Gateway, Request Validation
+- **Monitoring**: Health check endpoints (`/api/health/isalive`, `/api/health/isready`)
 
 #### **Device Service**
+
 - **Purpose**: Management of all devices and sensor data
 - **Technologies**: MongoDB, Redis, MassTransit
 - **Functions**: Device Registration, Data Processing, Threshold Management
 
 #### **User Service**
+
 - **Purpose**: User management and profile operations
-- **Technologies**: 
+- **Technologies**:
   - **Development**: Firebase Admin SDK, local configuration
   - **Production**: Firebase Admin SDK, Azure KeyVault
 - **Functions**: User Authentication, Profile Management, Relationships
 
 #### **Notification Service**
+
 - **Purpose**: Push notifications and alerting
-- **Technologies**: 
+- **Technologies**:
   - **Development**: Firebase Cloud Messaging, RabbitMQ, Notification Emulator
   - **Production**: Firebase Cloud Messaging, Azure Service Bus
 - **Functions**: Smart Notifications, Reminder System
 
 #### **Device Orchestrator**
+
 - **Purpose**: Coordination between devices and services
 - **Technologies**: Background Services, MassTransit
 - **Functions**: Data Orchestration, Event Processing
@@ -170,39 +186,55 @@ graph TB
 ### Installation & Setup
 
 1. **Clone repository**:
+
    ```powershell
    git clone https://github.com/Back-Buddy/Backend.git
    cd Backend/src
    ```
 
 2. **Configure environment variables**:
+
    ```powershell
    cp Development.env.example Development.env
    # Edit Development.env with your values
    ```
 
 3. **Start services**:
+
    ```powershell
    docker-compose up --build -d
    ```
 
 4. **Verify services**:
+
    ```powershell
+   # Check service status
    docker-compose ps
+
+   # Verify API health
+   curl http://localhost:8080/api/health/isalive
+
+   # Access Swagger UI
+   start http://localhost:8080/swagger
+
+   # View logs
+   docker-compose logs -f
    ```
 
 ### 🌐 Service Endpoints
 
-| Service | URL | Description |
-|---------|-----|-------------|
-| **API Gateway** | [http://localhost:8080](http://localhost:8080) | Main API Endpoint |
-| **Swagger UI** | [http://localhost:8080/swagger](http://localhost:8080/swagger) | API Documentation |
-| **Scalar API Explorer** | [http://localhost:8080/scalar/v1](http://localhost:8080/scalar/v1) | Modern API UI |
-| **MongoDB Express** | [http://localhost:8081](http://localhost:8081) | Database Admin UI |
-| **Redis Insight** | [http://localhost:5540](http://localhost:5540) | Redis Management |
-| **RabbitMQ Management** | [http://localhost:15672](http://localhost:15672) | Message Broker UI (Dev) |
-| **Firebase Emulator** | [http://localhost:4000](http://localhost:4000) | Firebase Local Development |
-| **Notification Emulator** | [http://localhost:8083](http://localhost:8083) | Push Notification Testing (Dev) |
+| Service                   | URL                                                                                  | Description                     |
+| ------------------------- | ------------------------------------------------------------------------------------ | ------------------------------- |
+| **API Gateway**           | [http://localhost:8080](http://localhost:8080)                                       | Main API Endpoint               |
+| **Swagger UI**            | [http://localhost:8080/swagger](http://localhost:8080/swagger)                       | API Documentation               |
+| **Scalar API Explorer**   | [http://localhost:8080/scalar/v1](http://localhost:8080/scalar/v1)                   | Modern API UI                   |
+| **Health Checks**         | [http://localhost:8080/api/health/isalive](http://localhost:8080/api/health/isalive) | Service Health Status           |
+| **Health Checks**         | [http://localhost:8080/api/health/isready](http://localhost:8080/api/health/isready) | Service Readiness Status        |
+| **MongoDB Express**       | [http://localhost:8081](http://localhost:8081)                                       | Database Admin UI               |
+| **Redis Insight**         | [http://localhost:5540](http://localhost:5540)                                       | Redis Management                |
+| **RabbitMQ Management**   | [http://localhost:15672](http://localhost:15672)                                     | Message Broker UI (Dev)         |
+| **Firebase Emulator**     | [http://localhost:4000](http://localhost:4000)                                       | Firebase Local Development      |
+| **Notification Emulator** | [http://localhost:8083](http://localhost:8083)                                       | Push Notification Testing (Dev) |
 
 ### 🔐 Default Credentials
 
@@ -213,6 +245,7 @@ graph TB
 ## 🗄️ Data Model & Relationships
 
 ### Entity Relationship Diagram
+
 ```mermaid
 erDiagram
     USER {
@@ -287,53 +320,100 @@ erDiagram
 ### 📊 Database Collections
 
 #### **Users Collection (Firebase)**
+
 - **Primary Key**: Firebase UID (string)
 - **Purpose**: User profile and authentication
 - **Storage**: Firebase Firestore
 
 #### **Devices Collection (MongoDB)**
+
 - **Primary Key**: GUID
 - **Purpose**: Device registration and configuration
 - **Indexes**: `userId`, `active`
 
 #### **DeviceLogs Collection (MongoDB)**
+
 - **Primary Key**: GUID
 - **Purpose**: Historical session data (sitting/standing periods)
 - **Indexes**: `deviceId + startTime`, `endTime`
 
 #### **Reports Collection (MongoDB)**
+
 - **Primary Key**: GUID
 - **Purpose**: User-generated reports with analytics metadata
 - **Indexes**: `userId`, `deviceId`, `createdAt`, `visibilityType`
 
 #### **UserFollow Collection (MongoDB)**
+
 - **Primary Key**: GUID
 - **Purpose**: User relationship management (following system)
 - **Indexes**: `userId`, `targetId`, `createdAt`
 
 #### **ReportLike Collection (MongoDB)**
+
 - **Primary Key**: GUID
 - **Purpose**: User likes on reports
 - **Indexes**: `reportId`, `userId`
 
 #### **Redis Cache Structure**
+
 ```
 device:status:{deviceId} → Current Device Status JSON
 user:session:{userId} → Active Session Data
 notifications:queue:{userId} → Pending Notifications
 ```
 
+## 📊 Monitoring & Observability
+
+The BackBuddy Backend implements enterprise-grade monitoring and observability features for production-ready operation.
+
+### Health Checks
+
+#### Standard Health Check Endpoints
+
+- **Liveness Probe**: `/api/health/isalive` - Basic service availability
+- **Readiness Probe**: `/api/health/isready` - Service readiness for traffic
+- **JSON Response Format**: Detailed health status information
+- **Kubernetes Compatible**: Ready for container orchestration
+
+#### Health Check Features
+
+```http
+GET /api/health/isalive
+Content-Type: application/json
+
+{
+  "status": "Healthy",
+  "totalDuration": "00:00:00.0123456",
+  "entries": {
+    "self": {
+      "status": "Healthy",
+      "duration": "00:00:00.0045678"
+    }
+  }
+}
+```
+
+### Application Insights & Telemetry
+
+#### Azure Application Insights Integration
+
+- **Custom Metrics**: Business-specific performance indicators
+- **Exception Tracking**: Automatic error monitoring and alerting
+- **Performance Monitoring**: Response times, throughput, and resource usage
+- **Dependency Tracking**: Database, Redis, and external service calls
+
 ## 🧪 Testing & Quality Assurance
 
-The BackBuddy Backend features a comprehensive test suite with **213 Integration Tests** and **30 Unit Tests**, ensuring robust quality assurance.
+The BackBuddy Backend features a comprehensive test suite with **212 Integration Tests** and **30 Unit Tests**, ensuring robust quality assurance.
 
 ### Test Overview
 
-| Test Type | Count | Coverage |
-|-----------|-------|----------|
-| **Integration Tests** | 213 | End-to-End API Testing |
-| **Unit Tests** | 30 | Core Business Logic |
-| **Total** | **243** | Comprehensive Coverage |
+| Test Type             | Count   | Coverage               |
+| --------------------- | ------- | ---------------------- |
+| **Integration Tests** | 212     | End-to-End API Testing |
+| **Unit Tests**        | 30      | Core Business Logic    |
+| **Total**             | **242** | Comprehensive Coverage |
 
 ### Integration Test Scaling
 
@@ -347,6 +427,7 @@ The integration tests are executed under realistic conditions where the **API is
 ### Running Tests
 
 #### Unit Tests
+
 ```powershell
 # All Unit Tests (30 Tests)
 dotnet test --collect:"XPlat Code Coverage"
@@ -362,6 +443,7 @@ dotnet test --collect:"XPlat Code Coverage" --results-directory ./TestResults
 ```
 
 #### Integration Tests
+
 ```powershell
 # Start infrastructure with API scaling (213 Integration Tests)
 docker-compose -f docker-compose.test.yml up -d
@@ -374,6 +456,7 @@ docker-compose -f docker-compose.test.yml down -v
 ```
 
 #### All Tests
+
 ```powershell
 # Run complete test suite (243 Tests total)
 dotnet test --collect:"XPlat Code Coverage" --results-directory ./TestResults
@@ -398,12 +481,14 @@ graph LR
 ### Deployment Environments
 
 #### Development
+
 ```powershell
 # Local development setup
 docker-compose -f docker-compose.yml -f docker-compose.override.yml up -d
 ```
 
 #### Production (Azure)
+
 - **Container Hosting**: Azure Container Apps
 - **Container Registry**: Azure Container Registry
 - **Key Management**: Azure KeyVault for secure secret storage
@@ -414,6 +499,7 @@ docker-compose -f docker-compose.yml -f docker-compose.override.yml up -d
 ### 🔧 Configuration
 
 #### Environment Variables
+
 ```env
 # Database Configuration
 MONGODB_CONNECTION_STRING=mongodb://mongodb:27017/backbuddy
@@ -449,11 +535,13 @@ JWT_AUDIENCE=BackBuddy.Client
 ### 📱 API Versioning & Documentation
 
 #### API Versioning Strategy
+
 - **URL Path Versioning**: `/api/v1/`, `/api/v2/`
 - **Backward Compatibility**: Minimum 2 versions simultaneously
 - **Deprecation Policy**: 6 months notice before breaking changes
 
 #### OpenAPI Specification
+
 - **Swagger UI**: Interactive API documentation
 - **Scalar**: Modern alternative to Swagger UI
 - **Code Generation**: Client SDKs for various languages
@@ -464,20 +552,23 @@ JWT_AUDIENCE=BackBuddy.Client
 ### Security Measures
 
 #### Authentication & Authorization
+
 - **Multi-Factor Authentication**: SMS/Email/TOTP Support
 - **JWT Token Rotation**: Short lifespan with refresh tokens
 - **Role-Based Access Control**: Granular permissions
 - **API Rate Limiting**: Protection against DDoS and abuse
 
 #### Data Protection
+
 - **Encryption at Rest**: AES-256 for sensitive data
 - **Encryption in Transit**: TLS 1.3 for all connections
-- **Key Management**: 
+- **Key Management**:
   - **Development**: Local configuration and environment variables
   - **Production**: Azure KeyVault integration
 - **Personal Data**: GDPR-compliant data processing
 
 #### Security Scanning
+
 ```powershell
 # Dependency Vulnerability Scan
 dotnet list package --vulnerable --include-transitive
@@ -494,6 +585,7 @@ dotnet format --severity error --verify-no-changes
 ### Development Setup
 
 #### Local Development Environment
+
 ```powershell
 # Clone repository
 git clone https://github.com/Back-Buddy/Backend.git
@@ -510,12 +602,14 @@ dotnet run --project Api/Api.csproj
 ```
 
 #### Code Guidelines
+
 - **Code Style**: EditorConfig + .NET Coding Conventions
 - **Commit Messages**: Conventional Commits Format
-- **Branch Strategy**: GitFlow (main, develop, feature/*, hotfix/*)
+- **Branch Strategy**: GitFlow (main, develop, feature/_, hotfix/_)
 - **Code Reviews**: Minimum 2 approvals for production
 
 #### Debugging
+
 ```powershell
 # Start with debugger
 dotnet run --project Api/Api.csproj --configuration Debug
@@ -527,6 +621,7 @@ docker-compose logs -f api
 ### 🔍 Monitoring & Observability
 
 #### Application Metrics
+
 - **Azure Application Insights**: Application performance monitoring
 - **Custom Metrics**: Business-specific KPIs
 - **Performance Counters**: Response times, throughput
@@ -534,9 +629,10 @@ docker-compose logs -f api
 - **Resource Usage**: CPU, memory, disk I/O
 
 #### Logging Strategy
+
 ```csharp
 // Structured Logging Example
-logger.LogInformation("Device data processed: {DeviceId} - {DataPoints} points in {Duration}ms", 
+logger.LogInformation("Device data processed: {DeviceId} - {DataPoints} points in {Duration}ms",
     deviceId, dataPoints, processingTime);
 ```
 
@@ -545,6 +641,7 @@ logger.LogInformation("Device data processed: {DeviceId} - {DataPoints} points i
 ### Common Issues
 
 #### Services won't start
+
 ```powershell
 # Check Docker status
 docker-compose ps
@@ -560,6 +657,7 @@ docker-compose down -v && docker-compose up -d
 ```
 
 #### Database connection failed
+
 ```powershell
 # Test MongoDB connection
 docker exec -it backbuddy-mongodb-1 mongosh
@@ -569,6 +667,7 @@ docker exec -it backbuddy-redis-1 redis-cli ping
 ```
 
 #### Performance issues
+
 ```powershell
 # Check resource usage
 docker stats
@@ -578,40 +677,10 @@ docker stats
 # Analyze Redis Memory Usage
 ```
 
-## 📝 Changelog
-
-### [v1.2.0] - 2025-06-26
-#### Added
-- WebSocket real-time communication
-- Redis caching layer
-- Advanced analytics endpoints
-- Device orchestrator service
-- Comprehensive test suite
-
-#### Changed
-- Migrated to .NET 9
-- Improved API response times by 40%
-- Enhanced error handling
-
-#### Fixed
-- Memory leaks in device data processing
-- Race conditions in notification service
-
-### [v1.1.0] - 2025-05-15
-#### Added
-- Firebase authentication integration
-- Push notification system
-- User relationship management
-- Achievement system
-
-#### Security
-- Implemented JWT token rotation
-- Added API rate limiting
-- Enhanced input validation
-
 ## 🏆 Acknowledgments & Credits
 
 ### Open Source Libraries
+
 - **ASP.NET Core Team** - Microsoft
 - **MongoDB .NET Driver** - MongoDB Inc.
 - **MassTransit** - Chris Patterson & Contributors
@@ -622,8 +691,11 @@ docker stats
 - **Azure KeyVault** - Microsoft (Production)
 
 ### Contributors
-- **PlaySkyHD** - Project Lead & Architecture
-- **Community Contributors** - Feature Development & Testing
+
+- **PlaySkyHD (Nic Markfort)** - Backend, Architecture & App Development
+- **JPoepsel02 (Jannik Pöpsel)** - Feature Development (Backend & Sensor)
+- **Ben-Bongo (Ben Steverding)** - App Development
+- **LeonSCG (Leon Schmedding)** - Sensor Development / App Development
 
 ---
 
