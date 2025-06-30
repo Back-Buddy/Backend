@@ -126,7 +126,6 @@ graph TB
 - **MSTest Framework** - Unit Testing
 - **NSubstitute** - Mocking Framework
 - **Integration Tests** - End-to-End Testing
-- **Test Containers** - Isolated Test Environments
 
 #### Monitoring & Observability
 
