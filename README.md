@@ -323,7 +323,7 @@ erDiagram
     USER ||--o{ USER_FOLLOW : "follows_users"
     USER ||--o{ REPORT_LIKE : "likes_reports"
     REPORT ||--o{ REPORT_LIKE : "receives_likes"
-    REPORT ||--o{ REPORT_METADATA: "owns"
+    REPORT ||--|| REPORT_METADATA : "contains"
 ```
 
 ### 📊 Database Collections
