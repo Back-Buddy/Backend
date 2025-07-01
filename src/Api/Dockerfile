@@ -6,7 +6,7 @@ WORKDIR /app
 EXPOSE 8080
 
 # Build Stage with Dotnet SDK
-FROM mcr.microsoft.com/dotnet/sdk:9.0@sha256:faa2daf2b72cbe787ee1882d9651fa4ef3e938ee56792b8324516f5a448f3abe AS sdk
+FROM mcr.microsoft.com/dotnet/sdk:9.0@sha256:b768b444028d3c531de90a356836047e48658cd1e26ba07a539a6f1a052a35d9 AS sdk
 WORKDIR /src
 
 # Install dev tools
