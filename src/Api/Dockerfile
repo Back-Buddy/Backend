@@ -1,7 +1,7 @@
 ARG BUILD_ENV=prod
 
 # Base Stage for general settings that never change
-FROM mcr.microsoft.com/dotnet/aspnet:9.0@sha256:1e12c265e1e1b3714c5805ab0cab63380eb687b0a04f3b3ef3392494a6122614 AS aspnet
+FROM mcr.microsoft.com/dotnet/aspnet:10.0@sha256:7c4246c1c384319346d45b3e24a10a21d5b6fc9b36a04790e1588148ff8055b0 AS aspnet
 WORKDIR /app
 EXPOSE 8080
 
